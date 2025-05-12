@@ -1,0 +1,56 @@
+const User = require('./User');
+const Role = require('./Role');
+const Permission = require('./Permission');
+const Organization = require('./Organization');
+const Repository = require('./Repository');
+const Team = require('./Team');
+const Policy = require('./Policy');
+const AuditLog = require('./AuditLog');
+
+// Define associations
+// User <-> Role (Many-to-Many)
+User.belongsToMany(Role, { through: 'UserRoles' });
+Role.belongsToMany(User, { through: 'UserRoles' });
+
+// Role <-> Permission (Many-to-Many)
+Role.belongsToMany(Permission, { through: 'RolePermissions' });
+Permission.belongsToMany(Role, { through: 'RolePermissions' });
+
+// Organization <-> User (Many-to-Many)
+Organization.belongsToMany(User, { through: 'OrganizationUsers' });
+User.belongsToMany(Organization, { through: 'OrganizationUsers' });
+
+// Organization <-> Repository (One-to-Many)
+Organization.hasMany(Repository);
+Repository.belongsTo(Organization);
+
+// Organization <-> Team (One-to-Many)
+Organization.hasMany(Team);
+Team.belongsTo(Organization);
+
+// Team <-> User (Many-to-Many)
+Team.belongsToMany(User, { through: 'TeamUsers' });
+User.belongsToMany(Team, { through: 'TeamUsers' });
+
+// Team <-> Repository (Many-to-Many)
+Team.belongsToMany(Repository, { through: 'TeamRepositories', as: 'Repositories' });
+Repository.belongsToMany(Team, { through: 'TeamRepositories', as: 'Teams' });
+
+// User <-> AuditLog (One-to-Many)
+User.hasMany(AuditLog);
+AuditLog.belongsTo(User);
+
+// Organization <-> Policy (Many-to-Many)
+Organization.belongsToMany(Policy, { through: 'OrganizationPolicies' });
+Policy.belongsToMany(Organization, { through: 'OrganizationPolicies' });
+
+module.exports = {
+  User,
+  Role,
+  Permission,
+  Organization,
+  Repository,
+  Team,
+  Policy,
+  AuditLog
+}; 
