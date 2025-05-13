@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Box,
   Grid,
@@ -13,9 +13,17 @@ import {
   Icon,
   Flex,
   useColorModeValue,
+  Spinner,
+  Center,
+  Alert,
+  AlertIcon,
+  Button,
 } from '@chakra-ui/react';
-import { FiUsers, FiGitPullRequest, FiShield, FiAlertCircle } from 'react-icons/fi';
+import { FiUsers, FiGitPullRequest, FiShield, FiAlertCircle, FiRefreshCw } from 'react-icons/fi';
 import { useAuth } from '../contexts/AuthContext';
+import StatsCard from '../components/StatsCard';
+import ActivityFeed from '../components/ActivityFeed';
+import axios from 'axios';
 
 // Placeholder component for stats card
 const StatsCard = ({ title, stat, icon, description }) => {
@@ -71,23 +79,114 @@ const ActivityItem = ({ activity }) => {
 };
 
 const DashboardPage = () => {
-  const { organization, user } = useAuth();
+  const { organization, user, token } = useAuth();
+  const [stats, setStats] = useState(null);
+  const [recentActivities, setRecentActivities] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
   
-  // Mock data - in a real app, this would come from API
-  const mockStats = {
-    users: 34,
-    repositories: 78,
-    policies: 12,
-    violations: 3,
+  // 获取仪表板数据
+  const fetchDashboardData = async () => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      
+      // 如果没有组织信息，则使用模拟数据
+      if (!organization?.id) {
+        // 使用模拟数据
+        const mockStats = {
+          users: 34,
+          repositories: 78,
+          policies: 12,
+          violations: 3,
+        };
+        
+        const mockActivities = [
+          { 
+            id: 1, 
+            action: 'policy_violated', 
+            resourceType: 'repository',
+            resourceId: 'backend',
+            createdAt: new Date().toISOString(),
+            details: { 
+              repositoryName: 'backend',
+              policyName: 'No Public Repos',
+              visibility: 'public'
+            }
+          },
+          { 
+            id: 2, 
+            action: 'policy_created', 
+            resourceType: 'policy',
+            resourceId: 'no-public-repos',
+            createdAt: new Date(Date.now() - 86400000).toISOString(),
+            details: { 
+              policyName: 'No Public Repos'
+            }
+          },
+          { 
+            id: 3, 
+            action: 'member_added', 
+            resourceType: 'user',
+            resourceId: 'john.doe',
+            createdAt: new Date(Date.now() - 86400000 * 1.5).toISOString(),
+            details: { 
+              username: 'john.doe',
+              teamName: 'admin'
+            }
+          },
+          { 
+            id: 4, 
+            action: 'policy_violated', 
+            resourceType: 'repository',
+            resourceId: 'frontend',
+            createdAt: new Date(Date.now() - 86400000 * 2).toISOString(),
+            details: { 
+              repositoryName: 'frontend',
+              policyName: 'Branch Protection',
+              message: 'Direct commit to main branch'
+            }
+          },
+        ];
+        
+        setStats(mockStats);
+        setRecentActivities(mockActivities);
+        return;
+      }
+      
+      // 获取真实数据
+      const [statsResponse, activitiesResponse] = await Promise.all([
+        axios.get(`/api/organizations/${organization.id}/stats`, {
+          headers: { Authorization: `Bearer ${token}` }
+        }),
+        axios.get(`/api/audit/organization/${organization.id}/logs?page=1&limit=10`, {
+          headers: { Authorization: `Bearer ${token}` }
+        })
+      ]);
+      
+      setStats(statsResponse.data);
+      setRecentActivities(activitiesResponse.data.logs || []);
+    } catch (err) {
+      console.error('Error fetching dashboard data:', err);
+      setError('Failed to load dashboard data. Please try again later.');
+    } finally {
+      setIsLoading(false);
+    }
   };
   
-  const mockActivities = [
-    { id: 1, title: 'Repository "backend" was made public', timestamp: 'Today, 10:30 AM', type: 'policy_violation' },
-    { id: 2, title: 'New policy "No Public Repos" created', timestamp: 'Yesterday, 2:15 PM', type: 'info' },
-    { id: 3, title: 'User john.doe added to admin team', timestamp: 'Yesterday, 11:45 AM', type: 'info' },
-    { id: 4, title: 'Policy violation: Direct commit to main branch', timestamp: '2 days ago', type: 'policy_violation' },
-  ];
-
+  // 页面加载时获取数据
+  useEffect(() => {
+    fetchDashboardData();
+  }, [organization?.id]);
+  
+  // 定义视图中使用的统计数据
+  const displayStats = stats || {
+    users: 0,
+    repositories: 0,
+    policies: 0,
+    violations: 0
+  };
+  
   return (
     <Box>
       <Heading as="h1" size="lg" mb={6}>
@@ -103,84 +202,108 @@ const DashboardPage = () => {
         </Text>
       </Box>
       
-      <SimpleGrid columns={{ base: 1, md: 2, lg: 4 }} spacing={5} mb={8}>
-        <StatsCard
-          title="Users"
-          stat={mockStats.users}
-          icon={FiUsers}
-          description="Total organization users"
-        />
-        <StatsCard
-          title="Repositories"
-          stat={mockStats.repositories}
-          icon={FiGitPullRequest}
-          description="Managed repositories"
-        />
-        <StatsCard
-          title="Policies"
-          stat={mockStats.policies}
-          icon={FiShield}
-          description="Active access policies"
-        />
-        <StatsCard
-          title="Policy Violations"
-          stat={mockStats.violations}
-          icon={FiAlertCircle}
-          description="Last 7 days"
-        />
-      </SimpleGrid>
-      
-      <Grid templateColumns={{ base: '1fr', lg: '2fr 1fr' }} gap={6}>
-        <GridItem>
-          <Box
-            bg={useColorModeValue('white', 'gray.700')}
-            shadow="sm"
-            rounded="lg"
-            p={5}
-            borderWidth="1px"
-            borderColor={useColorModeValue('gray.200', 'gray.700')}
-          >
-            <Heading as="h3" size="md" mb={4}>
-              Recent Activity
-            </Heading>
-            <Box maxH="400px" overflowY="auto">
-              {mockActivities.map(activity => (
-                <ActivityItem key={activity.id} activity={activity} />
-              ))}
-            </Box>
-          </Box>
-        </GridItem>
-        
-        <GridItem>
-          <Box
-            bg={useColorModeValue('white', 'gray.700')}
-            shadow="sm"
-            rounded="lg"
-            p={5}
-            borderWidth="1px"
-            borderColor={useColorModeValue('gray.200', 'gray.700')}
-            height="100%"
-          >
-            <Heading as="h3" size="md" mb={4}>
-              Quick Tips
-            </Heading>
-            <Box>
-              <Text fontSize="sm" mb={3}>
-                • Review your access policies regularly to ensure compliance
-              </Text>
-              <Text fontSize="sm" mb={3}>
-                • Check audit logs for any unauthorized access attempts
-              </Text>
-              <Text fontSize="sm" mb={3}>
-                • Create dedicated teams for different project responsibilities
-              </Text>
-              <Text fontSize="sm" mb={3}>
-                • Limit direct repository access to essential personnel only
-              </Text>
-            </Box>
-          </Box>
-        </GridItem>
-      </Grid>
+      {isLoading ? (
+        <Center p={10}>
+          <Spinner size="xl" color="brand.500" />
+        </Center>
+      ) : error ? (
+        <Alert status="error" mb={6}>
+          <AlertIcon />
+          {error}
+        </Alert>
+      ) : (
+        <>
+          <SimpleGrid columns={{ base: 1, md: 2, lg: 4 }} spacing={5} mb={8}>
+            <StatsCard
+              title="Users"
+              stat={displayStats.users}
+              icon={FiUsers}
+              description="Total organization users"
+            />
+            <StatsCard
+              title="Repositories"
+              stat={displayStats.repositories}
+              icon={FiGitPullRequest}
+              description="Managed repositories"
+            />
+            <StatsCard
+              title="Policies"
+              stat={displayStats.policies}
+              icon={FiShield}
+              description="Active access policies"
+            />
+            <StatsCard
+              title="Policy Violations"
+              stat={displayStats.violations}
+              icon={FiAlertCircle}
+              description="Last 7 days"
+            />
+          </SimpleGrid>
+          
+          <Grid templateColumns={{ base: '1fr', lg: '2fr 1fr' }} gap={6}>
+            <GridItem>
+              <Box
+                bg={useColorModeValue('white', 'gray.700')}
+                shadow="sm"
+                rounded="lg"
+                p={5}
+                borderWidth="1px"
+                borderColor={useColorModeValue('gray.200', 'gray.700')}
+              >
+                <Flex justifyContent="space-between" alignItems="center" mb={4}>
+                  <Heading as="h3" size="md">
+                    Recent Activity
+                  </Heading>
+                  <Button 
+                    leftIcon={<FiRefreshCw />} 
+                    size="sm" 
+                    variant="ghost"
+                    onClick={fetchDashboardData}
+                  >
+                    Refresh
+                  </Button>
+                </Flex>
+                <Box maxH="400px" overflowY="auto">
+                  <ActivityFeed activities={recentActivities} maxItems={10} />
+                </Box>
+              </Box>
+            </GridItem>
+            
+            <GridItem>
+              <Box
+                bg={useColorModeValue('white', 'gray.700')}
+                shadow="sm"
+                rounded="lg"
+                p={5}
+                borderWidth="1px"
+                borderColor={useColorModeValue('gray.200', 'gray.700')}
+                height="100%"
+              >
+                <Heading as="h3" size="md" mb={4}>
+                  Quick Tips
+                </Heading>
+                <Box>
+                  <Text fontSize="sm" mb={3}>
+                    • Review your access policies regularly to ensure compliance
+                  </Text>
+                  <Text fontSize="sm" mb={3}>
+                    • Check audit logs for any unauthorized access attempts
+                  </Text>
+                  <Text fontSize="sm" mb={3}>
+                    • Create dedicated teams for different project responsibilities
+                  </Text>
+                  <Text fontSize="sm" mb={3}>
+                    • Limit direct repository access to essential personnel only
+                  </Text>
+                  <Text fontSize="sm" mb={3}>
+                    • Enable branch protection on all production repositories
+                  </Text>
+                </Box>
+              </Box>
+            </GridItem>
+          </Grid>
+        </>
+      )}
     </Box>
   );
 };

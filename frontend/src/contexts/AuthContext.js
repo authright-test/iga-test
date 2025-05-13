@@ -44,12 +44,31 @@ export const AuthProvider = ({ children }) => {
   const login = async (code) => {
     try {
       setIsLoading(true);
-      const res = await axios.post('/auth/login', { code });
+      const res = await axios.post('/api/auth/login', { code });
       const { token, user, organization } = res.data;
       setToken(token);
       setUser(user);
       setOrganization(organization);
       setAuthToken(token);
+      
+      // 记录登录审计日志
+      if (user && organization) {
+        try {
+          await axios.post(`/api/audit/organization/${organization.id}/logs`, {
+            action: 'user_login',
+            resourceType: 'user',
+            resourceId: user.id.toString(),
+            details: {
+              username: user.username,
+              email: user.email,
+              loginMethod: 'github_oauth'
+            }
+          });
+        } catch (error) {
+          console.error('Failed to log audit event:', error);
+        }
+      }
+      
       return true;
     } catch (error) {
       toast({
@@ -66,11 +85,48 @@ export const AuthProvider = ({ children }) => {
   };
 
   // Logout user
-  const logout = () => {
+  const logout = async () => {
+    // 记录登出审计日志
+    if (user && organization) {
+      try {
+        await axios.post(`/api/audit/organization/${organization.id}/logs`, {
+          action: 'user_logout',
+          resourceType: 'user',
+          resourceId: user.id.toString(),
+          details: {
+            username: user.username,
+            email: user.email
+          }
+        });
+      } catch (error) {
+        console.error('Failed to log audit event:', error);
+      }
+    }
+    
     setToken(null);
     setUser(null);
     setOrganization(null);
     setAuthToken(null);
+  };
+
+  // 记录审计日志
+  const logAuditEvent = async (action, resourceType, resourceId, details = {}) => {
+    if (!organization) return false;
+    
+    try {
+      await axios.post(`/api/audit/organization/${organization.id}/logs`, {
+        action,
+        resourceType,
+        resourceId,
+        details
+      }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      return true;
+    } catch (error) {
+      console.error('Failed to log audit event:', error);
+      return false;
+    }
   };
 
   // Verify token on app load
@@ -80,8 +136,9 @@ export const AuthProvider = ({ children }) => {
       if (token && !isTokenExpired(token)) {
         setAuthToken(token);
         try {
-          const res = await axios.get('/auth/verify');
+          const res = await axios.get('/api/auth/verify');
           setUser(res.data.user);
+          setOrganization(res.data.organization);
         } catch (error) {
           setToken(null);
           setUser(null);
@@ -110,6 +167,7 @@ export const AuthProvider = ({ children }) => {
     isLoading,
     login,
     logout,
+    logAuditEvent
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

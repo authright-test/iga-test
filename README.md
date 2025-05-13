@@ -84,6 +84,31 @@ The application is containerized and can be deployed using Docker Compose:
 docker-compose up -d --build
 ```
 
+## Key Features
+
+### Audit Logging System
+
+The audit logging system provides comprehensive activity tracking and security auditing, recording all actions performed within GitHub organizations and repositories:
+
+- **Real-time Activity Tracking**: Automatically logs all key operations including repository creation/deletion, team member changes, permission modifications, and policy enforcement actions
+- **Detailed Log Information**: Records operation type, resource information, executing user, and detailed contextual data
+- **Advanced Search & Filtering**: Filter logs by action type, resource type, date range, and keywords
+- **Statistical Analysis**: Provides activity trends, user behavior, and policy enforcement statistics
+- **Export Capability**: Export audit logs to CSV format for compliance reporting and external analysis
+- **Dashboard Integration**: Displays recent important activities on the main dashboard for immediate insights
+
+#### Audit Log Data Model
+
+- `id`: Unique log record identifier
+- `userId`: ID of the user performing the action (can be null for system operations)
+- `organizationId`: Organization ID
+- `action`: Performed operation (e.g., repository_created, member_added, policy_enforced)
+- `resourceType`: Resource type (e.g., repository, user, team, organization, policy)
+- `resourceId`: Resource identifier
+- `details`: Detailed JSON information about the operation
+- `createdAt`: Record creation timestamp
+- `updatedAt`: Record update timestamp
+
 ## Documentation
 
 For more details on installation, configuration, and usage, refer to the following documentation:
