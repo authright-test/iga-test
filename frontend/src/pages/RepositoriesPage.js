@@ -20,6 +20,7 @@ import {
   FormControl,
   FormLabel,
   Input,
+  Textarea,
   Select,
   useToast,
   Badge,
@@ -34,22 +35,22 @@ import {
   HStack,
   VStack,
 } from '@chakra-ui/react';
-import { FiMoreVertical, FiEdit2, FiTrash2, FiUserPlus, FiUserMinus, FiShield, FiUsers } from 'react-icons/fi';
-import { useUsers } from '../hooks/useUsers';
+import { FiMoreVertical, FiEdit2, FiTrash2, FiUserPlus, FiUserMinus, FiShield, FiGitBranch, FiGitCommit } from 'react-icons/fi';
+import { useRepositories } from '../hooks/useRepositories';
 import { useAuth } from '../contexts/AuthContext';
 
-const UsersPage = () => {
-  const [selectedUser, setSelectedUser] = useState(null);
+const RepositoriesPage = () => {
+  const [selectedRepo, setSelectedRepo] = useState(null);
   const [formData, setFormData] = useState({
-    username: '',
-    email: '',
-    role: 'user',
+    name: '',
+    description: '',
+    visibility: 'private',
   });
   
   const { 
-    isOpen: isUserModalOpen, 
-    onOpen: onUserModalOpen, 
-    onClose: onUserModalClose 
+    isOpen: isRepoModalOpen, 
+    onOpen: onRepoModalOpen, 
+    onClose: onRepoModalClose 
   } = useDisclosure();
   
   const { 
@@ -64,28 +65,30 @@ const UsersPage = () => {
   const borderColor = useColorModeValue('gray.200', 'gray.700');
 
   const {
-    users,
+    repositories,
     isLoading,
     error,
-    createUser,
-    updateUser,
-    deleteUser,
-    getUserTeams,
+    createRepository,
+    updateRepository,
+    deleteRepository,
+    getRepositoryTeams,
     addTeam,
     removeTeam,
-    getUserRepositories,
-    addRepository,
-    removeRepository,
-    getUserPermissions,
-    updateUserPermissions,
-  } = useUsers();
+    getRepositoryUsers,
+    addUser,
+    removeUser,
+    getRepositoryPermissions,
+    updateRepositoryPermissions,
+    getRepositoryBranches,
+    getRepositoryCommits,
+  } = useRepositories();
 
-  const handleCreateUser = async () => {
+  const handleCreateRepository = async () => {
     try {
-      if (!formData.username || !formData.email) {
+      if (!formData.name) {
         toast({
           title: 'Validation Error',
-          description: 'Username and email are required',
+          description: 'Repository name is required',
           status: 'error',
           duration: 3000,
           isClosable: true,
@@ -93,24 +96,24 @@ const UsersPage = () => {
         return;
       }
 
-      const newUser = await createUser(formData);
+      const newRepo = await createRepository(formData);
       
       logAuditEvent(
-        'user_created',
-        'user',
-        newUser.id.toString(),
-        { username: formData.username }
+        'repository_created',
+        'repository',
+        newRepo.id.toString(),
+        { name: formData.name }
       );
       
       toast({
-        title: 'User created',
-        description: `User "${formData.username}" has been created.`,
+        title: 'Repository created',
+        description: `Repository "${formData.name}" has been created.`,
         status: 'success',
         duration: 3000,
         isClosable: true,
       });
       
-      onUserModalClose();
+      onRepoModalClose();
     } catch (err) {
       toast({
         title: 'Error',
@@ -122,28 +125,28 @@ const UsersPage = () => {
     }
   };
 
-  const handleUpdateUser = async () => {
+  const handleUpdateRepository = async () => {
     try {
-      if (!selectedUser) return;
+      if (!selectedRepo) return;
 
-      const updatedUser = await updateUser(selectedUser.id, formData);
+      const updatedRepo = await updateRepository(selectedRepo.id, formData);
       
       logAuditEvent(
-        'user_updated',
-        'user',
-        selectedUser.id.toString(),
-        { username: formData.username }
+        'repository_updated',
+        'repository',
+        selectedRepo.id.toString(),
+        { name: formData.name }
       );
       
       toast({
-        title: 'User updated',
-        description: `User "${formData.username}" has been updated.`,
+        title: 'Repository updated',
+        description: `Repository "${formData.name}" has been updated.`,
         status: 'success',
         duration: 3000,
         isClosable: true,
       });
       
-      onUserModalClose();
+      onRepoModalClose();
     } catch (err) {
       toast({
         title: 'Error',
@@ -155,20 +158,20 @@ const UsersPage = () => {
     }
   };
 
-  const handleDeleteUser = async (user) => {
+  const handleDeleteRepository = async (repo) => {
     try {
-      await deleteUser(user.id);
+      await deleteRepository(repo.id);
       
       logAuditEvent(
-        'user_deleted',
-        'user',
-        user.id.toString(),
-        { username: user.username }
+        'repository_deleted',
+        'repository',
+        repo.id.toString(),
+        { name: repo.name }
       );
       
       toast({
-        title: 'User deleted',
-        description: `User "${user.username}" has been deleted.`,
+        title: 'Repository deleted',
+        description: `Repository "${repo.name}" has been deleted.`,
         status: 'success',
         duration: 3000,
         isClosable: true,
@@ -184,20 +187,20 @@ const UsersPage = () => {
     }
   };
 
-  const handleAddTeam = async (userId, teamId) => {
+  const handleAddTeam = async (repoId, teamId) => {
     try {
-      await addTeam(userId, teamId);
+      await addTeam(repoId, teamId);
       
       logAuditEvent(
         'team_added',
-        'user',
-        userId.toString(),
+        'repository',
+        repoId.toString(),
         { teamId }
       );
       
       toast({
         title: 'Team added',
-        description: 'Team has been added to the user.',
+        description: 'Team has been added to the repository.',
         status: 'success',
         duration: 3000,
         isClosable: true,
@@ -213,20 +216,20 @@ const UsersPage = () => {
     }
   };
 
-  const handleRemoveTeam = async (userId, teamId) => {
+  const handleRemoveTeam = async (repoId, teamId) => {
     try {
-      await removeTeam(userId, teamId);
+      await removeTeam(repoId, teamId);
       
       logAuditEvent(
         'team_removed',
-        'user',
-        userId.toString(),
+        'repository',
+        repoId.toString(),
         { teamId }
       );
       
       toast({
         title: 'Team removed',
-        description: 'Team has been removed from the user.',
+        description: 'Team has been removed from the repository.',
         status: 'success',
         duration: 3000,
         isClosable: true,
@@ -242,29 +245,29 @@ const UsersPage = () => {
     }
   };
 
-  const openUserModal = (user = null) => {
-    if (user) {
-      setSelectedUser(user);
+  const openRepoModal = (repo = null) => {
+    if (repo) {
+      setSelectedRepo(repo);
       setFormData({
-        username: user.username,
-        email: user.email,
-        role: user.role,
+        name: repo.name,
+        description: repo.description,
+        visibility: repo.visibility,
       });
     } else {
-      setSelectedUser(null);
+      setSelectedRepo(null);
       setFormData({
-        username: '',
-        email: '',
-        role: 'user',
+        name: '',
+        description: '',
+        visibility: 'private',
       });
     }
-    onUserModalOpen();
+    onRepoModalOpen();
   };
 
-  const openTeamsModal = async (user) => {
+  const openTeamsModal = async (repo) => {
     try {
-      const teams = await getUserTeams(user.id);
-      setSelectedUser(user);
+      const teams = await getRepositoryTeams(repo.id);
+      setSelectedRepo(repo);
       setFormData(prev => ({
         ...prev,
         teams,
@@ -284,7 +287,7 @@ const UsersPage = () => {
   if (isLoading) {
     return (
       <Box p={4}>
-        <Heading size="lg" mb={4}>Loading users...</Heading>
+        <Heading size="lg" mb={4}>Loading repositories...</Heading>
       </Box>
     );
   }
@@ -292,7 +295,7 @@ const UsersPage = () => {
   if (error) {
     return (
       <Box p={4}>
-        <Heading size="lg" mb={4}>Error loading users</Heading>
+        <Heading size="lg" mb={4}>Error loading repositories</Heading>
         <Box color="red.500">{error}</Box>
       </Box>
     );
@@ -301,9 +304,9 @@ const UsersPage = () => {
   return (
     <Box p={4}>
       <Flex justify="space-between" align="center" mb={4}>
-        <Heading size="lg">Users</Heading>
-        <Button colorScheme="blue" onClick={() => openUserModal()}>
-          Create User
+        <Heading size="lg">Repositories</Heading>
+        <Button colorScheme="blue" onClick={() => openRepoModal()}>
+          Create Repository
         </Button>
       </Flex>
 
@@ -318,35 +321,32 @@ const UsersPage = () => {
         <Table variant="simple">
           <Thead>
             <Tr>
-              <Th>User</Th>
-              <Th>Role</Th>
+              <Th>Repository</Th>
+              <Th>Visibility</Th>
               <Th>Teams</Th>
-              <Th>Repositories</Th>
+              <Th>Branches</Th>
               <Th>Actions</Th>
             </Tr>
           </Thead>
           <Tbody>
-            {users.map((user) => (
-              <Tr key={user.id}>
+            {repositories.map((repo) => (
+              <Tr key={repo.id}>
                 <Td>
-                  <HStack spacing={3}>
-                    <Avatar size="sm" name={user.username} src={user.avatar} />
-                    <VStack align="start" spacing={0}>
-                      <Text fontWeight="medium">{user.username}</Text>
-                      <Text fontSize="sm" color="gray.500">
-                        {user.email}
-                      </Text>
-                    </VStack>
-                  </HStack>
+                  <VStack align="start" spacing={0}>
+                    <Text fontWeight="medium">{repo.name}</Text>
+                    <Text fontSize="sm" color="gray.500">
+                      {repo.description}
+                    </Text>
+                  </VStack>
                 </Td>
                 <Td>
-                  <Badge colorScheme={user.role === 'admin' ? 'red' : 'blue'}>
-                    {user.role}
+                  <Badge colorScheme={repo.visibility === 'private' ? 'red' : 'green'}>
+                    {repo.visibility}
                   </Badge>
                 </Td>
                 <Td>
                   <HStack spacing={1}>
-                    {user.teams?.map((team) => (
+                    {repo.teams?.map((team) => (
                       <Badge key={team.id} colorScheme="purple">
                         {team.name}
                       </Badge>
@@ -355,9 +355,9 @@ const UsersPage = () => {
                 </Td>
                 <Td>
                   <HStack spacing={1}>
-                    {user.repositories?.map((repo) => (
-                      <Badge key={repo.id} colorScheme="green">
-                        {repo.name}
+                    {repo.branches?.map((branch) => (
+                      <Badge key={branch.name} colorScheme="blue">
+                        {branch.name}
                       </Badge>
                     ))}
                   </HStack>
@@ -373,40 +373,46 @@ const UsersPage = () => {
                     <MenuList>
                       <MenuItem
                         icon={<FiEdit2 />}
-                        onClick={() => openUserModal(user)}
+                        onClick={() => openRepoModal(repo)}
                       >
-                        Edit User
+                        Edit Repository
                       </MenuItem>
                       <MenuItem
-                        icon={<FiUsers />}
-                        onClick={() => openTeamsModal(user)}
+                        icon={<FiShield />}
+                        onClick={() => openTeamsModal(repo)}
                       >
                         Manage Teams
                       </MenuItem>
                       <MenuItem
                         icon={<FiUserPlus />}
-                        onClick={() => handleAddTeam(user.id)}
+                        onClick={() => handleAddTeam(repo.id)}
                       >
                         Add Team
                       </MenuItem>
                       <MenuItem
                         icon={<FiUserMinus />}
-                        onClick={() => handleRemoveTeam(user.id)}
+                        onClick={() => handleRemoveTeam(repo.id)}
                       >
                         Remove Team
                       </MenuItem>
                       <MenuItem
-                        icon={<FiShield />}
-                        onClick={() => getUserPermissions(user.id)}
+                        icon={<FiGitBranch />}
+                        onClick={() => getRepositoryBranches(repo.id)}
                       >
-                        View Permissions
+                        View Branches
+                      </MenuItem>
+                      <MenuItem
+                        icon={<FiGitCommit />}
+                        onClick={() => getRepositoryCommits(repo.id)}
+                      >
+                        View Commits
                       </MenuItem>
                       <MenuItem
                         icon={<FiTrash2 />}
-                        onClick={() => handleDeleteUser(user)}
+                        onClick={() => handleDeleteRepository(repo)}
                         color="red.500"
                       >
-                        Delete User
+                        Delete Repository
                       </MenuItem>
                     </MenuList>
                   </Menu>
@@ -417,56 +423,55 @@ const UsersPage = () => {
         </Table>
       </Box>
 
-      {/* User Modal */}
-      <Modal isOpen={isUserModalOpen} onClose={onUserModalClose}>
+      {/* Repository Modal */}
+      <Modal isOpen={isRepoModalOpen} onClose={onRepoModalClose}>
         <ModalOverlay />
         <ModalContent>
           <ModalHeader>
-            {selectedUser ? 'Edit User' : 'Create User'}
+            {selectedRepo ? 'Edit Repository' : 'Create Repository'}
           </ModalHeader>
           <ModalCloseButton />
           <ModalBody pb={6}>
             <FormControl mb={4}>
-              <FormLabel>Username</FormLabel>
+              <FormLabel>Name</FormLabel>
               <Input
-                value={formData.username}
+                value={formData.name}
                 onChange={(e) =>
-                  setFormData({ ...formData, username: e.target.value })
+                  setFormData({ ...formData, name: e.target.value })
                 }
-                placeholder="Enter username"
+                placeholder="Enter repository name"
               />
             </FormControl>
             <FormControl mb={4}>
-              <FormLabel>Email</FormLabel>
-              <Input
-                value={formData.email}
+              <FormLabel>Description</FormLabel>
+              <Textarea
+                value={formData.description}
                 onChange={(e) =>
-                  setFormData({ ...formData, email: e.target.value })
+                  setFormData({ ...formData, description: e.target.value })
                 }
-                placeholder="Enter email"
-                type="email"
+                placeholder="Enter repository description"
               />
             </FormControl>
             <FormControl mb={4}>
-              <FormLabel>Role</FormLabel>
+              <FormLabel>Visibility</FormLabel>
               <Select
-                value={formData.role}
+                value={formData.visibility}
                 onChange={(e) =>
-                  setFormData({ ...formData, role: e.target.value })
+                  setFormData({ ...formData, visibility: e.target.value })
                 }
               >
-                <option value="user">User</option>
-                <option value="admin">Admin</option>
+                <option value="private">Private</option>
+                <option value="public">Public</option>
               </Select>
             </FormControl>
             <Button
               colorScheme="blue"
               mr={3}
-              onClick={selectedUser ? handleUpdateUser : handleCreateUser}
+              onClick={selectedRepo ? handleUpdateRepository : handleCreateRepository}
             >
-              {selectedUser ? 'Update' : 'Create'}
+              {selectedRepo ? 'Update' : 'Create'}
             </Button>
-            <Button onClick={onUserModalClose}>Cancel</Button>
+            <Button onClick={onRepoModalClose}>Cancel</Button>
           </ModalBody>
         </ModalContent>
       </Modal>
@@ -475,14 +480,14 @@ const UsersPage = () => {
       <Modal isOpen={isTeamsModalOpen} onClose={onTeamsModalClose}>
         <ModalOverlay />
         <ModalContent>
-          <ModalHeader>Manage User Teams</ModalHeader>
+          <ModalHeader>Manage Repository Teams</ModalHeader>
           <ModalCloseButton />
           <ModalBody pb={6}>
             {/* Add your teams management UI here */}
             <Button
               colorScheme="blue"
               mr={3}
-              onClick={() => handleUpdateUser(selectedUser.id, formData)}
+              onClick={() => handleUpdateRepository(selectedRepo.id, formData)}
             >
               Update Teams
             </Button>
@@ -494,4 +499,4 @@ const UsersPage = () => {
   );
 };
 
-export default UsersPage; 
+export default RepositoriesPage; 

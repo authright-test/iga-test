@@ -46,6 +46,16 @@ Designing and implementing a GitHub App for an Enterprise Identity Governance an
 - React
 - Chakra UI
 - @octokit
+- react-hook-form
+- yup
+- file-saver
+- date-fns
+- lodash
+- humanize
+- jszip
+- chart.js
+- react-chartjs-2
+- @tanstack/react-query
 
 ## 安全认证
 
