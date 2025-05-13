@@ -1,5 +1,5 @@
 const express = require('express');
-const githubAuthMiddleware = require('../middleware/githubAuth');
+const { authenticateJWT, authenticateGitHubApp } = require('../middleware/auth');
 const authRoutes = require('./auth');
 const rolesRoutes = require('./roles');
 const policiesRoutes = require('./policies');
@@ -18,15 +18,10 @@ function setupRoutes(app) {
   router.use('/auth', authRoutes);
 
   // Protected routes
-  router.use('/api', githubAuthMiddleware, (req, res, next) => {
-    // Add user data from token to req object
-    req.user = {
-      id: req.decoded.userId,
-      githubId: req.decoded.githubId,
-      username: req.decoded.username
-    };
-    next();
-  });
+  router.use('/api', authenticateJWT);
+
+  // GitHub App routes
+  router.use('/api/github', authenticateGitHubApp);
 
   // API routes (protected)
   router.use('/api/roles', rolesRoutes);

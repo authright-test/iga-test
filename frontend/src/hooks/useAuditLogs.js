@@ -1,30 +1,38 @@
 import { useState, useEffect } from 'react';
 import api from '../services/api';
-import { useAuth } from '../contexts/AuthContext';
+import { useAuth } from './useAuth';
 
-export const useAuditLogs = () => {
+export const useAuditLogs = (options = {}) => {
   const [logs, setLogs] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const { organization } = useAuth();
+  const { limit = 10, page = 1 } = options;
 
-  const fetchLogs = async (filters = {}) => {
-    try {
-      setIsLoading(true);
-      setError(null);
-      
-      const response = await api.get(
-        `/organizations/${organization.id}/audit-logs`,
-        { params: filters }
-      );
-      
-      setLogs(response.data);
-    } catch (err) {
-      setError(err.response?.data?.error || err.message);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  useEffect(() => {
+    const fetchLogs = async () => {
+      if (!organization?.id) return;
+
+      try {
+        setIsLoading(true);
+        const response = await api.get(`/api/audit/organization/${organization.id}/logs`, {
+          params: {
+            limit,
+            page,
+            ...options
+          }
+        });
+        setLogs(response.data.logs);
+        setError(null);
+      } catch (err) {
+        setError(err.message);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchLogs();
+  }, [organization?.id, limit, page, options]);
 
   const getLogDetails = async (logId) => {
     try {
@@ -75,17 +83,10 @@ export const useAuditLogs = () => {
     }
   };
 
-  useEffect(() => {
-    if (organization?.id) {
-      fetchLogs();
-    }
-  }, [organization?.id]);
-
   return {
     logs,
     isLoading,
     error,
-    fetchLogs,
     getLogDetails,
     exportLogs,
     getLogStats,

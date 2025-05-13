@@ -1,12 +1,45 @@
 const express = require('express');
-const { authenticateUser, verifyToken } = require('../services/authService');
+const { authenticateUser, verifyToken, githubApp } = require('../services/authService');
 const logger = require('../utils/logger');
 
 const router = express.Router();
 
 /**
+ * @route   GET /auth/github
+ * @desc    Redirect to GitHub OAuth page
+ * @access  Public
+ */
+router.get('/github', (req, res) => {
+  const githubAuthUrl = `https://github.com/login/oauth/authorize?client_id=${process.env.GITHUB_APP_CLIENT_ID}&redirect_uri=${process.env.GITHUB_CALLBACK_URL}&scope=user:email`;
+  res.redirect(githubAuthUrl);
+});
+
+/**
+ * @route   GET /auth/github/callback
+ * @desc    Handle GitHub OAuth callback
+ * @access  Public
+ */
+router.get('/github/callback', async (req, res) => {
+  try {
+    const { code } = req.query;
+    
+    if (!code) {
+      return res.redirect(`${process.env.FRONTEND_URL}/login?error=no_code`);
+    }
+    
+    const authResult = await authenticateUser(code);
+    
+    // Redirect to frontend with token
+    res.redirect(`${process.env.FRONTEND_URL}/oauth-callback?token=${authResult.token}`);
+  } catch (error) {
+    logger.error('GitHub OAuth callback error:', error);
+    res.redirect(`${process.env.FRONTEND_URL}/login?error=oauth_failed`);
+  }
+});
+
+/**
  * @route   POST /auth/login
- * @desc    Authenticate user with GitHub OAuth code
+ * @desc    Authenticate user with GitHub OAuth code (API endpoint)
  * @access  Public
  */
 router.post('/login', async (req, res) => {
@@ -71,11 +104,10 @@ router.get('/verify', async (req, res) => {
 
 /**
  * @route   POST /auth/logout
- * @desc    Logout user (client-side only)
+ * @desc    Logout user
  * @access  Public
  */
 router.post('/logout', (req, res) => {
-  // Actual logout happens on the client side by removing the token
   res.json({ success: true, message: 'Logout successful' });
 });
 
