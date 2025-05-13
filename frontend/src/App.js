@@ -1,7 +1,9 @@
 import React from 'react';
-import { Routes, Route, Navigate } from 'react-router-dom';
-import { useDisclosure } from '@chakra-ui/react';
-import { AuthProvider, useAuth } from './contexts/AuthContext';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { useAuth } from './hooks/useAuth';
+import GitHubLogin from './components/auth/GitHubLogin';
+import OAuthCallback from './components/auth/OAuthCallback';
+import Dashboard from './components/Dashboard';
 import Layout from './components/Layout';
 import LoginPage from './pages/LoginPage';
 import DashboardPage from './pages/DashboardPage';
@@ -14,12 +16,12 @@ import RepositoriesPage from './pages/RepositoriesPage';
 import TeamsPage from './pages/TeamsPage';
 import NotFoundPage from './pages/NotFoundPage';
 
-// Protected route component - redirects to login if not authenticated
+// Protected Route component
 const ProtectedRoute = ({ children }) => {
-  const { isAuthenticated, isLoading } = useAuth();
+  const { isAuthenticated, loading } = useAuth();
 
-  if (isLoading) {
-    return null; // Or a loading spinner
+  if (loading) {
+    return <div>Loading...</div>;
   }
 
   if (!isAuthenticated) {
@@ -29,113 +31,105 @@ const ProtectedRoute = ({ children }) => {
   return children;
 };
 
-function AppRoutes() {
-  const { isAuthenticated } = useAuth();
-  const drawerDisclosure = useDisclosure();
-
-  return (
-    <Routes>
-      <Route 
-        path="/login" 
-        element={isAuthenticated ? <Navigate to="/" /> : <LoginPage />} 
-      />
-      <Route
-        path="/"
-        element={
-          <ProtectedRoute>
-            <Layout drawerDisclosure={drawerDisclosure}>
-              <DashboardPage />
-            </Layout>
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/roles"
-        element={
-          <ProtectedRoute>
-            <Layout drawerDisclosure={drawerDisclosure}>
-              <RolesPage />
-            </Layout>
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/policies"
-        element={
-          <ProtectedRoute>
-            <Layout drawerDisclosure={drawerDisclosure}>
-              <PoliciesPage />
-            </Layout>
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/audit-logs"
-        element={
-          <ProtectedRoute>
-            <Layout drawerDisclosure={drawerDisclosure}>
-              <AuditLogsPage />
-            </Layout>
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/organization"
-        element={
-          <ProtectedRoute>
-            <Layout drawerDisclosure={drawerDisclosure}>
-              <OrganizationPage />
-            </Layout>
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/users"
-        element={
-          <ProtectedRoute>
-            <Layout drawerDisclosure={drawerDisclosure}>
-              <UsersPage />
-            </Layout>
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/repositories"
-        element={
-          <ProtectedRoute>
-            <Layout drawerDisclosure={drawerDisclosure}>
-              <RepositoriesPage />
-            </Layout>
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/teams"
-        element={
-          <ProtectedRoute>
-            <Layout drawerDisclosure={drawerDisclosure}>
-              <TeamsPage />
-            </Layout>
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="*"
-        element={
-          <Layout drawerDisclosure={drawerDisclosure}>
-            <NotFoundPage />
-          </Layout>
-        }
-      />
-    </Routes>
-  );
-}
-
 function App() {
   return (
-    <AuthProvider>
-      <AppRoutes />
-    </AuthProvider>
+    <Router>
+      <Routes>
+        {/* Public routes */}
+        <Route path="/login" element={<GitHubLogin />} />
+        <Route path="/oauth-callback" element={<OAuthCallback />} />
+
+        {/* Protected routes */}
+        <Route
+          path="/"
+          element={
+            <ProtectedRoute>
+              <Layout>
+                <Dashboard />
+              </Layout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/roles"
+          element={
+            <ProtectedRoute>
+              <Layout>
+                <RolesPage />
+              </Layout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/policies"
+          element={
+            <ProtectedRoute>
+              <Layout>
+                <PoliciesPage />
+              </Layout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/audit-logs"
+          element={
+            <ProtectedRoute>
+              <Layout>
+                <AuditLogsPage />
+              </Layout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/organization"
+          element={
+            <ProtectedRoute>
+              <Layout>
+                <OrganizationPage />
+              </Layout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/users"
+          element={
+            <ProtectedRoute>
+              <Layout>
+                <UsersPage />
+              </Layout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/repositories"
+          element={
+            <ProtectedRoute>
+              <Layout>
+                <RepositoriesPage />
+              </Layout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/teams"
+          element={
+            <ProtectedRoute>
+              <Layout>
+                <TeamsPage />
+              </Layout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="*"
+          element={
+            <Layout>
+              <NotFoundPage />
+            </Layout>
+          }
+        />
+      </Routes>
+    </Router>
   );
 }
 

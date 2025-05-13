@@ -1,5 +1,5 @@
 const express = require('express');
-const { getAuditLogs, getOrganizationAuditLogs, getAuditLogStats } = require('../services/auditService');
+const { getAuditLogs, getOrganizationAuditLogs, getAuditLogStats, getAccessHistory, getAccessHistoryByUser, getAccessHistoryByRepository, getAccessHistoryByTeam, exportAccessHistory } = require('../services/auditService');
 const { hasPermission } = require('../services/accessControlService');
 const logger = require('../utils/logger');
 
@@ -198,6 +198,205 @@ router.get('/organization/:organizationId/stats', async (req, res) => {
     });
   } catch (error) {
     logger.error('Error getting organization audit log stats:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/**
+ * @route   GET /api/organizations/:organizationId/access-history
+ * @desc    Get access history with filtering and pagination
+ * @access  Private
+ */
+router.get('/organizations/:organizationId/access-history', async (req, res) => {
+  try {
+    const hasViewPermission = await hasPermission(req.user.id, 'view:access_history');
+    
+    if (!hasViewPermission) {
+      return res.status(403).json({ error: 'Forbidden: Insufficient permissions' });
+    }
+    
+    const organizationId = req.params.organizationId;
+    const {
+      page = 1,
+      limit = 50,
+      startDate,
+      endDate,
+      type,
+      userId,
+      repositoryId,
+      teamId
+    } = req.query;
+    
+    const filters = {
+      startDate,
+      endDate,
+      type,
+      userId,
+      repositoryId,
+      teamId
+    };
+    
+    const history = await getAccessHistory(organizationId, filters, parseInt(page), parseInt(limit));
+    
+    res.json(history);
+  } catch (error) {
+    logger.error('Error getting access history:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/**
+ * @route   GET /api/organizations/:organizationId/access-history/users/:userId
+ * @desc    Get access history for a specific user
+ * @access  Private
+ */
+router.get('/organizations/:organizationId/access-history/users/:userId', async (req, res) => {
+  try {
+    const hasViewPermission = await hasPermission(req.user.id, 'view:access_history');
+    
+    if (!hasViewPermission) {
+      return res.status(403).json({ error: 'Forbidden: Insufficient permissions' });
+    }
+    
+    const { organizationId, userId } = req.params;
+    const {
+      page = 1,
+      limit = 50,
+      startDate,
+      endDate,
+      type
+    } = req.query;
+    
+    const filters = {
+      startDate,
+      endDate,
+      type
+    };
+    
+    const history = await getAccessHistoryByUser(organizationId, userId, filters, parseInt(page), parseInt(limit));
+    
+    res.json(history);
+  } catch (error) {
+    logger.error('Error getting user access history:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/**
+ * @route   GET /api/organizations/:organizationId/access-history/repositories/:repositoryId
+ * @desc    Get access history for a specific repository
+ * @access  Private
+ */
+router.get('/organizations/:organizationId/access-history/repositories/:repositoryId', async (req, res) => {
+  try {
+    const hasViewPermission = await hasPermission(req.user.id, 'view:access_history');
+    
+    if (!hasViewPermission) {
+      return res.status(403).json({ error: 'Forbidden: Insufficient permissions' });
+    }
+    
+    const { organizationId, repositoryId } = req.params;
+    const {
+      page = 1,
+      limit = 50,
+      startDate,
+      endDate,
+      type
+    } = req.query;
+    
+    const filters = {
+      startDate,
+      endDate,
+      type
+    };
+    
+    const history = await getAccessHistoryByRepository(organizationId, repositoryId, filters, parseInt(page), parseInt(limit));
+    
+    res.json(history);
+  } catch (error) {
+    logger.error('Error getting repository access history:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/**
+ * @route   GET /api/organizations/:organizationId/access-history/teams/:teamId
+ * @desc    Get access history for a specific team
+ * @access  Private
+ */
+router.get('/organizations/:organizationId/access-history/teams/:teamId', async (req, res) => {
+  try {
+    const hasViewPermission = await hasPermission(req.user.id, 'view:access_history');
+    
+    if (!hasViewPermission) {
+      return res.status(403).json({ error: 'Forbidden: Insufficient permissions' });
+    }
+    
+    const { organizationId, teamId } = req.params;
+    const {
+      page = 1,
+      limit = 50,
+      startDate,
+      endDate,
+      type
+    } = req.query;
+    
+    const filters = {
+      startDate,
+      endDate,
+      type
+    };
+    
+    const history = await getAccessHistoryByTeam(organizationId, teamId, filters, parseInt(page), parseInt(limit));
+    
+    res.json(history);
+  } catch (error) {
+    logger.error('Error getting team access history:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/**
+ * @route   GET /api/organizations/:organizationId/access-history/export
+ * @desc    Export access history
+ * @access  Private
+ */
+router.get('/organizations/:organizationId/access-history/export', async (req, res) => {
+  try {
+    const hasViewPermission = await hasPermission(req.user.id, 'view:access_history');
+    
+    if (!hasViewPermission) {
+      return res.status(403).json({ error: 'Forbidden: Insufficient permissions' });
+    }
+    
+    const organizationId = req.params.organizationId;
+    const {
+      startDate,
+      endDate,
+      type,
+      userId,
+      repositoryId,
+      teamId,
+      format = 'csv'
+    } = req.query;
+    
+    const filters = {
+      startDate,
+      endDate,
+      type,
+      userId,
+      repositoryId,
+      teamId
+    };
+    
+    const { data, filename } = await exportAccessHistory(organizationId, filters, format);
+    
+    res.setHeader('Content-Type', format === 'csv' ? 'text/csv' : 'application/json');
+    res.setHeader('Content-Disposition', `attachment; filename=${filename}`);
+    
+    res.send(data);
+  } catch (error) {
+    logger.error('Error exporting access history:', error);
     res.status(500).json({ error: error.message });
   }
 });

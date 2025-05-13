@@ -66,9 +66,10 @@ import {
   FiGitBranch,
   FiUserMinus,
 } from 'react-icons/fi';
-import axios from 'axios';
 import { useAuth } from '../contexts/AuthContext';
 import { useTeams } from '../hooks/useTeams';
+import { useUsers } from '../hooks/useUsers';
+import { useRepositories } from '../hooks/useRepositories';
 
 const TeamsPage = () => {
   const [selectedTeam, setSelectedTeam] = useState(null);
@@ -81,9 +82,6 @@ const TeamsPage = () => {
     username: '',
     role: 'member',
   });
-  const [availableUsers, setAvailableUsers] = useState([]);
-  const [isSearchingUsers, setIsSearchingUsers] = useState(false);
-  const [repositories, setRepositories] = useState([]);
   const [selectedRepositories, setSelectedRepositories] = useState([]);
   const [isSyncing, setIsSyncing] = useState(false);
   const [permissionRules, setPermissionRules] = useState({
@@ -108,7 +106,7 @@ const TeamsPage = () => {
   } = useDisclosure();
 
   const toast = useToast();
-  const { token, organization, logAuditEvent } = useAuth();
+  const { organization, logAuditEvent } = useAuth();
   const bgColor = useColorModeValue('white', 'gray.800');
   const borderColor = useColorModeValue('gray.200', 'gray.700');
 
@@ -127,7 +125,18 @@ const TeamsPage = () => {
     removeRepository,
     getTeamPermissions,
     updateTeamPermissions,
+    syncWithGitHub,
   } = useTeams();
+
+  const {
+    users,
+    searchUsers,
+  } = useUsers();
+
+  const {
+    repositories,
+    getRepositories,
+  } = useRepositories();
 
   const handleCreateTeam = async () => {
     try {
@@ -291,6 +300,161 @@ const TeamsPage = () => {
     }
   };
 
+  const handleSearchUsers = async (query) => {
+    try {
+      await searchUsers(query);
+    } catch (err) {
+      toast({
+        title: 'Error',
+        description: err.response?.data?.error || err.message,
+        status: 'error',
+        duration: 5000,
+        isClosable: true,
+      });
+    }
+  };
+
+  const handleManagePermissions = async (team) => {
+    try {
+      const permissions = await getTeamPermissions(team.id);
+      setPermissionRules(permissions);
+      setSelectedTeam(team);
+    } catch (err) {
+      toast({
+        title: 'Error',
+        description: err.response?.data?.error || err.message,
+        status: 'error',
+        duration: 5000,
+        isClosable: true,
+      });
+    }
+  };
+
+  const handleManageRepoAccess = async (team) => {
+    try {
+      const teamRepos = await getTeamRepositories(team.id);
+      setSelectedRepositories(teamRepos.map(repo => repo.id));
+      setSelectedTeam(team);
+    } catch (err) {
+      toast({
+        title: 'Error',
+        description: err.response?.data?.error || err.message,
+        status: 'error',
+        duration: 5000,
+        isClosable: true,
+      });
+    }
+  };
+
+  const handleSavePermissions = async () => {
+    try {
+      if (!selectedTeam) return;
+
+      await updateTeamPermissions(selectedTeam.id, permissionRules);
+      
+      logAuditEvent(
+        'team_permissions_updated',
+        'team',
+        selectedTeam.id.toString(),
+        { name: selectedTeam.name }
+      );
+      
+      toast({
+        title: 'Permissions updated',
+        description: 'Team permissions have been updated.',
+        status: 'success',
+        duration: 3000,
+        isClosable: true,
+      });
+    } catch (err) {
+      toast({
+        title: 'Error',
+        description: err.response?.data?.error || err.message,
+        status: 'error',
+        duration: 5000,
+        isClosable: true,
+      });
+    }
+  };
+
+  const handleSaveRepoAccess = async () => {
+    try {
+      if (!selectedTeam) return;
+
+      const currentRepos = await getTeamRepositories(selectedTeam.id);
+      const currentRepoIds = currentRepos.map(repo => repo.id);
+
+      // Add new repositories
+      for (const repoId of selectedRepositories) {
+        if (!currentRepoIds.includes(repoId)) {
+          await addRepository(selectedTeam.id, repoId);
+        }
+      }
+
+      // Remove repositories that are no longer selected
+      for (const repoId of currentRepoIds) {
+        if (!selectedRepositories.includes(repoId)) {
+          await removeRepository(selectedTeam.id, repoId);
+        }
+      }
+      
+      logAuditEvent(
+        'team_repositories_updated',
+        'team',
+        selectedTeam.id.toString(),
+        { name: selectedTeam.name }
+      );
+      
+      toast({
+        title: 'Repository access updated',
+        description: 'Team repository access has been updated.',
+        status: 'success',
+        duration: 3000,
+        isClosable: true,
+      });
+    } catch (err) {
+      toast({
+        title: 'Error',
+        description: err.response?.data?.error || err.message,
+        status: 'error',
+        duration: 5000,
+        isClosable: true,
+      });
+    }
+  };
+
+  const handleSyncWithGitHub = async () => {
+    try {
+      setIsSyncing(true);
+      await syncWithGitHub();
+      
+      logAuditEvent(
+        'teams_synced',
+        'team',
+        'all',
+        { organization: organization.name }
+      );
+      
+      toast({
+        title: 'Teams synced',
+        description: 'Teams have been synchronized with GitHub.',
+        status: 'success',
+        duration: 3000,
+        isClosable: true,
+      });
+    } catch (err) {
+      toast({
+        title: 'Error',
+        description: err.response?.data?.error || err.message,
+        status: 'error',
+        duration: 5000,
+        isClosable: true,
+      });
+    } finally {
+      setIsSyncing(false);
+    }
+  };
+
   const openTeamModal = (team = null) => {
     if (team) {
       setSelectedTeam(team);
@@ -320,247 +484,6 @@ const TeamsPage = () => {
       }));
       onMembersModalOpen();
     } catch (err) {
-      toast({
-        title: 'Error',
-        description: err.response?.data?.error || err.message,
-        status: 'error',
-        duration: 5000,
-        isClosable: true,
-      });
-    }
-  };
-
-  const handleSearchUsers = async (query) => {
-    if (!query) {
-      setAvailableUsers([]);
-      return;
-    }
-
-    try {
-      setIsSearchingUsers(true);
-      
-      if (!organization?.id) {
-        // Mock user search
-        const mockUsers = [
-          { id: 1, username: 'john_doe', name: 'John Doe' },
-          { id: 2, username: 'jane_smith', name: 'Jane Smith' },
-        ].filter(user => 
-          user.username.toLowerCase().includes(query.toLowerCase()) ||
-          user.name.toLowerCase().includes(query.toLowerCase())
-        );
-        
-        setAvailableUsers(mockUsers);
-        return;
-      }
-      
-      const response = await axios.get(
-        `/api/organizations/${organization.id}/users/search?q=${query}`,
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-      
-      setAvailableUsers(response.data);
-    } catch (err) {
-      toast({
-        title: 'Error',
-        description: err.response?.data?.error || err.message,
-        status: 'error',
-        duration: 5000,
-        isClosable: true,
-      });
-    } finally {
-      setIsSearchingUsers(false);
-    }
-  };
-
-  const handleManagePermissions = (team) => {
-    setSelectedTeam(team);
-    setPermissionRules(team.permissionRules || {
-      branchProtection: false,
-      requireReviews: false,
-      requireStatusChecks: false,
-      requireLinearHistory: false,
-      allowForcePush: false,
-      allowDeletions: false,
-    });
-    onTeamModalOpen();
-  };
-
-  const handleManageRepoAccess = (team) => {
-    setSelectedTeam(team);
-    setSelectedRepositories(team.repositories || []);
-    onTeamModalOpen();
-  };
-
-  const handleSavePermissions = async () => {
-    try {
-      if (!organization?.id) {
-        // Mock update
-        const updatedTeams = teams.map(t => {
-          if (t.id === selectedTeam.id) {
-            return {
-              ...t,
-              permissionRules,
-            };
-          }
-          return t;
-        });
-        setTeams(updatedTeams);
-        
-        toast({
-          title: 'Permissions updated',
-          description: 'Team permissions have been updated.',
-          status: 'success',
-          duration: 3000,
-          isClosable: true,
-        });
-        
-        onTeamModalClose();
-        return;
-      }
-
-      await axios.put(
-        `/api/organizations/${organization.id}/teams/${selectedTeam.id}/permissions`,
-        permissionRules,
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-
-      logAuditEvent(
-        'team_permissions_updated',
-        'team',
-        selectedTeam.id.toString(),
-        { 
-          teamName: selectedTeam.name,
-          permissionRules 
-        }
-      );
-
-      toast({
-        title: 'Permissions updated',
-        description: 'Team permissions have been updated.',
-        status: 'success',
-        duration: 3000,
-        isClosable: true,
-      });
-
-      onTeamModalClose();
-    } catch (err) {
-      toast({
-        title: 'Error',
-        description: err.response?.data?.error || err.message,
-        status: 'error',
-        duration: 5000,
-        isClosable: true,
-      });
-    }
-  };
-
-  const handleSaveRepoAccess = async () => {
-    try {
-      if (!organization?.id) {
-        // Mock update
-        const updatedTeams = teams.map(t => {
-          if (t.id === selectedTeam.id) {
-            return {
-              ...t,
-              repositories: selectedRepositories,
-            };
-          }
-          return t;
-        });
-        setTeams(updatedTeams);
-        
-        toast({
-          title: 'Repository access updated',
-          description: 'Team repository access has been updated.',
-          status: 'success',
-          duration: 3000,
-          isClosable: true,
-        });
-        
-        onTeamModalClose();
-        return;
-      }
-
-      await axios.put(
-        `/api/organizations/${organization.id}/teams/${selectedTeam.id}/repositories`,
-        { repositories: selectedRepositories },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-
-      logAuditEvent(
-        'team_repositories_updated',
-        'team',
-        selectedTeam.id.toString(),
-        { 
-          teamName: selectedTeam.name,
-          repositories: selectedRepositories.map(r => r.id)
-        }
-      );
-
-      toast({
-        title: 'Repository access updated',
-        description: 'Team repository access has been updated.',
-        status: 'success',
-        duration: 3000,
-        isClosable: true,
-      });
-
-      onTeamModalClose();
-    } catch (err) {
-      toast({
-        title: 'Error',
-        description: err.response?.data?.error || err.message,
-        status: 'error',
-        duration: 5000,
-        isClosable: true,
-      });
-    }
-  };
-
-  const handleSyncWithGitHub = async () => {
-    try {
-      setIsSyncing(true);
-      
-      if (!organization?.id) {
-        // Mock sync
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        
-        toast({
-          title: 'Sync completed',
-          description: 'Team permissions have been synchronized with GitHub.',
-          status: 'success',
-          duration: 3000,
-          isClosable: true,
-        });
-        
-        setIsSyncing(false);
-        return;
-      }
-
-      await axios.post(
-        `/api/organizations/${organization.id}/teams/${selectedTeam.id}/sync`,
-        {},
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-
-      logAuditEvent(
-        'team_synced',
-        'team',
-        selectedTeam.id.toString(),
-        { teamName: selectedTeam.name }
-      );
-
-      toast({
-        title: 'Sync completed',
-        description: 'Team permissions have been synchronized with GitHub.',
-        status: 'success',
-        duration: 3000,
-        isClosable: true,
-      });
-
-      setIsSyncing(false);
-    } catch (err) {
-      setIsSyncing(false);
       toast({
         title: 'Error',
         description: err.response?.data?.error || err.message,

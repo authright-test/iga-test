@@ -37,7 +37,8 @@ Designing and implementing a GitHub App for an Enterprise Identity Governance an
 - Node.js (Express) 
 - GitHub App OAuth
 - octokit/webhooks
-- MySQL
+- sequelize as ORM
+- MySQL or PostgreSQL
 - Redis
 
 
@@ -55,7 +56,6 @@ Designing and implementing a GitHub App for an Enterprise Identity Governance an
 - jszip
 - chart.js
 - react-chartjs-2
-- @tanstack/react-query
 
 ## 安全认证
 

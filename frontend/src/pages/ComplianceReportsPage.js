@@ -73,7 +73,6 @@ import {
   FiCheck,
   FiX,
 } from 'react-icons/fi';
-import axios from 'axios';
 import { useAuth } from '../contexts/AuthContext';
 import {
   LineChart,
@@ -97,14 +96,6 @@ const ComplianceReportsPage = () => {
     schedule: 'daily',
     parameters: {},
   });
-  const [riskScores, setRiskScores] = useState({
-    overall: 85,
-    security: 90,
-    compliance: 80,
-    access: 85,
-  });
-  const [trendData, setTrendData] = useState([]);
-  const [violations, setViolations] = useState([]);
   
   const { 
     isOpen: isReportModalOpen, 
@@ -125,104 +116,25 @@ const ComplianceReportsPage = () => {
 
   const {
     reports,
+    violations,
     isLoading,
     error,
     createReport,
     generateReport,
     downloadReport,
     deleteReport,
+    getComplianceStats,
+    getReportDetails,
+    getViolationDetails,
+    resolveViolation,
+    exportReport,
   } = useComplianceReports();
 
   useEffect(() => {
-    fetchRiskScores();
-    fetchTrendData();
-    fetchViolations();
-  }, []);
-
-  const fetchRiskScores = async () => {
-    try {
-      const response = await axios.get(
-        `/api/organizations/${organization.id}/risk-scores`,
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-      setRiskScores(response.data);
-    } catch (err) {
-      toast({
-        title: 'Error fetching risk scores',
-        description: err.response?.data?.error || err.message,
-        status: 'error',
-        duration: 5000,
-        isClosable: true,
-      });
+    if (organization?.id) {
+      getComplianceStats();
     }
-  };
-
-  const fetchTrendData = async () => {
-    try {
-      const response = await axios.get(
-        `/api/organizations/${organization.id}/compliance-trends`,
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-      setTrendData(response.data);
-    } catch (err) {
-      toast({
-        title: 'Error fetching trend data',
-        description: err.response?.data?.error || err.message,
-        status: 'error',
-        duration: 5000,
-        isClosable: true,
-      });
-    }
-  };
-
-  const fetchViolations = async () => {
-    try {
-      const response = await axios.get(
-        `/api/organizations/${organization.id}/compliance-violations`,
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-      if (!organization?.id) {
-        // Mock data
-        const mockViolations = [
-          {
-            id: 1,
-            type: 'security',
-            severity: 'high',
-            description: 'Multiple failed login attempts detected',
-            affected: ['user1', 'user2'],
-            timestamp: new Date(Date.now() - 3600000).toISOString(),
-            status: 'open',
-          },
-          {
-            id: 2,
-            type: 'compliance',
-            severity: 'medium',
-            description: 'Repository without branch protection',
-            affected: ['repo1'],
-            timestamp: new Date(Date.now() - 7200000).toISOString(),
-            status: 'resolved',
-          },
-        ];
-        setViolations(mockViolations);
-        return;
-      }
-      
-      const response = await axios.get(
-        `/api/organizations/${organization.id}/compliance-violations`,
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-      
-      setViolations(response.data);
-    } catch (err) {
-      toast({
-        title: 'Error fetching violations',
-        description: err.response?.data?.error || err.message,
-        status: 'error',
-        duration: 5000,
-        isClosable: true,
-      });
-    }
-  };
+  }, [organization?.id]);
 
   const handleCreateReport = async () => {
     try {
@@ -237,40 +149,12 @@ const ComplianceReportsPage = () => {
         return;
       }
 
-      if (!organization?.id) {
-        // Mock create
-        const newReport = {
-          id: reports.length + 1,
-          ...formData,
-          lastGenerated: null,
-          status: 'pending',
-          score: 0,
-        };
-        
-        setReports([...reports, newReport]);
-        
-        toast({
-          title: 'Report created',
-          description: `Report "${formData.name}" has been created.`,
-          status: 'success',
-          duration: 3000,
-          isClosable: true,
-        });
-        
-        onReportModalClose();
-        return;
-      }
-      
-      const response = await axios.post(
-        `/api/organizations/${organization.id}/compliance-reports`,
-        formData,
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      const newReport = await createReport(formData);
       
       logAuditEvent(
-        'compliance_report_created',
+        'report_created',
         'report',
-        response.data.id.toString(),
+        newReport.id.toString(),
         { name: formData.name }
       );
       
@@ -283,7 +167,6 @@ const ComplianceReportsPage = () => {
       });
       
       onReportModalClose();
-      fetchReports();
     } catch (err) {
       toast({
         title: 'Error',
@@ -297,43 +180,10 @@ const ComplianceReportsPage = () => {
 
   const handleGenerateReport = async (report) => {
     try {
-      if (!organization?.id) {
-        // Mock generation
-        await new Promise(resolve => setTimeout(resolve, 2000));
-        
-        const updatedReports = reports.map(r => {
-          if (r.id === report.id) {
-            return {
-              ...r,
-              lastGenerated: new Date().toISOString(),
-              status: 'success',
-              score: Math.floor(Math.random() * 30) + 70,
-            };
-          }
-          return r;
-        });
-        
-        setReports(updatedReports);
-        
-        toast({
-          title: 'Report generated',
-          description: `Report "${report.name}" has been generated successfully.`,
-          status: 'success',
-          duration: 3000,
-          isClosable: true,
-        });
-        
-        return;
-      }
-      
-      const response = await axios.post(
-        `/api/organizations/${organization.id}/compliance-reports/${report.id}/generate`,
-        {},
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      const generatedReport = await generateReport(report.id);
       
       logAuditEvent(
-        'compliance_report_generated',
+        'report_generated',
         'report',
         report.id.toString(),
         { name: report.name }
@@ -341,13 +191,11 @@ const ComplianceReportsPage = () => {
       
       toast({
         title: 'Report generated',
-        description: `Report "${report.name}" has been generated successfully.`,
+        description: `Report "${report.name}" has been generated.`,
         status: 'success',
         duration: 3000,
         isClosable: true,
       });
-      
-      fetchReports();
     } catch (err) {
       toast({
         title: 'Error',
@@ -361,40 +209,23 @@ const ComplianceReportsPage = () => {
 
   const handleDownloadReport = async (report) => {
     try {
-      if (!organization?.id) {
-        // Mock download
-        toast({
-          title: 'Report downloaded',
-          description: `Report "${report.name}" has been downloaded.`,
-          status: 'success',
-          duration: 3000,
-          isClosable: true,
-        });
-        return;
-      }
+      const reportData = await downloadReport(report.id);
       
-      const response = await axios.get(
-        `/api/organizations/${organization.id}/compliance-reports/${report.id}/download`,
-        { 
-          headers: { Authorization: `Bearer ${token}` },
-          responseType: 'blob',
-        }
+      logAuditEvent(
+        'report_downloaded',
+        'report',
+        report.id.toString(),
+        { name: report.name }
       );
       
-      const url = window.URL.createObjectURL(new Blob([response.data]));
+      // Create a download link
+      const url = window.URL.createObjectURL(new Blob([reportData]));
       const link = document.createElement('a');
       link.href = url;
       link.setAttribute('download', `${report.name}.pdf`);
       document.body.appendChild(link);
       link.click();
       link.remove();
-      
-      logAuditEvent(
-        'compliance_report_downloaded',
-        'report',
-        report.id.toString(),
-        { name: report.name }
-      );
       
       toast({
         title: 'Report downloaded',

@@ -39,7 +39,7 @@ import {
   TabPanel,
 } from '@chakra-ui/react';
 import { FiMoreVertical, FiEdit2, FiTrash2, FiShield, FiUsers, FiGitBranch } from 'react-icons/fi';
-import { usePermissions } from '../hooks/usePermissions';
+import { useAccessPermissions } from '../hooks/useAccessPermissions';
 import { useAuth } from '../contexts/AuthContext';
 
 const PermissionsPage = () => {
@@ -75,16 +75,12 @@ const PermissionsPage = () => {
     createPermission,
     updatePermission,
     deletePermission,
-    getPermissionTeams,
-    addTeam,
-    removeTeam,
     getPermissionUsers,
-    addUser,
-    removeUser,
-    getPermissionRepositories,
-    addRepository,
-    removeRepository,
-  } = usePermissions();
+    getPermissionRoles,
+    getPermissionGroups,
+    getPermissionResources,
+    getPermissionHistory,
+  } = useAccessPermissions();
 
   const handleCreatePermission = async () => {
     try {

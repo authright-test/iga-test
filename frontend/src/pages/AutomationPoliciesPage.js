@@ -62,17 +62,13 @@ import {
   FiCopy,
   FiSave,
 } from 'react-icons/fi';
-import axios from 'axios';
 import { useAuth } from '../contexts/AuthContext';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { tomorrow } from 'react-syntax-highlighter/dist/esm/styles/prism';
+import { useAutomationPolicies } from '../hooks/useAutomationPolicies';
 
 const AutomationPoliciesPage = () => {
-  const [policies, setPolicies] = useState([]);
-  const [templates, setTemplates] = useState([]);
   const [selectedPolicy, setSelectedPolicy] = useState(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [formData, setFormData] = useState({
     name: '',
@@ -113,149 +109,30 @@ const AutomationPoliciesPage = () => {
   } = useDisclosure();
 
   const toast = useToast();
-  const { token, organization, logAuditEvent } = useAuth();
+  const { organization, logAuditEvent } = useAuth();
   const bgColor = useColorModeValue('white', 'gray.800');
   const borderColor = useColorModeValue('gray.200', 'gray.700');
 
-  useEffect(() => {
-    fetchPolicies();
-    fetchTemplates();
-  }, [organization?.id]);
-
-  const fetchPolicies = async () => {
-    try {
-      setIsLoading(true);
-      setError(null);
-      
-      if (!organization?.id) {
-        // Mock data for development
-        const mockPolicies = [
-          {
-            id: 1,
-            name: 'Branch Protection',
-            description: 'Enforce branch protection rules',
-            type: 'repository',
-            trigger: 'push',
-            conditions: [
-              { type: 'branch', value: 'main' },
-              { type: 'repository', value: 'frontend-app' }
-            ],
-            actions: [
-              { type: 'require_reviews', value: 2 },
-              { type: 'require_status_checks', value: true }
-            ],
-            schedule: null,
-            enabled: true,
-            lastExecuted: new Date(Date.now() - 3600000).toISOString(),
-            status: 'success',
-          },
-          {
-            id: 2,
-            name: 'Security Scan',
-            description: 'Run security scans on pull requests',
-            type: 'repository',
-            trigger: 'pull_request',
-            conditions: [
-              { type: 'repository', value: 'backend-service' }
-            ],
-            actions: [
-              { type: 'run_security_scan', value: 'full' }
-            ],
-            schedule: '0 0 * * *',
-            enabled: true,
-            lastExecuted: new Date(Date.now() - 7200000).toISOString(),
-            status: 'pending',
-          },
-        ];
-        
-        setPolicies(mockPolicies);
-        return;
-      }
-      
-      const response = await axios.get(
-        `/api/organizations/${organization.id}/automation-policies`,
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-      
-      setPolicies(response.data);
-    } catch (err) {
-      setError('Failed to fetch policies: ' + (err.response?.data?.error || err.message));
-      toast({
-        title: 'Error fetching policies',
-        description: err.response?.data?.error || err.message,
-        status: 'error',
-        duration: 5000,
-        isClosable: true,
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const fetchTemplates = async () => {
-    try {
-      if (!organization?.id) {
-        // Mock templates
-        const mockTemplates = [
-          {
-            id: 1,
-            name: 'Branch Protection Template',
-            description: 'Template for branch protection rules',
-            type: 'repository',
-            code: `{
-  "conditions": [
-    { "type": "branch", "value": "main" }
-  ],
-  "actions": [
-    { "type": "require_reviews", "value": 2 },
-    { "type": "require_status_checks", "value": true }
-  ]
-}`,
-            parameters: [
-              { name: 'branch', type: 'string', required: true },
-              { name: 'reviewers', type: 'number', required: true }
-            ],
-          },
-          {
-            id: 2,
-            name: 'Security Scan Template',
-            description: 'Template for security scanning',
-            type: 'repository',
-            code: `{
-  "conditions": [
-    { "type": "repository", "value": "{repository}" }
-  ],
-  "actions": [
-    { "type": "run_security_scan", "value": "{scan_type}" }
-  ]
-}`,
-            parameters: [
-              { name: 'repository', type: 'string', required: true },
-              { name: 'scan_type', type: 'string', required: true }
-            ],
-          },
-        ];
-        
-        setTemplates(mockTemplates);
-        return;
-      }
-      
-      const response = await axios.get(
-        `/api/organizations/${organization.id}/automation-templates`,
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-      
-      setTemplates(response.data);
-    } catch (err) {
-      toast({
-        title: 'Error fetching templates',
-        description: err.response?.data?.error || err.message,
-        status: 'error',
-        duration: 5000,
-        isClosable: true,
-      });
-    }
-  };
+  const {
+    policies,
+    templates,
+    isLoading,
+    error,
+    createPolicy,
+    updatePolicy,
+    deletePolicy,
+    enablePolicy,
+    disablePolicy,
+    executePolicy,
+    bulkExecute,
+    createTemplate,
+    updateTemplate,
+    deleteTemplate,
+    getPolicyDetails,
+    getTemplateDetails,
+    getPolicyHistory,
+    getTemplateUsage,
+  } = useAutomationPolicies();
 
   const handleCreatePolicy = async () => {
     try {
@@ -270,39 +147,12 @@ const AutomationPoliciesPage = () => {
         return;
       }
 
-      if (!organization?.id) {
-        // Mock create
-        const newPolicy = {
-          id: policies.length + 1,
-          ...formData,
-          lastExecuted: null,
-          status: 'pending',
-        };
-        
-        setPolicies([...policies, newPolicy]);
-        
-        toast({
-          title: 'Policy created',
-          description: `Policy "${formData.name}" has been created.`,
-          status: 'success',
-          duration: 3000,
-          isClosable: true,
-        });
-        
-        onPolicyModalClose();
-        return;
-      }
-      
-      const response = await axios.post(
-        `/api/organizations/${organization.id}/automation-policies`,
-        formData,
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      const newPolicy = await createPolicy(formData);
       
       logAuditEvent(
-        'automation_policy_created',
+        'policy_created',
         'policy',
-        response.data.id.toString(),
+        newPolicy.id.toString(),
         { name: formData.name }
       );
       
@@ -315,7 +165,6 @@ const AutomationPoliciesPage = () => {
       });
       
       onPolicyModalClose();
-      fetchPolicies();
     } catch (err) {
       toast({
         title: 'Error',
@@ -329,10 +178,10 @@ const AutomationPoliciesPage = () => {
 
   const handleCreateTemplate = async () => {
     try {
-      if (!templateData.name || !templateData.code) {
+      if (!templateData.name) {
         toast({
           title: 'Validation Error',
-          description: 'Template name and code are required',
+          description: 'Template name is required',
           status: 'error',
           duration: 3000,
           isClosable: true,
@@ -340,37 +189,12 @@ const AutomationPoliciesPage = () => {
         return;
       }
 
-      if (!organization?.id) {
-        // Mock create
-        const newTemplate = {
-          id: templates.length + 1,
-          ...templateData,
-        };
-        
-        setTemplates([...templates, newTemplate]);
-        
-        toast({
-          title: 'Template created',
-          description: `Template "${templateData.name}" has been created.`,
-          status: 'success',
-          duration: 3000,
-          isClosable: true,
-        });
-        
-        onTemplateModalClose();
-        return;
-      }
-      
-      const response = await axios.post(
-        `/api/organizations/${organization.id}/automation-templates`,
-        templateData,
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      const newTemplate = await createTemplate(templateData);
       
       logAuditEvent(
-        'automation_template_created',
+        'template_created',
         'template',
-        response.data.id.toString(),
+        newTemplate.id.toString(),
         { name: templateData.name }
       );
       
@@ -383,7 +207,6 @@ const AutomationPoliciesPage = () => {
       });
       
       onTemplateModalClose();
-      fetchTemplates();
     } catch (err) {
       toast({
         title: 'Error',
@@ -398,68 +221,18 @@ const AutomationPoliciesPage = () => {
   const handleExecutePolicy = async (policy) => {
     try {
       setIsExecuting(true);
-      setSelectedPolicy(policy);
-      onExecuteModalOpen();
-      
-      if (!organization?.id) {
-        // Mock execution
-        await new Promise(resolve => setTimeout(resolve, 2000));
-        
-        const mockResult = {
-          policyId: policy.id,
-          status: 'success',
-          timestamp: new Date().toISOString(),
-          details: {
-            conditions: policy.conditions,
-            actions: policy.actions,
-            results: policy.actions.map(action => ({
-              type: action.type,
-              status: 'success',
-              message: `Successfully executed ${action.type}`,
-            })),
-          },
-        };
-        
-        setExecutionResults([mockResult, ...executionResults]);
-        
-        toast({
-          title: 'Policy executed',
-          description: `Policy "${policy.name}" has been executed successfully.`,
-          status: 'success',
-          duration: 3000,
-          isClosable: true,
-        });
-        
-        setIsExecuting(false);
-        return;
-      }
-      
-      const response = await axios.post(
-        `/api/organizations/${organization.id}/automation-policies/${policy.id}/execute`,
-        {},
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      const result = await executePolicy(policy.id);
       
       logAuditEvent(
-        'automation_policy_executed',
+        'policy_executed',
         'policy',
         policy.id.toString(),
         { name: policy.name }
       );
       
-      setExecutionResults([response.data, ...executionResults]);
-      
-      toast({
-        title: 'Policy executed',
-        description: `Policy "${policy.name}" has been executed successfully.`,
-        status: 'success',
-        duration: 3000,
-        isClosable: true,
-      });
-      
-      setIsExecuting(false);
+      setExecutionResults([result]);
+      onExecuteModalOpen();
     } catch (err) {
-      setIsExecuting(false);
       toast({
         title: 'Error',
         description: err.response?.data?.error || err.message,
@@ -467,72 +240,26 @@ const AutomationPoliciesPage = () => {
         duration: 5000,
         isClosable: true,
       });
+    } finally {
+      setIsExecuting(false);
     }
   };
 
   const handleBulkExecute = async (selectedPolicies) => {
     try {
       setIsExecuting(true);
-      
-      if (!organization?.id) {
-        // Mock bulk execution
-        await new Promise(resolve => setTimeout(resolve, 2000));
-        
-        const mockResults = selectedPolicies.map(policy => ({
-          policyId: policy.id,
-          status: 'success',
-          timestamp: new Date().toISOString(),
-          details: {
-            conditions: policy.conditions,
-            actions: policy.actions,
-            results: policy.actions.map(action => ({
-              type: action.type,
-              status: 'success',
-              message: `Successfully executed ${action.type}`,
-            })),
-          },
-        }));
-        
-        setExecutionResults([...mockResults, ...executionResults]);
-        
-        toast({
-          title: 'Bulk execution completed',
-          description: `${selectedPolicies.length} policies have been executed successfully.`,
-          status: 'success',
-          duration: 3000,
-          isClosable: true,
-        });
-        
-        setIsExecuting(false);
-        return;
-      }
-      
-      const response = await axios.post(
-        `/api/organizations/${organization.id}/automation-policies/bulk-execute`,
-        { policyIds: selectedPolicies.map(p => p.id) },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      const results = await bulkExecute(selectedPolicies.map(p => p.id));
       
       logAuditEvent(
-        'automation_policies_bulk_executed',
+        'policies_bulk_executed',
         'policy',
-        selectedPolicies.map(p => p.id).join(','),
+        selectedPolicies.map(p => p.id.toString()).join(','),
         { count: selectedPolicies.length }
       );
       
-      setExecutionResults([...response.data, ...executionResults]);
-      
-      toast({
-        title: 'Bulk execution completed',
-        description: `${selectedPolicies.length} policies have been executed successfully.`,
-        status: 'success',
-        duration: 3000,
-        isClosable: true,
-      });
-      
-      setIsExecuting(false);
+      setExecutionResults(results);
+      onExecuteModalOpen();
     } catch (err) {
-      setIsExecuting(false);
       toast({
         title: 'Error',
         description: err.response?.data?.error || err.message,
@@ -540,6 +267,8 @@ const AutomationPoliciesPage = () => {
         duration: 5000,
         isClosable: true,
       });
+    } finally {
+      setIsExecuting(false);
     }
   };
 
