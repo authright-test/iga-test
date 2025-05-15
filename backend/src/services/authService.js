@@ -1,5 +1,6 @@
 import { App } from '@octokit/app';
 import { Octokit } from '@octokit/rest';
+import axios from 'axios';
 import jwt from 'jsonwebtoken';
 import { Organization, User } from '../models/index.js';
 import logger from '../utils/logger.js';
@@ -11,12 +12,40 @@ const githubApp = new App({
 });
 
 /**
+ * Exchange OAuth code for user access token
+ * @param {string} code - OAuth code from GitHub
+ * @returns {Promise<string>} User access token
+ */
+const exchangeCodeForToken = async (code) => {
+  try {
+    const response = await axios.post('https://github.com/login/oauth/access_token', {
+      client_id: process.env.GITHUB_APP_CLIENT_ID,
+      client_secret: process.env.GITHUB_APP_CLIENT_SECRET,
+      code
+    }, {
+      headers: {
+        Accept: 'application/json'
+      }
+    });
+
+    if (!response.data.access_token) {
+      throw new Error('Failed to obtain access token');
+    }
+
+    return response.data.access_token;
+  } catch (error) {
+    logger.error('Token exchange error:', error.response?.data || error.message);
+    throw new Error('Failed to exchange code for token');
+  }
+};
+
+/**
  * Generate a JWT token for a user
  * @param {Object} user - User object from database
- * @param {number} installationId - GitHub App installation ID
+ * @param {number|null} installationId - GitHub App installation ID
  * @returns {string} JWT token
  */
-const generateToken = (user, installationId) => {
+const generateToken = (user, installationId = null) => {
   return jwt.sign(
     {
       userId: user.id,
@@ -30,28 +59,61 @@ const generateToken = (user, installationId) => {
 };
 
 /**
+ * Get GitHub App installation for a user
+ * @param {Octokit} userOctokit - Octokit instance with user access token
+ * @returns {Promise<Object|null>} Installation information or null
+ */
+const getInstallationForUser = async (userOctokit) => {
+  try {
+    // Get all installations for the authenticated user
+    const { data: installations } = await userOctokit.request('GET /user/installations', {
+      per_page: 100
+    });
+
+    if (!installations.installations || installations.installations.length === 0) {
+      logger.info('No GitHub App installations found for user');
+      return null;
+    }
+
+    // Get the first installation
+    const installation = installations.installations[0];
+
+    // Get installation access token for the GitHub App
+    const { token: installationToken } = await githubApp.getInstallationAccessToken({
+      installationId: installation.id
+    });
+
+    return {
+      installation,
+      installationToken
+    };
+  } catch (error) {
+    logger.error('Error getting installation:', error);
+    return null;
+  }
+};
+
+/**
  * Authenticate a user with GitHub
  * @param {string} code - OAuth code from GitHub
  * @returns {Object} User and token
  */
 const authenticateUser = async (code) => {
   try {
-    // Exchange code for token
-    const octokit = new Octokit({
-      auth: {
-        clientId: process.env.GITHUB_APP_CLIENT_ID,
-        clientSecret: process.env.GITHUB_APP_CLIENT_SECRET,
-        code
-      },
-      request: {
-        fetch: require('node-fetch')
-      }
+    // Step 1: Exchange OAuth code for user access token
+    const userAccessToken = await exchangeCodeForToken(code);
+    logger.info('Successfully obtained user access token');
+
+    // Step 2: Create Octokit instance with user access token
+    const userOctokit = new Octokit({
+      auth: userAccessToken
     });
 
-    // Get authenticated user info
-    const { data: githubUser } = await octokit.users.getAuthenticated();
+    // Step 3: Get authenticated user info using user access token
+    const { data: githubUser } = await userOctokit.users.getAuthenticated();
+    logger.info('Successfully authenticated GitHub user:', githubUser.login);
 
-    // Find or create user in database
+    // Step 4: Find or create user in database
     let [user, created] = await User.findOrCreate({
       where: { githubId: githubUser.id.toString() },
       defaults: {
@@ -70,52 +132,56 @@ const authenticateUser = async (code) => {
       await user.save();
     }
 
-    // Get all installations for the user
-    const installations = await githubApp.octokit.apps.listInstallationsForAuthenticatedUser();
+    let organization = null;
+    let installationId = null;
 
-    if (installations.data.installations.length === 0) {
-      throw new Error('No GitHub App installations found for this user');
+    // Step 5: Try to get GitHub App installation information
+    const installationInfo = await getInstallationForUser(userOctokit);
+
+    if (installationInfo) {
+      logger.info('Successfully obtained GitHub App installation token');
+      const { installation, installationToken } = installationInfo;
+
+      // Step 6: Create Octokit instance with installation token for app-level operations
+      const appOctokit = new Octokit({
+        auth: installationToken
+      });
+
+      try {
+        // Step 7: Get organization information using app token
+        const { data: orgData } = await appOctokit.orgs.get({
+          org: installation.account.login
+        });
+
+        // Step 8: Store organization in database
+        [organization] = await Organization.findOrCreate({
+          where: { githubId: orgData.id.toString() },
+          defaults: {
+            name: orgData.name || orgData.login,
+            login: orgData.login,
+            avatarUrl: orgData.avatar_url,
+            installationId: installation.id
+          }
+        });
+
+        // Step 9: Associate user with organization
+        await user.addOrganization(organization);
+        installationId = installation.id;
+      } catch (error) {
+        logger.error('Error getting organization info:', error);
+      }
+    } else {
+      logger.info('User does not have GitHub App installed');
     }
 
-    // Use the first installation
-    const installationId = installations.data.installations[0].id;
-
-    // Get the installation access token
-    const installationAccessToken = await githubApp.getInstallationAccessToken({
-      installationId
-    });
-
-    // Create Octokit instance with installation token
-    const installationOctokit = new Octokit({
-      auth: installationAccessToken
-    });
-
-    // Get organization information
-    const { data: orgData } = await installationOctokit.orgs.get({
-      org: installations.data.installations[0].account.login
-    });
-
-    // Store organization in database
-    const [organization] = await Organization.findOrCreate({
-      where: { githubId: orgData.id.toString() },
-      defaults: {
-        name: orgData.name || orgData.login,
-        login: orgData.login,
-        avatarUrl: orgData.avatar_url,
-        installationId
-      }
-    });
-
-    // Associate user with organization
-    await user.addOrganization(organization);
-
-    // Generate JWT token
-    const token = generateToken(user, installationId);
+    // Step 10: Generate JWT token for our application
+    const jwtToken = generateToken(user, installationId);
 
     return {
       user,
-      token,
-      organization
+      token: jwtToken,
+      organization,
+      hasAppInstalled: !!installationInfo
     };
   } catch (error) {
     logger.error('Authentication error:', error);

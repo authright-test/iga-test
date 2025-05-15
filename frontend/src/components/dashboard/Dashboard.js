@@ -21,7 +21,7 @@ import {
 import React from 'react';
 import { FiAlertCircle, FiGitBranch, FiShield, FiUsers } from 'react-icons/fi';
 import { useAuditLogs } from '../../hooks/useAuditLogs';
-import { useAuth } from '../../hooks/useAuth';
+import { useAuth } from '../../contexts/AuthContext';
 import { usePolicies } from '../../hooks/usePolicies';
 import { useStats } from '../../hooks/useStats';
 

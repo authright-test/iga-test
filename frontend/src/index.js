@@ -4,6 +4,7 @@ import ReactDOM from 'react-dom/client';
 import { QueryClient, QueryClientProvider } from 'react-query';
 import { BrowserRouter } from 'react-router-dom';
 import App from './App';
+import { AuthProvider } from './contexts/AuthContext';
 import reportWebVitals from './reportWebVitals';
 
 // Create a client for react-query
@@ -22,7 +23,9 @@ root.render(
     <BrowserRouter>
       <QueryClientProvider client={queryClient}>
         <ChakraProvider>
-          <App />
+          <AuthProvider>
+            <App />
+          </AuthProvider>
         </ChakraProvider>
       </QueryClientProvider>
     </BrowserRouter>

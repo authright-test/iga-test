@@ -44,7 +44,7 @@ export const AuthProvider = ({ children }) => {
   const login = async (code) => {
     try {
       setIsLoading(true);
-      const res = await axios.post('/api/auth/login', { code });
+      const res = await axios.post('/auth/login', { code });
       const { token, user, organization } = res.data;
       setToken(token);
       setUser(user);
@@ -136,7 +136,7 @@ export const AuthProvider = ({ children }) => {
       if (token && !isTokenExpired(token)) {
         setAuthToken(token);
         try {
-          const res = await axios.get('/api/auth/verify');
+          const res = await axios.get('/auth/verify');
           setUser(res.data.user);
           setOrganization(res.data.organization);
         } catch (error) {

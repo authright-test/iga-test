@@ -4,7 +4,7 @@ import GitHubLogin from './components/auth/GitHubLogin';
 import OAuthCallback from './components/auth/OAuthCallback';
 import Dashboard from './components/dashboard/Dashboard';
 import Layout from './components/Layout';
-import { useAuth } from './hooks/useAuth';
+import { useAuth } from './contexts/AuthContext';
 import AuditLogsPage from './pages/AuditLogsPage';
 import NotFoundPage from './pages/NotFoundPage';
 import OrganizationPage from './pages/OrganizationPage';

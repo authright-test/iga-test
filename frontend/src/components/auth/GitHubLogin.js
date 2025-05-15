@@ -18,7 +18,9 @@ import { FaGithub } from 'react-icons/fa';
  * A professional login page that matches GitHub Apps style
  */
 const GitHubLogin = () => {
+  const [loading, setLoading] = React.useState(false);
   const handleLogin = () => {
+    setLoading(true);
     window.location.href = `${process.env.REACT_APP_API_URL}/auth/github`;
   };
 
@@ -51,6 +53,9 @@ const GitHubLogin = () => {
             <Button
               leftIcon={<Icon as={FaGithub} boxSize="5" />}
               onClick={handleLogin}
+              isLoading={loading}
+              spinnerPlacement="start"
+              loadingText={'Sign in with GitHub'}
               colorScheme="gray"
               bg="gray.100"
               _hover={{ bg: 'gray.400' }}
