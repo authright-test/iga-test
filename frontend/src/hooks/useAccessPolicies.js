@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
-import api from '../services/api';
+import { useEffect, useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
+import api from '../services/api';
 
 export const useAccessPolicies = () => {
   const [policies, setPolicies] = useState([]);
@@ -12,12 +12,12 @@ export const useAccessPolicies = () => {
     try {
       setIsLoading(true);
       setError(null);
-      
+
       const response = await api.get(
         `/organizations/${organization.id}/access-policies`,
         { params: filters }
       );
-      
+
       setPolicies(response.data);
     } catch (err) {
       setError(err.response?.data?.error || err.message);
@@ -45,7 +45,7 @@ export const useAccessPolicies = () => {
         `/organizations/${organization.id}/access-policies/${policyId}`,
         policyData
       );
-      setPolicies(policies.map(policy => 
+      setPolicies(policies.map(policy =>
         policy.id === policyId ? response.data : policy
       ));
       return response.data;
@@ -70,7 +70,7 @@ export const useAccessPolicies = () => {
       const response = await api.post(
         `/organizations/${organization.id}/access-policies/${policyId}/enable`
       );
-      setPolicies(policies.map(policy => 
+      setPolicies(policies.map(policy =>
         policy.id === policyId ? response.data : policy
       ));
       return response.data;
@@ -84,7 +84,7 @@ export const useAccessPolicies = () => {
       const response = await api.post(
         `/organizations/${organization.id}/access-policies/${policyId}/disable`
       );
-      setPolicies(policies.map(policy => 
+      setPolicies(policies.map(policy =>
         policy.id === policyId ? response.data : policy
       ));
       return response.data;
@@ -146,4 +146,4 @@ export const useAccessPolicies = () => {
     getPolicyHistory,
     refreshPolicies: fetchPolicies,
   };
-}; 
+};

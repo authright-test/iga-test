@@ -1,89 +1,76 @@
-import React, { useState, useEffect } from 'react';
 import {
-  Box,
-  Button,
-  Heading,
-  Table,
-  Thead,
-  Tbody,
-  Tr,
-  Th,
-  Td,
-  Badge,
-  Flex,
-  useDisclosure,
-  Modal,
-  ModalOverlay,
-  ModalContent,
-  ModalHeader,
-  ModalFooter,
-  ModalBody,
-  ModalCloseButton,
-  FormControl,
-  FormLabel,
-  Input,
-  Select,
-  useToast,
-  Spinner,
-  Text,
-  HStack,
-  VStack,
-  Progress,
-  IconButton,
-  Menu,
-  MenuButton,
-  MenuList,
-  MenuItem,
   Alert,
   AlertIcon,
+  Badge,
+  Box,
+  Button,
+  Card,
+  CardBody,
+  Divider,
+  Flex,
+  FormControl,
+  FormLabel,
+  Heading,
+  HStack,
+  IconButton,
+  Input,
   InputGroup,
   InputLeftElement,
-  Divider,
-  useColorModeValue,
-  Tabs,
-  TabList,
-  TabPanels,
-  Tab,
-  TabPanel,
+  List,
+  ListIcon,
+  ListItem,
+  Menu,
+  MenuButton,
+  MenuItem,
+  MenuList,
+  Modal,
+  ModalBody,
+  ModalCloseButton,
+  ModalContent,
+  ModalFooter,
+  ModalHeader,
+  ModalOverlay,
+  Progress,
+  Select,
+  SimpleGrid,
+  Spinner,
   Stat,
+  StatArrow,
+  StatHelpText,
   StatLabel,
   StatNumber,
-  StatHelpText,
-  StatArrow,
-  SimpleGrid,
-  Card,
-  CardHeader,
-  CardBody,
-  CardFooter,
-  List,
-  ListItem,
-  ListIcon,
+  Tab,
+  Table,
+  TabList,
+  TabPanel,
+  TabPanels,
+  Tabs,
+  Tbody,
+  Td,
+  Text,
+  Th,
+  Thead,
+  Tr,
+  useColorModeValue,
+  useDisclosure,
+  useToast,
+  VStack,
 } from '@chakra-ui/react';
-import { 
-  FiPlus,
-  FiDownload,
-  FiRefreshCw,
-  FiAlertCircle,
-  FiCheckCircle,
-  FiSearch,
-  FiMoreVertical,
-  FiBarChart2,
-  FiShield,
-  FiAlertTriangle,
-  FiCheck,
-  FiX,
-} from 'react-icons/fi';
-import { useAuth } from '../contexts/AuthContext';
+import React, { useEffect, useState } from 'react';
 import {
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  Legend,
-  ResponsiveContainer,
-} from 'recharts';
+  FiAlertCircle,
+  FiAlertTriangle,
+  FiBarChart2,
+  FiCheck,
+  FiDownload,
+  FiMoreVertical,
+  FiPlus,
+  FiRefreshCw,
+  FiSearch,
+  FiShield,
+} from 'react-icons/fi';
+import { CartesianGrid, Legend, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis, } from 'recharts';
+import { useAuth } from '../contexts/AuthContext';
 import { useComplianceReports } from '../hooks/useComplianceReports';
 
 const ComplianceReportsPage = () => {
@@ -96,17 +83,17 @@ const ComplianceReportsPage = () => {
     schedule: 'daily',
     parameters: {},
   });
-  
-  const { 
-    isOpen: isReportModalOpen, 
-    onOpen: onReportModalOpen, 
-    onClose: onReportModalClose 
+
+  const {
+    isOpen: isReportModalOpen,
+    onOpen: onReportModalOpen,
+    onClose: onReportModalClose
   } = useDisclosure();
-  
-  const { 
-    isOpen: isDetailsModalOpen, 
-    onOpen: onDetailsModalOpen, 
-    onClose: onDetailsModalClose 
+
+  const {
+    isOpen: isDetailsModalOpen,
+    onOpen: onDetailsModalOpen,
+    onClose: onDetailsModalClose
   } = useDisclosure();
 
   const toast = useToast();
@@ -150,14 +137,14 @@ const ComplianceReportsPage = () => {
       }
 
       const newReport = await createReport(formData);
-      
+
       logAuditEvent(
         'report_created',
         'report',
         newReport.id.toString(),
         { name: formData.name }
       );
-      
+
       toast({
         title: 'Report created',
         description: `Report "${formData.name}" has been created.`,
@@ -165,7 +152,7 @@ const ComplianceReportsPage = () => {
         duration: 3000,
         isClosable: true,
       });
-      
+
       onReportModalClose();
     } catch (err) {
       toast({
@@ -181,14 +168,14 @@ const ComplianceReportsPage = () => {
   const handleGenerateReport = async (report) => {
     try {
       const generatedReport = await generateReport(report.id);
-      
+
       logAuditEvent(
         'report_generated',
         'report',
         report.id.toString(),
         { name: report.name }
       );
-      
+
       toast({
         title: 'Report generated',
         description: `Report "${report.name}" has been generated.`,
@@ -210,14 +197,14 @@ const ComplianceReportsPage = () => {
   const handleDownloadReport = async (report) => {
     try {
       const reportData = await downloadReport(report.id);
-      
+
       logAuditEvent(
         'report_downloaded',
         'report',
         report.id.toString(),
         { name: report.name }
       );
-      
+
       // Create a download link
       const url = window.URL.createObjectURL(new Blob([reportData]));
       const link = document.createElement('a');
@@ -226,7 +213,7 @@ const ComplianceReportsPage = () => {
       document.body.appendChild(link);
       link.click();
       link.remove();
-      
+
       toast({
         title: 'Report downloaded',
         description: `Report "${report.name}" has been downloaded.`,
@@ -275,7 +262,7 @@ const ComplianceReportsPage = () => {
           Create Report
         </Button>
       </Flex>
-      
+
       <SimpleGrid columns={{ base: 1, md: 2, lg: 4 }} spacing={6} mb={6}>
         <Card>
           <CardBody>
@@ -289,7 +276,7 @@ const ComplianceReportsPage = () => {
             </Stat>
           </CardBody>
         </Card>
-        
+
         <Card>
           <CardBody>
             <Stat>
@@ -302,7 +289,7 @@ const ComplianceReportsPage = () => {
             </Stat>
           </CardBody>
         </Card>
-        
+
         <Card>
           <CardBody>
             <Stat>
@@ -315,7 +302,7 @@ const ComplianceReportsPage = () => {
             </Stat>
           </CardBody>
         </Card>
-        
+
         <Card>
           <CardBody>
             <Stat>
@@ -329,7 +316,7 @@ const ComplianceReportsPage = () => {
           </CardBody>
         </Card>
       </SimpleGrid>
-      
+
       <Box mb={6}>
         <Heading size="md" mb={4}>Compliance Trends</Heading>
         <Box height="300px">
@@ -347,7 +334,7 @@ const ComplianceReportsPage = () => {
           </ResponsiveContainer>
         </Box>
       </Box>
-      
+
       <Box mb={6}>
         <Heading size="md" mb={4}>Recent Violations</Heading>
         <List spacing={3}>
@@ -396,7 +383,7 @@ const ComplianceReportsPage = () => {
           ))}
         </List>
       </Box>
-      
+
       <Flex mb={6}>
         <InputGroup>
           <InputLeftElement pointerEvents="none">
@@ -410,14 +397,14 @@ const ComplianceReportsPage = () => {
           />
         </InputGroup>
       </Flex>
-      
+
       {error && (
         <Alert status="error" mb={4}>
           <AlertIcon />
           {error}
         </Alert>
       )}
-      
+
       {isLoading ? (
         <Flex justify="center" align="center" height="200px">
           <Spinner size="xl" color="brand.500" />
@@ -525,7 +512,7 @@ const ComplianceReportsPage = () => {
           </Table>
         </Box>
       )}
-      
+
       {/* Report Modal */}
       <Modal isOpen={isReportModalOpen} onClose={onReportModalClose} size="xl">
         <ModalOverlay />
@@ -547,7 +534,7 @@ const ComplianceReportsPage = () => {
                   placeholder="Enter report name"
                 />
               </FormControl>
-              
+
               <FormControl>
                 <FormLabel>Description</FormLabel>
                 <Input
@@ -559,7 +546,7 @@ const ComplianceReportsPage = () => {
                   placeholder="Enter report description"
                 />
               </FormControl>
-              
+
               <FormControl isRequired>
                 <FormLabel>Type</FormLabel>
                 <Select
@@ -574,7 +561,7 @@ const ComplianceReportsPage = () => {
                   <option value="access">Access Control</option>
                 </Select>
               </FormControl>
-              
+
               <FormControl isRequired>
                 <FormLabel>Schedule</FormLabel>
                 <Select
@@ -601,7 +588,7 @@ const ComplianceReportsPage = () => {
           </ModalFooter>
         </ModalContent>
       </Modal>
-      
+
       {/* Report Details Modal */}
       <Modal isOpen={isDetailsModalOpen} onClose={onDetailsModalClose} size="xl">
         <ModalOverlay />
@@ -617,7 +604,7 @@ const ComplianceReportsPage = () => {
                 <Tab>Violations</Tab>
                 <Tab>Recommendations</Tab>
               </TabList>
-              
+
               <TabPanels>
                 <TabPanel>
                   <VStack spacing={4} align="stretch">
@@ -658,7 +645,7 @@ const ComplianceReportsPage = () => {
                         </Box>
                       </SimpleGrid>
                     </Box>
-                    
+
                     <Box>
                       <Text fontWeight="medium" mb={2}>Key Metrics</Text>
                       <SimpleGrid columns={2} spacing={4}>
@@ -682,7 +669,7 @@ const ComplianceReportsPage = () => {
                     </Box>
                   </VStack>
                 </TabPanel>
-                
+
                 <TabPanel>
                   <VStack spacing={4} align="stretch">
                     {violations
@@ -718,7 +705,7 @@ const ComplianceReportsPage = () => {
                       ))}
                   </VStack>
                 </TabPanel>
-                
+
                 <TabPanel>
                   <VStack spacing={4} align="stretch">
                     <Box p={4} borderWidth="1px" borderRadius="md">
@@ -737,7 +724,7 @@ const ComplianceReportsPage = () => {
                         </ListItem>
                       </List>
                     </Box>
-                    
+
                     <Box p={4} borderWidth="1px" borderRadius="md">
                       <HStack mb={2}>
                         <FiAlertCircle color="yellow" />
@@ -754,7 +741,7 @@ const ComplianceReportsPage = () => {
                         </ListItem>
                       </List>
                     </Box>
-                    
+
                     <Box p={4} borderWidth="1px" borderRadius="md">
                       <HStack mb={2}>
                         <FiShield color="blue" />
@@ -794,4 +781,4 @@ const ComplianceReportsPage = () => {
   );
 };
 
-export default ComplianceReportsPage; 
+export default ComplianceReportsPage;

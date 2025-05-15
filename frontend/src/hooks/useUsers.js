@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
-import api from '../services/api';
+import { useEffect, useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
+import api from '../services/api';
 
 export const useUsers = () => {
   const [users, setUsers] = useState([]);
@@ -12,12 +12,12 @@ export const useUsers = () => {
     try {
       setIsLoading(true);
       setError(null);
-      
+
       const response = await api.get(
         `/organizations/${organization.id}/users`,
         { params: filters }
       );
-      
+
       setUsers(response.data);
     } catch (err) {
       setError(err.response?.data?.error || err.message);
@@ -45,7 +45,7 @@ export const useUsers = () => {
         `/organizations/${organization.id}/users/${userId}`,
         userData
       );
-      setUsers(users.map(user => 
+      setUsers(users.map(user =>
         user.id === userId ? response.data : user
       ));
       return response.data;
@@ -203,4 +203,4 @@ export const useUsers = () => {
     updateUserPermissions,
     refreshUsers: fetchUsers,
   };
-}; 
+};

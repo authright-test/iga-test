@@ -1,9 +1,9 @@
-const express = require('express');
-const { Policy, Organization } = require('../models');
-const { hasPermission } = require('../services/accessControlService');
-const { createPolicy, updatePolicy, deletePolicy, getOrganizationPolicies } = require('../services/policyService');
-const { createAuditLog } = require('../services/auditService');
-const logger = require('../utils/logger');
+import express from 'express';
+import { Policy, Organization } from '../models/index.js';
+import { hasPermission } from '../services/accessControlService.js';
+import { createPolicy, updatePolicy, deletePolicy, getOrganizationPolicies } from '../services/policyService.js';
+import { createAuditLog } from '../services/auditService.js';
+import logger from '../utils/logger.js';
 
 const router = express.Router();
 
@@ -240,4 +240,4 @@ router.post('/:id/deactivate', async (req, res) => {
   }
 });
 
-module.exports = router; 
+export default router; 

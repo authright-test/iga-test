@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
-import { useAuth } from './useAuth';
+import { useEffect, useState } from 'react';
 import api from '../services/api';
+import { useAuth } from './useAuth';
 
 export const usePolicies = () => {
   const [policies, setPolicies] = useState([]);
@@ -67,4 +67,4 @@ export const usePolicies = () => {
     updatePolicy,
     deletePolicy
   };
-}; 
+};

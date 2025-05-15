@@ -1,29 +1,29 @@
-import React, { useState } from 'react';
 import {
+  Badge,
   Box,
+  Button,
   Flex,
   Heading,
-  Table,
-  Thead,
-  Tbody,
-  Tr,
-  Th,
-  Td,
-  useToast,
-  Badge,
-  useColorModeValue,
-  Text,
   HStack,
-  VStack,
-  Select,
   Input,
   InputGroup,
   InputLeftElement,
-  Button,
+  Select,
+  Table,
+  Tbody,
+  Td,
+  Text,
+  Th,
+  Thead,
+  Tr,
+  useColorModeValue,
+  useToast,
+  VStack,
 } from '@chakra-ui/react';
-import { FiSearch, FiFilter } from 'react-icons/fi';
-import { useAuditLogs } from '../hooks/useAuditLogs';
+import React, { useState } from 'react';
+import { FiFilter, FiSearch } from 'react-icons/fi';
 import { useAuth } from '../contexts/AuthContext';
+import { useAuditLogs } from '../hooks/useAuditLogs';
 
 const AuditLogsPage = () => {
   const [filters, setFilters] = useState({
@@ -227,4 +227,4 @@ const AuditLogsPage = () => {
   );
 };
 
-export default AuditLogsPage; 
+export default AuditLogsPage;

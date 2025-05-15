@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import api from '../services/api';
 import { useAuth } from './useAuth';
 
@@ -49,7 +49,7 @@ export const useAuditLogs = (options = {}) => {
     try {
       const response = await api.get(
         `/organizations/${organization.id}/audit-logs/export`,
-        { 
+        {
           params: filters,
           responseType: 'blob'
         }
@@ -92,4 +92,4 @@ export const useAuditLogs = (options = {}) => {
     getLogStats,
     getLogTrends,
   };
-}; 
+};

@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import api from '../services/api';
 
 /**
@@ -68,4 +68,4 @@ export const useAuth = () => {
     logout,
     isAuthenticated: !!user
   };
-}; 
+};

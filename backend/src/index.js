@@ -1,12 +1,12 @@
-require('dotenv').config();
-const express = require('express');
-const cors = require('cors');
-const helmet = require('helmet');
-const { setupWebhooks } = require('./webhooks');
-const { setupRoutes } = require('./routes');
-const { setupDatabase } = require('./config/database');
-const { setupRedis } = require('./config/redis');
-const logger = require('./utils/logger');
+import cors from 'cors';
+import 'dotenv/config';
+import express from 'express';
+import helmet from 'helmet';
+import { setupDatabase } from './config/database.js';
+import { setupRedis } from './config/redis.js';
+import { setupRoutes } from './routes/index.js';
+import logger from './utils/logger.js';
+import { setupWebhooks } from './webhooks/index.js';
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -33,10 +33,10 @@ async function startServer() {
   try {
     // Initialize database
     await setupDatabase();
-    
+
     // Initialize Redis
     await setupRedis();
-    
+
     app.listen(port, () => {
       logger.info(`Server is running on port ${port}`);
     });
@@ -46,4 +46,4 @@ async function startServer() {
   }
 }
 
-startServer(); 
+startServer();

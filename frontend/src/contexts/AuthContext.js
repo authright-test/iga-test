@@ -1,7 +1,7 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import { useToast } from '@chakra-ui/react';
 import axios from 'axios';
 import jwt_decode from 'jwt-decode';
-import { useToast } from '@chakra-ui/react';
+import React, { createContext, useContext, useEffect, useState } from 'react';
 
 const AuthContext = createContext();
 
@@ -50,7 +50,7 @@ export const AuthProvider = ({ children }) => {
       setUser(user);
       setOrganization(organization);
       setAuthToken(token);
-      
+
       // 记录登录审计日志
       if (user && organization) {
         try {
@@ -68,7 +68,7 @@ export const AuthProvider = ({ children }) => {
           console.error('Failed to log audit event:', error);
         }
       }
-      
+
       return true;
     } catch (error) {
       toast({
@@ -102,7 +102,7 @@ export const AuthProvider = ({ children }) => {
         console.error('Failed to log audit event:', error);
       }
     }
-    
+
     setToken(null);
     setUser(null);
     setOrganization(null);
@@ -112,7 +112,7 @@ export const AuthProvider = ({ children }) => {
   // 记录审计日志
   const logAuditEvent = async (action, resourceType, resourceId, details = {}) => {
     if (!organization) return false;
-    
+
     try {
       await axios.post(`/api/audit/organization/${organization.id}/logs`, {
         action,
@@ -154,7 +154,7 @@ export const AuthProvider = ({ children }) => {
       }
       setIsLoading(false);
     };
-    
+
     verifyToken();
   }, [token]);
 
@@ -171,4 +171,4 @@ export const AuthProvider = ({ children }) => {
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
-}; 
+};

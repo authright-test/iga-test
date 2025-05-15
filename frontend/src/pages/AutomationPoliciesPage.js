@@ -1,70 +1,68 @@
-import React, { useState, useEffect } from 'react';
 import {
-  Box,
-  Button,
-  Heading,
-  Table,
-  Thead,
-  Tbody,
-  Tr,
-  Th,
-  Td,
-  Badge,
-  Flex,
-  useDisclosure,
-  Modal,
-  ModalOverlay,
-  ModalContent,
-  ModalHeader,
-  ModalFooter,
-  ModalBody,
-  ModalCloseButton,
-  FormControl,
-  FormLabel,
-  Input,
-  Select,
-  useToast,
-  Spinner,
-  Text,
-  HStack,
-  VStack,
-  Switch,
-  IconButton,
-  Menu,
-  MenuButton,
-  MenuList,
-  MenuItem,
   Alert,
   AlertIcon,
+  Badge,
+  Box,
+  Button,
+  Divider,
+  Flex,
+  FormControl,
+  FormLabel,
+  Heading,
+  HStack,
+  IconButton,
+  Input,
   InputGroup,
   InputLeftElement,
-  Divider,
-  useColorModeValue,
-  Tabs,
-  TabList,
-  TabPanels,
+  Menu,
+  MenuButton,
+  MenuItem,
+  MenuList,
+  Modal,
+  ModalBody,
+  ModalCloseButton,
+  ModalContent,
+  ModalFooter,
+  ModalHeader,
+  ModalOverlay,
+  Select,
+  Spinner,
+  Switch,
   Tab,
+  Table,
+  TabList,
   TabPanel,
-  Code,
+  TabPanels,
+  Tabs,
+  Tbody,
+  Td,
+  Text,
   Textarea,
+  Th,
+  Thead,
+  Tr,
+  useColorModeValue,
+  useDisclosure,
+  useToast,
+  VStack,
 } from '@chakra-ui/react';
-import { 
-  FiPlus,
-  FiEdit,
-  FiTrash2,
-  FiPlay,
-  FiPause,
-  FiClock,
+import React, { useState } from 'react';
+import {
   FiAlertCircle,
   FiCheckCircle,
-  FiSearch,
-  FiMoreVertical,
+  FiClock,
   FiCopy,
+  FiEdit,
+  FiMoreVertical,
+  FiPlay,
+  FiPlus,
   FiSave,
+  FiSearch,
+  FiTrash2,
 } from 'react-icons/fi';
-import { useAuth } from '../contexts/AuthContext';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { tomorrow } from 'react-syntax-highlighter/dist/esm/styles/prism';
+import { useAuth } from '../contexts/AuthContext';
 import { useAutomationPolicies } from '../hooks/useAutomationPolicies';
 
 const AutomationPoliciesPage = () => {
@@ -89,23 +87,23 @@ const AutomationPoliciesPage = () => {
   });
   const [isExecuting, setIsExecuting] = useState(false);
   const [executionResults, setExecutionResults] = useState([]);
-  
-  const { 
-    isOpen: isPolicyModalOpen, 
-    onOpen: onPolicyModalOpen, 
-    onClose: onPolicyModalClose 
+
+  const {
+    isOpen: isPolicyModalOpen,
+    onOpen: onPolicyModalOpen,
+    onClose: onPolicyModalClose
   } = useDisclosure();
-  
-  const { 
-    isOpen: isTemplateModalOpen, 
-    onOpen: onTemplateModalOpen, 
-    onClose: onTemplateModalClose 
+
+  const {
+    isOpen: isTemplateModalOpen,
+    onOpen: onTemplateModalOpen,
+    onClose: onTemplateModalClose
   } = useDisclosure();
-  
-  const { 
-    isOpen: isExecuteModalOpen, 
-    onOpen: onExecuteModalOpen, 
-    onClose: onExecuteModalClose 
+
+  const {
+    isOpen: isExecuteModalOpen,
+    onOpen: onExecuteModalOpen,
+    onClose: onExecuteModalClose
   } = useDisclosure();
 
   const toast = useToast();
@@ -148,14 +146,14 @@ const AutomationPoliciesPage = () => {
       }
 
       const newPolicy = await createPolicy(formData);
-      
+
       logAuditEvent(
         'policy_created',
         'policy',
         newPolicy.id.toString(),
         { name: formData.name }
       );
-      
+
       toast({
         title: 'Policy created',
         description: `Policy "${formData.name}" has been created.`,
@@ -163,7 +161,7 @@ const AutomationPoliciesPage = () => {
         duration: 3000,
         isClosable: true,
       });
-      
+
       onPolicyModalClose();
     } catch (err) {
       toast({
@@ -190,14 +188,14 @@ const AutomationPoliciesPage = () => {
       }
 
       const newTemplate = await createTemplate(templateData);
-      
+
       logAuditEvent(
         'template_created',
         'template',
         newTemplate.id.toString(),
         { name: templateData.name }
       );
-      
+
       toast({
         title: 'Template created',
         description: `Template "${templateData.name}" has been created.`,
@@ -205,7 +203,7 @@ const AutomationPoliciesPage = () => {
         duration: 3000,
         isClosable: true,
       });
-      
+
       onTemplateModalClose();
     } catch (err) {
       toast({
@@ -222,14 +220,14 @@ const AutomationPoliciesPage = () => {
     try {
       setIsExecuting(true);
       const result = await executePolicy(policy.id);
-      
+
       logAuditEvent(
         'policy_executed',
         'policy',
         policy.id.toString(),
         { name: policy.name }
       );
-      
+
       setExecutionResults([result]);
       onExecuteModalOpen();
     } catch (err) {
@@ -249,14 +247,14 @@ const AutomationPoliciesPage = () => {
     try {
       setIsExecuting(true);
       const results = await bulkExecute(selectedPolicies.map(p => p.id));
-      
+
       logAuditEvent(
         'policies_bulk_executed',
         'policy',
         selectedPolicies.map(p => p.id.toString()).join(','),
         { count: selectedPolicies.length }
       );
-      
+
       setExecutionResults(results);
       onExecuteModalOpen();
     } catch (err) {
@@ -332,7 +330,7 @@ const AutomationPoliciesPage = () => {
           </Button>
         </HStack>
       </Flex>
-      
+
       <Flex mb={6}>
         <InputGroup>
           <InputLeftElement pointerEvents="none">
@@ -346,14 +344,14 @@ const AutomationPoliciesPage = () => {
           />
         </InputGroup>
       </Flex>
-      
+
       {error && (
         <Alert status="error" mb={4}>
           <AlertIcon />
           {error}
         </Alert>
       )}
-      
+
       {isLoading ? (
         <Flex justify="center" align="center" height="200px">
           <Spinner size="xl" color="brand.500" />
@@ -477,7 +475,7 @@ const AutomationPoliciesPage = () => {
           </Table>
         </Box>
       )}
-      
+
       {/* Policy Modal */}
       <Modal isOpen={isPolicyModalOpen} onClose={onPolicyModalClose} size="xl">
         <ModalOverlay />
@@ -494,7 +492,7 @@ const AutomationPoliciesPage = () => {
                 <Tab>Actions</Tab>
                 <Tab>Schedule</Tab>
               </TabList>
-              
+
               <TabPanels>
                 <TabPanel>
                   <VStack spacing={4}>
@@ -509,7 +507,7 @@ const AutomationPoliciesPage = () => {
                         placeholder="Enter policy name"
                       />
                     </FormControl>
-                    
+
                     <FormControl>
                       <FormLabel>Description</FormLabel>
                       <Input
@@ -521,7 +519,7 @@ const AutomationPoliciesPage = () => {
                         placeholder="Enter policy description"
                       />
                     </FormControl>
-                    
+
                     <FormControl isRequired>
                       <FormLabel>Type</FormLabel>
                       <Select
@@ -536,7 +534,7 @@ const AutomationPoliciesPage = () => {
                         <option value="team">Team</option>
                       </Select>
                     </FormControl>
-                    
+
                     <FormControl isRequired>
                       <FormLabel>Trigger</FormLabel>
                       <Select
@@ -552,7 +550,7 @@ const AutomationPoliciesPage = () => {
                         <option value="manual">Manual</option>
                       </Select>
                     </FormControl>
-                    
+
                     <FormControl display="flex" alignItems="center">
                       <FormLabel mb="0">Enabled</FormLabel>
                       <Switch
@@ -565,21 +563,21 @@ const AutomationPoliciesPage = () => {
                     </FormControl>
                   </VStack>
                 </TabPanel>
-                
+
                 <TabPanel>
                   <VStack spacing={4}>
                     {/* TODO: Implement conditions editor */}
                     <Text>Conditions editor will be implemented here</Text>
                   </VStack>
                 </TabPanel>
-                
+
                 <TabPanel>
                   <VStack spacing={4}>
                     {/* TODO: Implement actions editor */}
                     <Text>Actions editor will be implemented here</Text>
                   </VStack>
                 </TabPanel>
-                
+
                 <TabPanel>
                   <VStack spacing={4}>
                     <FormControl>
@@ -608,7 +606,7 @@ const AutomationPoliciesPage = () => {
           </ModalFooter>
         </ModalContent>
       </Modal>
-      
+
       {/* Template Modal */}
       <Modal isOpen={isTemplateModalOpen} onClose={onTemplateModalClose} size="xl">
         <ModalOverlay />
@@ -628,7 +626,7 @@ const AutomationPoliciesPage = () => {
                   placeholder="Enter template name"
                 />
               </FormControl>
-              
+
               <FormControl>
                 <FormLabel>Description</FormLabel>
                 <Input
@@ -640,7 +638,7 @@ const AutomationPoliciesPage = () => {
                   placeholder="Enter template description"
                 />
               </FormControl>
-              
+
               <FormControl isRequired>
                 <FormLabel>Type</FormLabel>
                 <Select
@@ -655,7 +653,7 @@ const AutomationPoliciesPage = () => {
                   <option value="team">Team</option>
                 </Select>
               </FormControl>
-              
+
               <FormControl isRequired>
                 <FormLabel>Code</FormLabel>
                 <Box
@@ -702,7 +700,7 @@ const AutomationPoliciesPage = () => {
           </ModalFooter>
         </ModalContent>
       </Modal>
-      
+
       {/* Execution Results Modal */}
       <Modal isOpen={isExecuteModalOpen} onClose={onExecuteModalClose} size="xl">
         <ModalOverlay />
@@ -730,7 +728,7 @@ const AutomationPoliciesPage = () => {
                       {new Date(result.timestamp).toLocaleString()}
                     </Text>
                   </HStack>
-                  
+
                   <Box
                     borderWidth="1px"
                     borderRadius="md"
@@ -762,4 +760,4 @@ const AutomationPoliciesPage = () => {
   );
 };
 
-export default AutomationPoliciesPage; 
+export default AutomationPoliciesPage;

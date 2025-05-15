@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
-import api from '../services/api';
+import { useEffect, useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
+import api from '../services/api';
 
 export const useAccessTemplates = () => {
   const [templates, setTemplates] = useState([]);
@@ -12,12 +12,12 @@ export const useAccessTemplates = () => {
     try {
       setIsLoading(true);
       setError(null);
-      
+
       const response = await api.get(
         `/organizations/${organization.id}/access-templates`,
         { params: filters }
       );
-      
+
       setTemplates(response.data);
     } catch (err) {
       setError(err.response?.data?.error || err.message);
@@ -45,7 +45,7 @@ export const useAccessTemplates = () => {
         `/organizations/${organization.id}/access-templates/${templateId}`,
         templateData
       );
-      setTemplates(templates.map(template => 
+      setTemplates(templates.map(template =>
         template.id === templateId ? response.data : template
       ));
       return response.data;
@@ -104,4 +104,4 @@ export const useAccessTemplates = () => {
     getTemplateUsage,
     refreshTemplates: fetchTemplates,
   };
-}; 
+};

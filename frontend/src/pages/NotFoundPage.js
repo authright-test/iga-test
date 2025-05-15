@@ -1,5 +1,5 @@
+import { Box, Button, Heading, Text, useColorModeValue, VStack } from '@chakra-ui/react';
 import React from 'react';
-import { Box, Heading, Text, Button, VStack, useColorModeValue } from '@chakra-ui/react';
 import { Link as RouterLink } from 'react-router-dom';
 
 const NotFoundPage = () => {
@@ -40,4 +40,4 @@ const NotFoundPage = () => {
   );
 };
 
-export default NotFoundPage; 
+export default NotFoundPage;

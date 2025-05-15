@@ -1,0 +1,50 @@
+version: '3.3'
+services:
+
+  iga-redis:
+    container_name: iga-redis
+    image: redis
+    command: redis-server --requirepass IGA_REDIS_adm_^123456
+    # command: redis-server
+    networks:
+      - iga
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: [ "CMD", "redis-cli", "ping" ]
+      interval: 10s
+      timeout: 10s
+      retries: 10
+
+  #  iga-rabbitmq:
+  #    container_name: iga-rabbitmq
+  #    image: rabbitmq:latest
+  #    ports:
+  #      - 15672:15672
+  #      - 5672:5672
+  #    environment:
+  #      - RABBITMQ_DEFAULT_USER=guest
+  #      - RABBITMQ_DEFAULT_PASS=guest
+
+  iga-mysql:
+    container_name: iga-mysql
+    build:
+      context: .
+      dockerfile: ./etc/mysql/8/Dockerfile
+    image: mysql:8.0.30
+    env_file:
+      - ./server.env
+    volumes:
+      - ./.tmp/mysql:/var/lib/mysql
+    networks:
+      - iga
+    ports:
+      - "3306:3306"
+    healthcheck:
+      test: [ "CMD", "mysqladmin" ,"ping", "-h", "localhost", "-u", "root", "-p$$MYSQL_ROOT_PASSWORD" ]
+      interval: 15s
+      timeout: 10s
+      retries: 10
+
+networks:
+  iga:

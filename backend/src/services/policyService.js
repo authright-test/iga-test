@@ -1,7 +1,7 @@
-const { Policy, Organization, User, AuditLog } = require('../models');
-const logger = require('../utils/logger');
-const { githubApp } = require('./authService');
-const { Octokit } = require('@octokit/rest');
+import { Octokit } from '@octokit/rest';
+import { AuditLog, Organization, Policy } from '../models/index.js';
+import logger from '../utils/logger.js';
+import { githubApp } from './authService.js';
 
 /**
  * Evaluate a policy against an event
@@ -13,7 +13,7 @@ const { Octokit } = require('@octokit/rest');
 const evaluatePolicy = async (policy, event, context) => {
   try {
     const conditions = policy.conditions;
-    
+
     // Simple condition evaluation for now
     // In a real-world scenario, this would be more sophisticated
     for (const condition of conditions) {
@@ -45,7 +45,7 @@ const evaluatePolicy = async (policy, event, context) => {
           break;
       }
     }
-    
+
     return true;
   } catch (error) {
     logger.error('Policy evaluation error:', error);
@@ -74,17 +74,17 @@ const executePolicyActions = async (policy, event, context) => {
   try {
     const actions = policy.actions;
     const installationId = context.installationId;
-    
+
     // Get installation access token
     const installationAccessToken = await githubApp.getInstallationAccessToken({
       installationId
     });
-    
+
     // Create Octokit instance with installation token
     const octokit = new Octokit({
       auth: installationAccessToken
     });
-    
+
     for (const action of actions) {
       switch (action.type) {
         case 'revert_change':
@@ -99,9 +99,9 @@ const executePolicyActions = async (policy, event, context) => {
           break;
         case 'notify_admin':
           // In a real app, you would send an email or notification
-          logger.info(`Policy violation notification: ${policy.name}`, { 
-            policy, 
-            event 
+          logger.info(`Policy violation notification: ${policy.name}`, {
+            policy,
+            event
           });
           break;
         case 'remove_permission':
@@ -119,7 +119,7 @@ const executePolicyActions = async (policy, event, context) => {
           break;
       }
     }
-    
+
     // Log the policy enforcement in the audit log
     await AuditLog.create({
       action: 'policy_enforced',
@@ -132,7 +132,7 @@ const executePolicyActions = async (policy, event, context) => {
       },
       UserId: context.userId
     });
-    
+
     return true;
   } catch (error) {
     logger.error('Policy action execution error:', error);
@@ -157,13 +157,13 @@ const createPolicy = async (policyData, organizationId, userId) => {
       severity: policyData.severity || 'medium',
       isActive: policyData.isActive !== undefined ? policyData.isActive : true
     });
-    
+
     // Associate policy with organization
     const organization = await Organization.findByPk(organizationId);
     if (organization) {
       await policy.addOrganization(organization);
     }
-    
+
     // Log policy creation
     await AuditLog.create({
       action: 'policy_created',
@@ -175,7 +175,7 @@ const createPolicy = async (policyData, organizationId, userId) => {
       },
       UserId: userId
     });
-    
+
     return policy;
   } catch (error) {
     logger.error('Error creating policy:', error);
@@ -193,11 +193,11 @@ const createPolicy = async (policyData, organizationId, userId) => {
 const updatePolicy = async (policyId, policyData, userId) => {
   try {
     const policy = await Policy.findByPk(policyId);
-    
+
     if (!policy) {
       throw new Error('Policy not found');
     }
-    
+
     // Update policy
     await policy.update({
       name: policyData.name || policy.name,
@@ -207,7 +207,7 @@ const updatePolicy = async (policyId, policyData, userId) => {
       severity: policyData.severity || policy.severity,
       isActive: policyData.isActive !== undefined ? policyData.isActive : policy.isActive
     });
-    
+
     // Log policy update
     await AuditLog.create({
       action: 'policy_updated',
@@ -219,7 +219,7 @@ const updatePolicy = async (policyId, policyData, userId) => {
       },
       UserId: userId
     });
-    
+
     return policy;
   } catch (error) {
     logger.error('Error updating policy:', error);
@@ -236,11 +236,11 @@ const updatePolicy = async (policyId, policyData, userId) => {
 const deletePolicy = async (policyId, userId) => {
   try {
     const policy = await Policy.findByPk(policyId);
-    
+
     if (!policy) {
       throw new Error('Policy not found');
     }
-    
+
     // Log policy deletion before deleting
     await AuditLog.create({
       action: 'policy_deleted',
@@ -251,10 +251,10 @@ const deletePolicy = async (policyId, userId) => {
       },
       UserId: userId
     });
-    
+
     // Delete policy
     await policy.destroy();
-    
+
     return true;
   } catch (error) {
     logger.error('Error deleting policy:', error);
@@ -272,11 +272,11 @@ const getOrganizationPolicies = async (organizationId) => {
     const organization = await Organization.findByPk(organizationId, {
       include: [Policy]
     });
-    
+
     if (!organization) {
       return [];
     }
-    
+
     return organization.Policies;
   } catch (error) {
     logger.error('Error getting organization policies:', error);
@@ -284,11 +284,11 @@ const getOrganizationPolicies = async (organizationId) => {
   }
 };
 
-module.exports = {
-  evaluatePolicy,
-  executePolicyActions,
+export {
   createPolicy,
   updatePolicy,
   deletePolicy,
-  getOrganizationPolicies
-}; 
+  getOrganizationPolicies,
+  evaluatePolicy,
+  executePolicyActions
+};

@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
-import api from '../services/api';
+import { useEffect, useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
+import api from '../services/api';
 
 export const useAccessPermissions = () => {
   const [permissions, setPermissions] = useState([]);
@@ -12,12 +12,12 @@ export const useAccessPermissions = () => {
     try {
       setIsLoading(true);
       setError(null);
-      
+
       const response = await api.get(
         `/organizations/${organization.id}/access-permissions`,
         { params: filters }
       );
-      
+
       setPermissions(response.data);
     } catch (err) {
       setError(err.response?.data?.error || err.message);
@@ -45,7 +45,7 @@ export const useAccessPermissions = () => {
         `/organizations/${organization.id}/access-permissions/${permissionId}`,
         permissionData
       );
-      setPermissions(permissions.map(permission => 
+      setPermissions(permissions.map(permission =>
         permission.id === permissionId ? response.data : permission
       ));
       return response.data;
@@ -152,4 +152,4 @@ export const useAccessPermissions = () => {
     getPermissionHistory,
     refreshPermissions: fetchPermissions,
   };
-}; 
+};

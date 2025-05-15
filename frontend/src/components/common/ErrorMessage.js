@@ -1,24 +1,24 @@
-import React from 'react';
 import {
   Alert,
+  AlertDescription,
   AlertIcon,
   AlertTitle,
-  AlertDescription,
-  CloseButton,
   Box,
+  Button,
+  CloseButton,
+  Text,
   useColorModeValue,
   VStack,
-  Button,
-  Text,
 } from '@chakra-ui/react';
+import React from 'react';
 
-export const ErrorAlert = ({ 
-  title, 
-  description, 
-  onClose, 
+export const ErrorAlert = ({
+  title,
+  description,
+  onClose,
   status = 'error',
   isClosable = true,
-  ...props 
+  ...props
 }) => (
   <Alert
     status={status}
@@ -50,12 +50,12 @@ export const ErrorAlert = ({
   </Alert>
 );
 
-export const ErrorPage = ({ 
+export const ErrorPage = ({
   title = 'Error',
   description,
   error,
   onRetry,
-  ...props 
+  ...props
 }) => (
   <Box
     p={8}
@@ -84,10 +84,10 @@ export const ErrorPage = ({
   </Box>
 );
 
-export const ErrorInline = ({ 
+export const ErrorInline = ({
   message,
   onClose,
-  ...props 
+  ...props
 }) => (
   <Alert
     status="error"
@@ -108,16 +108,16 @@ export const ErrorInline = ({
   </Alert>
 );
 
-export const ErrorToast = ({ 
+export const ErrorToast = ({
   title,
   description,
   status = 'error',
   duration = 5000,
   isClosable = true,
-  ...props 
+  ...props
 }) => {
   const toast = useToast();
-  
+
   React.useEffect(() => {
     toast({
       title,
@@ -158,4 +158,4 @@ export const ErrorBoundary = ({ children }) => {
   }
 
   return children;
-}; 
+};

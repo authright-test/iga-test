@@ -1,43 +1,51 @@
-import React, { useState } from 'react';
 import {
+  Badge,
   Box,
   Button,
   Flex,
-  Heading,
-  Table,
-  Thead,
-  Tbody,
-  Tr,
-  Th,
-  Td,
-  useDisclosure,
-  Modal,
-  ModalOverlay,
-  ModalContent,
-  ModalHeader,
-  ModalBody,
-  ModalCloseButton,
   FormControl,
   FormLabel,
-  Input,
-  Textarea,
-  Select,
-  useToast,
-  Badge,
+  Heading,
+  HStack,
   IconButton,
+  Input,
   Menu,
   MenuButton,
-  MenuList,
   MenuItem,
-  useColorModeValue,
-  Avatar,
+  MenuList,
+  Modal,
+  ModalBody,
+  ModalCloseButton,
+  ModalContent,
+  ModalHeader,
+  ModalOverlay,
+  Select,
+  Table,
+  Tbody,
+  Td,
   Text,
-  HStack,
+  Textarea,
+  Th,
+  Thead,
+  Tr,
+  useColorModeValue,
+  useDisclosure,
+  useToast,
   VStack,
 } from '@chakra-ui/react';
-import { FiMoreVertical, FiEdit2, FiTrash2, FiUserPlus, FiUserMinus, FiShield, FiGitBranch, FiGitCommit } from 'react-icons/fi';
-import { useRepositories } from '../hooks/useRepositories';
+import React, { useState } from 'react';
+import {
+  FiEdit2,
+  FiGitBranch,
+  FiGitCommit,
+  FiMoreVertical,
+  FiShield,
+  FiTrash2,
+  FiUserMinus,
+  FiUserPlus
+} from 'react-icons/fi';
 import { useAuth } from '../contexts/AuthContext';
+import { useRepositories } from '../hooks/useRepositories';
 
 const RepositoriesPage = () => {
   const [selectedRepo, setSelectedRepo] = useState(null);
@@ -46,17 +54,17 @@ const RepositoriesPage = () => {
     description: '',
     visibility: 'private',
   });
-  
-  const { 
-    isOpen: isRepoModalOpen, 
-    onOpen: onRepoModalOpen, 
-    onClose: onRepoModalClose 
+
+  const {
+    isOpen: isRepoModalOpen,
+    onOpen: onRepoModalOpen,
+    onClose: onRepoModalClose
   } = useDisclosure();
-  
-  const { 
-    isOpen: isTeamsModalOpen, 
-    onOpen: onTeamsModalOpen, 
-    onClose: onTeamsModalClose 
+
+  const {
+    isOpen: isTeamsModalOpen,
+    onOpen: onTeamsModalOpen,
+    onClose: onTeamsModalClose
   } = useDisclosure();
 
   const toast = useToast();
@@ -97,14 +105,14 @@ const RepositoriesPage = () => {
       }
 
       const newRepo = await createRepository(formData);
-      
+
       logAuditEvent(
         'repository_created',
         'repository',
         newRepo.id.toString(),
         { name: formData.name }
       );
-      
+
       toast({
         title: 'Repository created',
         description: `Repository "${formData.name}" has been created.`,
@@ -112,7 +120,7 @@ const RepositoriesPage = () => {
         duration: 3000,
         isClosable: true,
       });
-      
+
       onRepoModalClose();
     } catch (err) {
       toast({
@@ -130,14 +138,14 @@ const RepositoriesPage = () => {
       if (!selectedRepo) return;
 
       const updatedRepo = await updateRepository(selectedRepo.id, formData);
-      
+
       logAuditEvent(
         'repository_updated',
         'repository',
         selectedRepo.id.toString(),
         { name: formData.name }
       );
-      
+
       toast({
         title: 'Repository updated',
         description: `Repository "${formData.name}" has been updated.`,
@@ -145,7 +153,7 @@ const RepositoriesPage = () => {
         duration: 3000,
         isClosable: true,
       });
-      
+
       onRepoModalClose();
     } catch (err) {
       toast({
@@ -161,14 +169,14 @@ const RepositoriesPage = () => {
   const handleDeleteRepository = async (repo) => {
     try {
       await deleteRepository(repo.id);
-      
+
       logAuditEvent(
         'repository_deleted',
         'repository',
         repo.id.toString(),
         { name: repo.name }
       );
-      
+
       toast({
         title: 'Repository deleted',
         description: `Repository "${repo.name}" has been deleted.`,
@@ -190,14 +198,14 @@ const RepositoriesPage = () => {
   const handleAddTeam = async (repoId, teamId) => {
     try {
       await addTeam(repoId, teamId);
-      
+
       logAuditEvent(
         'team_added',
         'repository',
         repoId.toString(),
         { teamId }
       );
-      
+
       toast({
         title: 'Team added',
         description: 'Team has been added to the repository.',
@@ -219,14 +227,14 @@ const RepositoriesPage = () => {
   const handleRemoveTeam = async (repoId, teamId) => {
     try {
       await removeTeam(repoId, teamId);
-      
+
       logAuditEvent(
         'team_removed',
         'repository',
         repoId.toString(),
         { teamId }
       );
-      
+
       toast({
         title: 'Team removed',
         description: 'Team has been removed from the repository.',
@@ -499,4 +507,4 @@ const RepositoriesPage = () => {
   );
 };
 
-export default RepositoriesPage; 
+export default RepositoriesPage;

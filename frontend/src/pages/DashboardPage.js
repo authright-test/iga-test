@@ -1,28 +1,27 @@
-import React, { useState, useEffect } from 'react';
 import {
+  Alert,
+  AlertIcon,
   Box,
+  Button,
+  Center,
+  Flex,
   Grid,
   GridItem,
   Heading,
-  Text,
+  Icon,
   SimpleGrid,
+  Spinner,
   Stat,
+  StatHelpText,
   StatLabel,
   StatNumber,
-  StatHelpText,
-  Icon,
-  Flex,
+  Text,
   useColorModeValue,
-  Spinner,
-  Center,
-  Alert,
-  AlertIcon,
-  Button,
 } from '@chakra-ui/react';
-import { FiUsers, FiGitPullRequest, FiShield, FiAlertCircle, FiRefreshCw } from 'react-icons/fi';
-import { useAuth } from '../contexts/AuthContext';
-import StatsCard from '../components/StatsCard';
+import React, { useEffect } from 'react';
+import { FiAlertCircle, FiGitPullRequest, FiRefreshCw, FiShield, FiUsers } from 'react-icons/fi';
 import ActivityFeed from '../components/ActivityFeed';
+import { useAuth } from '../contexts/AuthContext';
 import { useDashboard } from '../hooks/useDashboard';
 
 // Placeholder component for stats card
@@ -87,12 +86,12 @@ const DashboardPage = () => {
     error,
     fetchDashboardData,
   } = useDashboard();
-  
+
   // 页面加载时获取数据
   useEffect(() => {
     fetchDashboardData();
   }, [organization?.id]);
-  
+
   // 定义视图中使用的统计数据
   const displayStats = stats || {
     users: 0,
@@ -100,13 +99,13 @@ const DashboardPage = () => {
     policies: 0,
     violations: 0
   };
-  
+
   return (
     <Box>
       <Heading as="h1" size="lg" mb={6}>
         Dashboard
       </Heading>
-      
+
       <Box bg={useColorModeValue('gray.50', 'gray.700')} p={5} rounded="md" mb={6}>
         <Heading as="h2" size="md" mb={2}>
           Welcome, {user?.username}!
@@ -115,7 +114,7 @@ const DashboardPage = () => {
           You're viewing the access control dashboard for {organization?.name || 'your organization'}.
         </Text>
       </Box>
-      
+
       {isLoading ? (
         <Center p={10}>
           <Spinner size="xl" color="brand.500" />
@@ -153,7 +152,7 @@ const DashboardPage = () => {
               description="Last 7 days"
             />
           </SimpleGrid>
-          
+
           <Grid templateColumns={{ base: '1fr', lg: '2fr 1fr' }} gap={6}>
             <GridItem>
               <Box
@@ -178,7 +177,7 @@ const DashboardPage = () => {
                 <ActivityFeed activities={recentActivities} />
               </Box>
             </GridItem>
-            
+
             <GridItem>
               <Box
                 bg={useColorModeValue('white', 'gray.700')}
@@ -218,4 +217,4 @@ const DashboardPage = () => {
   );
 };
 
-export default DashboardPage; 
+export default DashboardPage;

@@ -1,75 +1,54 @@
-import React, { useState, useEffect } from 'react';
 import {
+  Avatar,
+  Badge,
   Box,
   Button,
-  Heading,
-  Table,
-  Thead,
-  Tbody,
-  Tr,
-  Th,
-  Td,
-  Badge,
   Flex,
-  useDisclosure,
-  Modal,
-  ModalOverlay,
-  ModalContent,
-  ModalHeader,
-  ModalFooter,
-  ModalBody,
-  ModalCloseButton,
   FormControl,
   FormLabel,
-  Input,
-  IconButton,
-  useToast,
-  Spinner,
-  Text,
+  Heading,
   HStack,
-  VStack,
-  Tooltip,
+  IconButton,
+  Input,
   Menu,
   MenuButton,
-  MenuList,
   MenuItem,
-  Alert,
-  AlertIcon,
-  InputGroup,
-  InputLeftElement,
+  MenuList,
+  Modal,
+  ModalBody,
+  ModalCloseButton,
+  ModalContent,
+  ModalHeader,
+  ModalOverlay,
   Select,
-  Divider,
-  useColorModeValue,
-  Avatar,
-  AvatarGroup,
-  Popover,
-  PopoverTrigger,
-  PopoverContent,
-  PopoverBody,
-  PopoverArrow,
-  PopoverCloseButton,
-  PopoverHeader,
-  Switch,
-  Checkbox,
+  Table,
+  Tbody,
+  Td,
+  Text,
   Textarea,
+  Th,
+  Thead,
+  Tr,
+  useColorModeValue,
+  useDisclosure,
+  useToast,
+  VStack,
 } from '@chakra-ui/react';
-import { 
-  FiEdit, 
-  FiUsers, 
-  FiSearch, 
-  FiMoreVertical, 
-  FiPlus,
-  FiExternalLink,
-  FiUserPlus,
-  FiTrash2,
-  FiShield,
+import React, { useState } from 'react';
+import {
+  FiEdit,
   FiGitBranch,
+  FiMoreVertical,
+  FiShield,
+  FiTrash2,
   FiUserMinus,
+  FiUserPlus,
+  FiUsers,
 } from 'react-icons/fi';
 import { useAuth } from '../contexts/AuthContext';
+import { useRepositories } from '../hooks/useRepositories';
 import { useTeams } from '../hooks/useTeams';
 import { useUsers } from '../hooks/useUsers';
-import { useRepositories } from '../hooks/useRepositories';
 
 const TeamsPage = () => {
   const [selectedTeam, setSelectedTeam] = useState(null);
@@ -92,17 +71,17 @@ const TeamsPage = () => {
     allowForcePush: false,
     allowDeletions: false,
   });
-  
-  const { 
-    isOpen: isTeamModalOpen, 
-    onOpen: onTeamModalOpen, 
-    onClose: onTeamModalClose 
+
+  const {
+    isOpen: isTeamModalOpen,
+    onOpen: onTeamModalOpen,
+    onClose: onTeamModalClose
   } = useDisclosure();
-  
-  const { 
-    isOpen: isMembersModalOpen, 
-    onOpen: onMembersModalOpen, 
-    onClose: onMembersModalClose 
+
+  const {
+    isOpen: isMembersModalOpen,
+    onOpen: onMembersModalOpen,
+    onClose: onMembersModalClose
   } = useDisclosure();
 
   const toast = useToast();
@@ -152,14 +131,14 @@ const TeamsPage = () => {
       }
 
       const newTeam = await createTeam(formData);
-      
+
       logAuditEvent(
         'team_created',
         'team',
         newTeam.id.toString(),
         { name: formData.name }
       );
-      
+
       toast({
         title: 'Team created',
         description: `Team "${formData.name}" has been created.`,
@@ -167,7 +146,7 @@ const TeamsPage = () => {
         duration: 3000,
         isClosable: true,
       });
-      
+
       onTeamModalClose();
     } catch (err) {
       toast({
@@ -185,14 +164,14 @@ const TeamsPage = () => {
       if (!selectedTeam) return;
 
       const updatedTeam = await updateTeam(selectedTeam.id, formData);
-      
+
       logAuditEvent(
         'team_updated',
         'team',
         selectedTeam.id.toString(),
         { name: formData.name }
       );
-      
+
       toast({
         title: 'Team updated',
         description: `Team "${formData.name}" has been updated.`,
@@ -200,7 +179,7 @@ const TeamsPage = () => {
         duration: 3000,
         isClosable: true,
       });
-      
+
       onTeamModalClose();
     } catch (err) {
       toast({
@@ -216,14 +195,14 @@ const TeamsPage = () => {
   const handleDeleteTeam = async (team) => {
     try {
       await deleteTeam(team.id);
-      
+
       logAuditEvent(
         'team_deleted',
         'team',
         team.id.toString(),
         { name: team.name }
       );
-      
+
       toast({
         title: 'Team deleted',
         description: `Team "${team.name}" has been deleted.`,
@@ -245,14 +224,14 @@ const TeamsPage = () => {
   const handleAddMember = async (teamId, userId) => {
     try {
       await addMember(teamId, userId);
-      
+
       logAuditEvent(
         'member_added',
         'team',
         teamId.toString(),
         { userId }
       );
-      
+
       toast({
         title: 'Member added',
         description: 'Member has been added to the team.',
@@ -274,14 +253,14 @@ const TeamsPage = () => {
   const handleRemoveMember = async (teamId, userId) => {
     try {
       await removeMember(teamId, userId);
-      
+
       logAuditEvent(
         'member_removed',
         'team',
         teamId.toString(),
         { userId }
       );
-      
+
       toast({
         title: 'Member removed',
         description: 'Member has been removed from the team.',
@@ -351,14 +330,14 @@ const TeamsPage = () => {
       if (!selectedTeam) return;
 
       await updateTeamPermissions(selectedTeam.id, permissionRules);
-      
+
       logAuditEvent(
         'team_permissions_updated',
         'team',
         selectedTeam.id.toString(),
         { name: selectedTeam.name }
       );
-      
+
       toast({
         title: 'Permissions updated',
         description: 'Team permissions have been updated.',
@@ -397,14 +376,14 @@ const TeamsPage = () => {
           await removeRepository(selectedTeam.id, repoId);
         }
       }
-      
+
       logAuditEvent(
         'team_repositories_updated',
         'team',
         selectedTeam.id.toString(),
         { name: selectedTeam.name }
       );
-      
+
       toast({
         title: 'Repository access updated',
         description: 'Team repository access has been updated.',
@@ -427,14 +406,14 @@ const TeamsPage = () => {
     try {
       setIsSyncing(true);
       await syncWithGitHub();
-      
+
       logAuditEvent(
         'teams_synced',
         'team',
         'all',
         { organization: organization.name }
       );
-      
+
       toast({
         title: 'Teams synced',
         description: 'Teams have been synchronized with GitHub.',

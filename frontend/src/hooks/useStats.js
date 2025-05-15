@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
-import { useAuth } from './useAuth';
+import { useEffect, useState } from 'react';
 import api from '../services/api';
+import { useAuth } from './useAuth';
 
 export const useStats = () => {
   const [stats, setStats] = useState(null);
@@ -28,4 +28,4 @@ export const useStats = () => {
   }, [organization?.id]);
 
   return { stats, isLoading, error };
-}; 
+};

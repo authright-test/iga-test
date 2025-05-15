@@ -1,7 +1,7 @@
-const jwt = require('jsonwebtoken');
-const { githubApp } = require('../services/authService');
-const { User, Organization } = require('../models');
-const logger = require('../utils/logger');
+import jwt from 'jsonwebtoken';
+import { githubApp } from '../services/authService.js';
+import { User, Organization } from '../models/index.js';
+import logger from '../utils/logger.js';
 
 /**
  * JWT Authentication Middleware
@@ -118,9 +118,4 @@ const isOrganizationAdmin = async (req, res, next) => {
   }
 };
 
-module.exports = {
-  authenticateJWT,
-  authenticateGitHubApp,
-  isOrganizationMember,
-  isOrganizationAdmin
-}; 
+export { authenticateJWT, authenticateGitHubApp, isOrganizationMember, isOrganizationAdmin }; 

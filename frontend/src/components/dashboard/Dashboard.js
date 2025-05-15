@@ -1,36 +1,36 @@
-import React from 'react';
 import {
   Box,
+  Card,
+  CardBody,
+  CardHeader,
   Grid,
   Heading,
-  Text,
+  HStack,
+  Icon,
+  SimpleGrid,
+  Stack,
   Stat,
+  StatArrow,
+  StatHelpText,
   StatLabel,
   StatNumber,
-  StatHelpText,
-  StatArrow,
-  SimpleGrid,
-  Card,
-  CardHeader,
-  CardBody,
-  Stack,
-  HStack,
-  VStack,
-  Icon,
-  useColorModeValue
+  Text,
+  useColorModeValue,
+  VStack
 } from '@chakra-ui/react';
-import { FiUsers, FiGitBranch, FiShield, FiAlertCircle } from 'react-icons/fi';
-import { useAuth } from '../../hooks/useAuth';
-import { useStats } from '../../hooks/useStats';
+import React from 'react';
+import { FiAlertCircle, FiGitBranch, FiShield, FiUsers } from 'react-icons/fi';
 import { useAuditLogs } from '../../hooks/useAuditLogs';
+import { useAuth } from '../../hooks/useAuth';
 import { usePolicies } from '../../hooks/usePolicies';
+import { useStats } from '../../hooks/useStats';
 
 const Dashboard = () => {
   const { user, organization } = useAuth();
   const { stats, isLoading: statsLoading } = useStats();
   const { recentLogs, isLoading: logsLoading } = useAuditLogs();
   const { policies, isLoading: policiesLoading } = usePolicies();
-  
+
   const cardBg = useColorModeValue('white', 'gray.700');
   const borderColor = useColorModeValue('gray.200', 'gray.600');
 
@@ -229,7 +229,7 @@ const PolicyItem = ({ policy }) => {
 // Security Status Item Component
 const SecurityStatusItem = ({ status }) => {
   const textColor = useColorModeValue('gray.600', 'gray.300');
-  const statusColor = status.severity === 'high' ? 'red.500' : 
+  const statusColor = status.severity === 'high' ? 'red.500' :
                      status.severity === 'medium' ? 'orange.500' : 'green.500';
 
   return (
@@ -245,4 +245,4 @@ const SecurityStatusItem = ({ status }) => {
   );
 };
 
-export default Dashboard; 
+export default Dashboard;

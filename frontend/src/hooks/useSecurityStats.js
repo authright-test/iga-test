@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
-import { useAuth } from './useAuth';
+import { useEffect, useState } from 'react';
 import api from '../services/api';
+import { useAuth } from './useAuth';
 
 export const useSecurityStats = () => {
   const [stats, setStats] = useState(null);
@@ -103,4 +103,4 @@ export const useSecurityStats = () => {
     applySecurityRecommendation,
     exportSecurityReport
   };
-}; 
+};

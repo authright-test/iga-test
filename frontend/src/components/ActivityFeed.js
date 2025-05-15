@@ -1,70 +1,53 @@
+import { Badge, Box, Divider, HStack, Icon, Text, useColorModeValue, VStack, } from '@chakra-ui/react';
 import React from 'react';
-import {
-  Box,
-  VStack,
-  HStack,
-  Text,
-  Badge,
-  Icon,
-  Divider,
-  useColorModeValue,
-} from '@chakra-ui/react';
-import {
-  FiAlertTriangle,
-  FiCheck,
-  FiInfo,
-  FiFileText,
-  FiUsers,
-  FiActivity,
-  FiGitPullRequest,
-} from 'react-icons/fi';
+import { FiActivity, FiAlertTriangle, FiCheck, FiFileText, FiGitPullRequest, FiInfo, FiUsers, } from 'react-icons/fi';
 
 // 根据活动类型获取图标和颜色
 const getActivityIconAndColor = (activity) => {
   const action = activity.action || '';
-  
+
   // 根据活动类型选择图标和颜色
   if (action.includes('policy_violated') || action.includes('violated')) {
-    return { 
-      icon: FiAlertTriangle, 
+    return {
+      icon: FiAlertTriangle,
       color: 'red.500',
-      badgeColor: 'red' 
+      badgeColor: 'red'
     };
   } else if (action.includes('created') || action.includes('added')) {
-    return { 
-      icon: FiCheck, 
+    return {
+      icon: FiCheck,
       color: 'green.500',
-      badgeColor: 'green' 
+      badgeColor: 'green'
     };
   } else if (action.includes('deleted') || action.includes('removed')) {
-    return { 
-      icon: FiAlertTriangle, 
+    return {
+      icon: FiAlertTriangle,
       color: 'orange.500',
-      badgeColor: 'orange' 
+      badgeColor: 'orange'
     };
   } else if (action.includes('repository') || action.includes('branch')) {
-    return { 
-      icon: FiGitPullRequest, 
+    return {
+      icon: FiGitPullRequest,
       color: 'purple.500',
-      badgeColor: 'purple' 
+      badgeColor: 'purple'
     };
   } else if (action.includes('user') || action.includes('member')) {
-    return { 
-      icon: FiUsers, 
+    return {
+      icon: FiUsers,
       color: 'blue.500',
-      badgeColor: 'blue' 
+      badgeColor: 'blue'
     };
   } else if (action.includes('policy') || action.includes('role')) {
-    return { 
-      icon: FiFileText, 
+    return {
+      icon: FiFileText,
       color: 'cyan.500',
-      badgeColor: 'cyan' 
+      badgeColor: 'cyan'
     };
   } else {
-    return { 
-      icon: FiInfo, 
+    return {
+      icon: FiInfo,
       color: 'gray.500',
-      badgeColor: 'gray' 
+      badgeColor: 'gray'
     };
   }
 };
@@ -74,7 +57,7 @@ const createActivityDescription = (activity) => {
   const action = activity.action || '';
   const resourceType = activity.resourceType || '';
   const details = activity.details || {};
-  
+
   // 根据活动类型生成描述
   if (action.includes('repository_created')) {
     return `Repository "${details.repositoryName || details.name || activity.resourceId}" was created`;
@@ -134,9 +117,9 @@ const formatTimeAgo = (dateString) => {
 const ActivityItem = ({ activity }) => {
   const { icon, color, badgeColor } = getActivityIconAndColor(activity);
   const bgHover = useColorModeValue('gray.50', 'gray.700');
-  
+
   return (
-    <Box 
+    <Box
       p={3}
       borderRadius="md"
       transition="background-color 0.2s"
@@ -144,32 +127,32 @@ const ActivityItem = ({ activity }) => {
       width="100%"
     >
       <HStack align="flex-start" spacing={3}>
-        <Box 
+        <Box
           p={2}
           borderRadius="full"
           bg={useColorModeValue(`${color.split('.')[0]}.50`, `${color.split('.')[0]}.900`)}
         >
           <Icon as={icon} color={color} boxSize={5} />
         </Box>
-        
+
         <Box flex="1">
           <HStack justifyContent="space-between" mb={1}>
             <Text fontWeight="medium">
               {createActivityDescription(activity)}
             </Text>
-            
+
             <Badge colorScheme={badgeColor} fontSize="xs">
               {activity.action?.replace(/_/g, ' ')}
             </Badge>
           </HStack>
-          
+
           <HStack justifyContent="space-between">
             <HStack>
               <Text fontSize="sm" color="gray.500">
                 {activity.User?.username || 'System'}
               </Text>
             </HStack>
-            
+
             <Text fontSize="xs" color="gray.500">
               {formatTimeAgo(activity.createdAt)}
             </Text>
@@ -184,7 +167,7 @@ const ActivityItem = ({ activity }) => {
 const ActivityFeed = ({ activities = [], maxItems = 5, showDividers = true }) => {
   // 限制显示的活动数量
   const displayedActivities = activities.slice(0, maxItems);
-  
+
   return (
     <VStack spacing={showDividers ? 0 : 2} align="stretch" width="100%">
       {displayedActivities.length === 0 ? (
@@ -206,4 +189,4 @@ const ActivityFeed = ({ activities = [], maxItems = 5, showDividers = true }) =>
   );
 };
 
-export default ActivityFeed; 
+export default ActivityFeed;

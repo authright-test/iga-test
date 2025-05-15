@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
-import api from '../services/api';
+import { useEffect, useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
+import api from '../services/api';
 
 export const useTeams = () => {
   const [teams, setTeams] = useState([]);
@@ -12,12 +12,12 @@ export const useTeams = () => {
     try {
       setIsLoading(true);
       setError(null);
-      
+
       const response = await api.get(
         `/organizations/${organization.id}/teams`,
         { params: filters }
       );
-      
+
       setTeams(response.data);
     } catch (err) {
       setError(err.response?.data?.error || err.message);
@@ -45,7 +45,7 @@ export const useTeams = () => {
         `/organizations/${organization.id}/teams/${teamId}`,
         teamData
       );
-      setTeams(teams.map(team => 
+      setTeams(teams.map(team =>
         team.id === teamId ? response.data : team
       ));
       return response.data;
@@ -179,4 +179,4 @@ export const useTeams = () => {
     updateTeamPermissions,
     refreshTeams: fetchTeams,
   };
-}; 
+};

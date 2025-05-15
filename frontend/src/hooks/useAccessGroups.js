@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
-import api from '../services/api';
+import { useEffect, useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
+import api from '../services/api';
 
 export const useAccessGroups = () => {
   const [groups, setGroups] = useState([]);
@@ -12,12 +12,12 @@ export const useAccessGroups = () => {
     try {
       setIsLoading(true);
       setError(null);
-      
+
       const response = await api.get(
         `/organizations/${organization.id}/access-groups`,
         { params: filters }
       );
-      
+
       setGroups(response.data);
     } catch (err) {
       setError(err.response?.data?.error || err.message);
@@ -45,7 +45,7 @@ export const useAccessGroups = () => {
         `/organizations/${organization.id}/access-groups/${groupId}`,
         groupData
       );
-      setGroups(groups.map(group => 
+      setGroups(groups.map(group =>
         group.id === groupId ? response.data : group
       ));
       return response.data;
@@ -164,4 +164,4 @@ export const useAccessGroups = () => {
     removeGroupRole,
     refreshGroups: fetchGroups,
   };
-}; 
+};

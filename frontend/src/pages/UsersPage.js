@@ -1,42 +1,42 @@
-import React, { useState } from 'react';
 import {
+  Avatar,
+  Badge,
   Box,
   Button,
   Flex,
-  Heading,
-  Table,
-  Thead,
-  Tbody,
-  Tr,
-  Th,
-  Td,
-  useDisclosure,
-  Modal,
-  ModalOverlay,
-  ModalContent,
-  ModalHeader,
-  ModalBody,
-  ModalCloseButton,
   FormControl,
   FormLabel,
-  Input,
-  Select,
-  useToast,
-  Badge,
+  Heading,
+  HStack,
   IconButton,
+  Input,
   Menu,
   MenuButton,
-  MenuList,
   MenuItem,
-  useColorModeValue,
-  Avatar,
+  MenuList,
+  Modal,
+  ModalBody,
+  ModalCloseButton,
+  ModalContent,
+  ModalHeader,
+  ModalOverlay,
+  Select,
+  Table,
+  Tbody,
+  Td,
   Text,
-  HStack,
+  Th,
+  Thead,
+  Tr,
+  useColorModeValue,
+  useDisclosure,
+  useToast,
   VStack,
 } from '@chakra-ui/react';
-import { FiMoreVertical, FiEdit2, FiTrash2, FiUserPlus, FiUserMinus, FiShield, FiUsers } from 'react-icons/fi';
-import { useUsers } from '../hooks/useUsers';
+import React, { useState } from 'react';
+import { FiEdit2, FiMoreVertical, FiShield, FiTrash2, FiUserMinus, FiUserPlus, FiUsers } from 'react-icons/fi';
 import { useAuth } from '../contexts/AuthContext';
+import { useUsers } from '../hooks/useUsers';
 
 const UsersPage = () => {
   const [selectedUser, setSelectedUser] = useState(null);
@@ -45,17 +45,17 @@ const UsersPage = () => {
     email: '',
     role: 'user',
   });
-  
-  const { 
-    isOpen: isUserModalOpen, 
-    onOpen: onUserModalOpen, 
-    onClose: onUserModalClose 
+
+  const {
+    isOpen: isUserModalOpen,
+    onOpen: onUserModalOpen,
+    onClose: onUserModalClose
   } = useDisclosure();
-  
-  const { 
-    isOpen: isTeamsModalOpen, 
-    onOpen: onTeamsModalOpen, 
-    onClose: onTeamsModalClose 
+
+  const {
+    isOpen: isTeamsModalOpen,
+    onOpen: onTeamsModalOpen,
+    onClose: onTeamsModalClose
   } = useDisclosure();
 
   const toast = useToast();
@@ -94,14 +94,14 @@ const UsersPage = () => {
       }
 
       const newUser = await createUser(formData);
-      
+
       logAuditEvent(
         'user_created',
         'user',
         newUser.id.toString(),
         { username: formData.username }
       );
-      
+
       toast({
         title: 'User created',
         description: `User "${formData.username}" has been created.`,
@@ -109,7 +109,7 @@ const UsersPage = () => {
         duration: 3000,
         isClosable: true,
       });
-      
+
       onUserModalClose();
     } catch (err) {
       toast({
@@ -127,14 +127,14 @@ const UsersPage = () => {
       if (!selectedUser) return;
 
       const updatedUser = await updateUser(selectedUser.id, formData);
-      
+
       logAuditEvent(
         'user_updated',
         'user',
         selectedUser.id.toString(),
         { username: formData.username }
       );
-      
+
       toast({
         title: 'User updated',
         description: `User "${formData.username}" has been updated.`,
@@ -142,7 +142,7 @@ const UsersPage = () => {
         duration: 3000,
         isClosable: true,
       });
-      
+
       onUserModalClose();
     } catch (err) {
       toast({
@@ -158,14 +158,14 @@ const UsersPage = () => {
   const handleDeleteUser = async (user) => {
     try {
       await deleteUser(user.id);
-      
+
       logAuditEvent(
         'user_deleted',
         'user',
         user.id.toString(),
         { username: user.username }
       );
-      
+
       toast({
         title: 'User deleted',
         description: `User "${user.username}" has been deleted.`,
@@ -187,14 +187,14 @@ const UsersPage = () => {
   const handleAddTeam = async (userId, teamId) => {
     try {
       await addTeam(userId, teamId);
-      
+
       logAuditEvent(
         'team_added',
         'user',
         userId.toString(),
         { teamId }
       );
-      
+
       toast({
         title: 'Team added',
         description: 'Team has been added to the user.',
@@ -216,14 +216,14 @@ const UsersPage = () => {
   const handleRemoveTeam = async (userId, teamId) => {
     try {
       await removeTeam(userId, teamId);
-      
+
       logAuditEvent(
         'team_removed',
         'user',
         userId.toString(),
         { teamId }
       );
-      
+
       toast({
         title: 'Team removed',
         description: 'Team has been removed from the user.',
@@ -494,4 +494,4 @@ const UsersPage = () => {
   );
 };
 
-export default UsersPage; 
+export default UsersPage;

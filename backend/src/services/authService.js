@@ -1,9 +1,8 @@
-const jwt = require('jsonwebtoken');
-const { App } = require('@octokit/app');
-const { createAppAuth } = require('@octokit/auth-app');
-const { Octokit } = require('@octokit/rest');
-const logger = require('../utils/logger');
-const { User, Organization } = require('../models');
+import { App } from '@octokit/app';
+import { Octokit } from '@octokit/rest';
+import jwt from 'jsonwebtoken';
+import { Organization, User } from '../models/index.js';
+import logger from '../utils/logger.js';
 
 // GitHub App instance
 const githubApp = new App({
@@ -73,7 +72,7 @@ const authenticateUser = async (code) => {
 
     // Get all installations for the user
     const installations = await githubApp.octokit.apps.listInstallationsForAuthenticatedUser();
-    
+
     if (installations.data.installations.length === 0) {
       throw new Error('No GitHub App installations found for this user');
     }
@@ -138,9 +137,9 @@ const verifyToken = (token) => {
   }
 };
 
-module.exports = {
+export {
   authenticateUser,
   generateToken,
   verifyToken,
   githubApp
-}; 
+};

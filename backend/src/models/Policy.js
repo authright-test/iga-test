@@ -1,5 +1,5 @@
-const { DataTypes } = require('sequelize');
-const { sequelize } = require('../config/database');
+import { DataTypes } from 'sequelize';
+import { sequelize } from '../config/database.js';
 
 const Policy = sequelize.define('Policy', {
   id: {
@@ -38,4 +38,4 @@ const Policy = sequelize.define('Policy', {
   timestamps: true
 });
 
-module.exports = Policy; 
+export default Policy; 

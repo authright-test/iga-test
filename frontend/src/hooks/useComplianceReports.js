@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
-import api from '../services/api';
+import { useEffect, useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
+import api from '../services/api';
 
 export const useComplianceReports = () => {
   const [reports, setReports] = useState([]);
@@ -13,12 +13,12 @@ export const useComplianceReports = () => {
     try {
       setIsLoading(true);
       setError(null);
-      
+
       const response = await api.get(
         `/organizations/${organization.id}/compliance/reports`,
         { params: filters }
       );
-      
+
       setReports(response.data);
     } catch (err) {
       setError(err.response?.data?.error || err.message);
@@ -31,12 +31,12 @@ export const useComplianceReports = () => {
     try {
       setIsLoading(true);
       setError(null);
-      
+
       const response = await api.get(
         `/organizations/${organization.id}/compliance/violations`,
         { params: filters }
       );
-      
+
       setViolations(response.data);
     } catch (err) {
       setError(err.response?.data?.error || err.message);
@@ -86,7 +86,7 @@ export const useComplianceReports = () => {
         `/organizations/${organization.id}/compliance/violations/${violationId}/resolve`,
         resolutionData
       );
-      setViolations(violations.map(violation => 
+      setViolations(violations.map(violation =>
         violation.id === violationId ? response.data : violation
       ));
       return response.data;
@@ -99,7 +99,7 @@ export const useComplianceReports = () => {
     try {
       const response = await api.get(
         `/organizations/${organization.id}/compliance/reports/${reportId}/export`,
-        { 
+        {
           params: { format },
           responseType: 'blob'
         }
@@ -142,4 +142,4 @@ export const useComplianceReports = () => {
     refreshReports: fetchReports,
     refreshViolations: fetchViolations,
   };
-}; 
+};

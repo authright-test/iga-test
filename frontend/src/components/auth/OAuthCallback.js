@@ -1,6 +1,6 @@
+import { Alert, AlertDescription, AlertIcon, AlertTitle, Box, Spinner, Text } from '@chakra-ui/react';
 import React, { useEffect, useState } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
-import { Spinner, Box, Text, Alert, AlertIcon, AlertTitle, AlertDescription } from '@chakra-ui/react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 
 /**
@@ -31,16 +31,16 @@ const OAuthCallback = () => {
 
         // Store token and update auth state
         await login(token);
-        
+
         // Redirect to dashboard or home page
         navigate('/dashboard', { replace: true });
       } catch (error) {
         console.error('OAuth callback error:', error);
         setError(error.message || 'Authentication failed');
-        
+
         // Redirect to login page after 3 seconds
         setTimeout(() => {
-          navigate('/login', { 
+          navigate('/login', {
             replace: true,
             state: { error: error.message || 'Authentication failed' }
           });
@@ -108,4 +108,4 @@ const OAuthCallback = () => {
   );
 };
 
-export default OAuthCallback; 
+export default OAuthCallback;

@@ -1,7 +1,16 @@
-const express = require('express');
-const { getAuditLogs, getOrganizationAuditLogs, getAuditLogStats, getAccessHistory, getAccessHistoryByUser, getAccessHistoryByRepository, getAccessHistoryByTeam, exportAccessHistory } = require('../services/auditService');
-const { hasPermission } = require('../services/accessControlService');
-const logger = require('../utils/logger');
+import express from 'express';
+import { hasPermission } from '../services/accessControlService.js';
+import {
+  exportAccessHistory,
+  getAccessHistory,
+  getAccessHistoryByRepository,
+  getAccessHistoryByTeam,
+  getAccessHistoryByUser,
+  getAuditLogs,
+  getAuditLogStats,
+  getOrganizationAuditLogs
+} from '../services/auditService.js';
+import logger from '../utils/logger.js';
 
 const router = express.Router();
 
@@ -14,11 +23,11 @@ router.get('/logs', async (req, res) => {
   try {
     // Check if user has permission to view audit logs
     const hasViewPermission = await hasPermission(req.user.id, 'view:audit_logs');
-    
+
     if (!hasViewPermission) {
       return res.status(403).json({ error: 'Forbidden: Insufficient permissions' });
     }
-    
+
     const {
       action,
       resourceType,
@@ -30,7 +39,7 @@ router.get('/logs', async (req, res) => {
       limit = 20,
       searchTerm
     } = req.query;
-    
+
     const filters = {
       action,
       resourceType,
@@ -40,9 +49,9 @@ router.get('/logs', async (req, res) => {
       endDate,
       searchTerm
     };
-    
+
     const auditLogs = await getAuditLogs(filters, parseInt(page), parseInt(limit));
-    
+
     res.json(auditLogs);
   } catch (error) {
     logger.error('Error getting audit logs:', error);
@@ -59,11 +68,11 @@ router.get('/organization/:organizationId/logs', async (req, res) => {
   try {
     // Check if user has permission to view audit logs
     const hasViewPermission = await hasPermission(req.user.id, 'view:audit_logs');
-    
+
     if (!hasViewPermission) {
       return res.status(403).json({ error: 'Forbidden: Insufficient permissions' });
     }
-    
+
     const organizationId = req.params.organizationId;
     const {
       action,
@@ -75,7 +84,7 @@ router.get('/organization/:organizationId/logs', async (req, res) => {
       limit = 20,
       searchTerm
     } = req.query;
-    
+
     const filters = {
       action,
       resourceType,
@@ -84,9 +93,9 @@ router.get('/organization/:organizationId/logs', async (req, res) => {
       endDate,
       searchTerm
     };
-    
+
     const auditLogs = await getOrganizationAuditLogs(organizationId, filters, parseInt(page), parseInt(limit));
-    
+
     res.json(auditLogs);
   } catch (error) {
     logger.error('Error getting organization audit logs:', error);
@@ -103,21 +112,21 @@ router.get('/stats', async (req, res) => {
   try {
     // Check if user has permission to view audit logs
     const hasViewPermission = await hasPermission(req.user.id, 'view:audit_logs');
-    
+
     if (!hasViewPermission) {
       return res.status(403).json({ error: 'Forbidden: Insufficient permissions' });
     }
-    
+
     const { startDate, endDate, resourceType } = req.query;
-    
+
     const filters = {
       startDate,
       endDate,
       resourceType
     };
-    
+
     const stats = await getAuditLogStats(filters);
-    
+
     res.json(stats);
   } catch (error) {
     logger.error('Error getting audit log stats:', error);
@@ -134,36 +143,36 @@ router.get('/organization/:organizationId/stats', async (req, res) => {
   try {
     // Check if user has permission to view audit logs
     const hasViewPermission = await hasPermission(req.user.id, 'view:audit_logs');
-    
+
     if (!hasViewPermission) {
       return res.status(403).json({ error: 'Forbidden: Insufficient permissions' });
     }
-    
+
     const organizationId = req.params.organizationId;
     const { startDate, endDate, resourceType } = req.query;
-    
+
     // Get all audit logs for this organization
     const filters = {
       startDate,
       endDate,
       resourceType
     };
-    
+
     // Get organization audit logs first page with large limit
     const auditLogs = await getOrganizationAuditLogs(organizationId, filters, 1, 1000);
-    
+
     // Calculate stats from the audit logs (simplified approach)
     const actionCounts = {};
     const resourceCounts = {};
     const userCounts = {};
-    
+
     auditLogs.logs.forEach(log => {
       // Action counts
       actionCounts[log.action] = (actionCounts[log.action] || 0) + 1;
-      
+
       // Resource counts
       resourceCounts[log.resourceType] = (resourceCounts[log.resourceType] || 0) + 1;
-      
+
       // User counts
       if (log.User) {
         userCounts[log.User.id] = userCounts[log.User.id] || {
@@ -174,14 +183,14 @@ router.get('/organization/:organizationId/stats', async (req, res) => {
         userCounts[log.User.id].count++;
       }
     });
-    
+
     // Convert to arrays and sort
     const actionCountsArray = Object.entries(actionCounts).map(([action, count]) => ({ action, count }));
     actionCountsArray.sort((a, b) => b.count - a.count);
-    
+
     const resourceCountsArray = Object.entries(resourceCounts).map(([resourceType, count]) => ({ resourceType, count }));
     resourceCountsArray.sort((a, b) => b.count - a.count);
-    
+
     const userCountsArray = Object.entries(userCounts).map(([userId, data]) => ({
       userId,
       username: data.username,
@@ -189,7 +198,7 @@ router.get('/organization/:organizationId/stats', async (req, res) => {
       count: data.count
     }));
     userCountsArray.sort((a, b) => b.count - a.count);
-    
+
     res.json({
       actionCounts: actionCountsArray,
       resourceCounts: resourceCountsArray,
@@ -210,11 +219,11 @@ router.get('/organization/:organizationId/stats', async (req, res) => {
 router.get('/organizations/:organizationId/access-history', async (req, res) => {
   try {
     const hasViewPermission = await hasPermission(req.user.id, 'view:access_history');
-    
+
     if (!hasViewPermission) {
       return res.status(403).json({ error: 'Forbidden: Insufficient permissions' });
     }
-    
+
     const organizationId = req.params.organizationId;
     const {
       page = 1,
@@ -226,7 +235,7 @@ router.get('/organizations/:organizationId/access-history', async (req, res) => 
       repositoryId,
       teamId
     } = req.query;
-    
+
     const filters = {
       startDate,
       endDate,
@@ -235,9 +244,9 @@ router.get('/organizations/:organizationId/access-history', async (req, res) => 
       repositoryId,
       teamId
     };
-    
+
     const history = await getAccessHistory(organizationId, filters, parseInt(page), parseInt(limit));
-    
+
     res.json(history);
   } catch (error) {
     logger.error('Error getting access history:', error);
@@ -253,11 +262,11 @@ router.get('/organizations/:organizationId/access-history', async (req, res) => 
 router.get('/organizations/:organizationId/access-history/users/:userId', async (req, res) => {
   try {
     const hasViewPermission = await hasPermission(req.user.id, 'view:access_history');
-    
+
     if (!hasViewPermission) {
       return res.status(403).json({ error: 'Forbidden: Insufficient permissions' });
     }
-    
+
     const { organizationId, userId } = req.params;
     const {
       page = 1,
@@ -266,15 +275,15 @@ router.get('/organizations/:organizationId/access-history/users/:userId', async 
       endDate,
       type
     } = req.query;
-    
+
     const filters = {
       startDate,
       endDate,
       type
     };
-    
+
     const history = await getAccessHistoryByUser(organizationId, userId, filters, parseInt(page), parseInt(limit));
-    
+
     res.json(history);
   } catch (error) {
     logger.error('Error getting user access history:', error);
@@ -290,11 +299,11 @@ router.get('/organizations/:organizationId/access-history/users/:userId', async 
 router.get('/organizations/:organizationId/access-history/repositories/:repositoryId', async (req, res) => {
   try {
     const hasViewPermission = await hasPermission(req.user.id, 'view:access_history');
-    
+
     if (!hasViewPermission) {
       return res.status(403).json({ error: 'Forbidden: Insufficient permissions' });
     }
-    
+
     const { organizationId, repositoryId } = req.params;
     const {
       page = 1,
@@ -303,15 +312,15 @@ router.get('/organizations/:organizationId/access-history/repositories/:reposito
       endDate,
       type
     } = req.query;
-    
+
     const filters = {
       startDate,
       endDate,
       type
     };
-    
+
     const history = await getAccessHistoryByRepository(organizationId, repositoryId, filters, parseInt(page), parseInt(limit));
-    
+
     res.json(history);
   } catch (error) {
     logger.error('Error getting repository access history:', error);
@@ -327,11 +336,11 @@ router.get('/organizations/:organizationId/access-history/repositories/:reposito
 router.get('/organizations/:organizationId/access-history/teams/:teamId', async (req, res) => {
   try {
     const hasViewPermission = await hasPermission(req.user.id, 'view:access_history');
-    
+
     if (!hasViewPermission) {
       return res.status(403).json({ error: 'Forbidden: Insufficient permissions' });
     }
-    
+
     const { organizationId, teamId } = req.params;
     const {
       page = 1,
@@ -340,15 +349,15 @@ router.get('/organizations/:organizationId/access-history/teams/:teamId', async 
       endDate,
       type
     } = req.query;
-    
+
     const filters = {
       startDate,
       endDate,
       type
     };
-    
+
     const history = await getAccessHistoryByTeam(organizationId, teamId, filters, parseInt(page), parseInt(limit));
-    
+
     res.json(history);
   } catch (error) {
     logger.error('Error getting team access history:', error);
@@ -364,11 +373,11 @@ router.get('/organizations/:organizationId/access-history/teams/:teamId', async 
 router.get('/organizations/:organizationId/access-history/export', async (req, res) => {
   try {
     const hasViewPermission = await hasPermission(req.user.id, 'view:access_history');
-    
+
     if (!hasViewPermission) {
       return res.status(403).json({ error: 'Forbidden: Insufficient permissions' });
     }
-    
+
     const organizationId = req.params.organizationId;
     const {
       startDate,
@@ -379,7 +388,7 @@ router.get('/organizations/:organizationId/access-history/export', async (req, r
       teamId,
       format = 'csv'
     } = req.query;
-    
+
     const filters = {
       startDate,
       endDate,
@@ -388,12 +397,12 @@ router.get('/organizations/:organizationId/access-history/export', async (req, r
       repositoryId,
       teamId
     };
-    
+
     const { data, filename } = await exportAccessHistory(organizationId, filters, format);
-    
+
     res.setHeader('Content-Type', format === 'csv' ? 'text/csv' : 'application/json');
     res.setHeader('Content-Disposition', `attachment; filename=${filename}`);
-    
+
     res.send(data);
   } catch (error) {
     logger.error('Error exporting access history:', error);
@@ -401,4 +410,4 @@ router.get('/organizations/:organizationId/access-history/export', async (req, r
   }
 });
 
-module.exports = router; 
+export default router;

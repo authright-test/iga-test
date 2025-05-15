@@ -1,6 +1,6 @@
-const express = require('express');
-const { authenticateUser, verifyToken, githubApp } = require('../services/authService');
-const logger = require('../utils/logger');
+import express from 'express';
+import { authenticateUser, verifyToken } from '../services/authService.js';
+import logger from '../utils/logger.js';
 
 const router = express.Router();
 
@@ -22,13 +22,13 @@ router.get('/github', (req, res) => {
 router.get('/github/callback', async (req, res) => {
   try {
     const { code } = req.query;
-    
+
     if (!code) {
       return res.redirect(`${process.env.FRONTEND_URL}/login?error=no_code`);
     }
-    
+
     const authResult = await authenticateUser(code);
-    
+
     // Redirect to frontend with token
     res.redirect(`${process.env.FRONTEND_URL}/oauth-callback?token=${authResult.token}`);
   } catch (error) {
@@ -45,13 +45,13 @@ router.get('/github/callback', async (req, res) => {
 router.post('/login', async (req, res) => {
   try {
     const { code } = req.body;
-    
+
     if (!code) {
       return res.status(400).json({ error: 'GitHub OAuth code is required' });
     }
-    
+
     const authResult = await authenticateUser(code);
-    
+
     res.json({
       user: {
         id: authResult.user.id,
@@ -81,13 +81,13 @@ router.post('/login', async (req, res) => {
 router.get('/verify', async (req, res) => {
   try {
     const token = req.headers.authorization?.split(' ')[1];
-    
+
     if (!token) {
       return res.status(401).json({ error: 'No token provided' });
     }
-    
+
     const decoded = verifyToken(token);
-    
+
     res.json({
       valid: true,
       user: {
@@ -111,4 +111,4 @@ router.post('/logout', (req, res) => {
   res.json({ success: true, message: 'Logout successful' });
 });
 
-module.exports = router; 
+export default router;

@@ -1,52 +1,52 @@
-const express = require('express');
-const { 
-  getRepositories,
-  createRepository,
-  updateRepository,
-  deleteRepository,
-  getRepositoryTeams,
-  addTeamToRepository,
-  removeTeamFromRepository,
-  getRepositoryUsers,
-  addUserToRepository,
-  removeUserFromRepository,
-  getRepositoryPermissions,
-  updateRepositoryPermissions,
-  getRepositoryBranches,
-  getRepositoryCommits,
-  syncRepository,
-  getRepositoryStats,
-  getRepositoryActivity,
-  getRepositoryAccessLogs,
-  batchCreateRepositories,
-  batchUpdateRepositories,
-  batchDeleteRepositories,
-  advancedSearchRepositories,
-  exportRepositories,
-  getRepositoriesStatistics,
-  getRepositoryProtectedBranches,
-  updateRepositoryProtectedBranch,
-  getRepositoryWebhooks,
-  createRepositoryWebhook,
-  getRepositoryDeployKeys,
+import express from 'express';
+import { hasPermission } from '../services/accessControlService.js';
+import {
   addRepositoryDeployKey,
-  getRepositoryEnvironments,
-  createRepositoryEnvironment,
-  getRepositoryLabels,
-  createRepositoryLabel,
-  getRepositoryMilestones,
-  createRepositoryMilestone,
-  getRepositoryIssues,
-  createRepositoryIssue,
-  getRepositoryPullRequests,
-  createRepositoryPullRequest,
-  getRepositoryComments,
+  addTeamToRepository,
+  addUserToRepository,
+  advancedSearchRepositories,
+  batchCreateRepositories,
+  batchDeleteRepositories,
+  batchUpdateRepositories,
+  createRepository,
   createRepositoryComment,
+  createRepositoryEnvironment,
+  createRepositoryIssue,
+  createRepositoryLabel,
+  createRepositoryMilestone,
+  createRepositoryPullRequest,
+  createRepositoryWebhook,
+  deleteRepository,
+  exportRepositories,
+  getRepositories,
+  getRepositoriesStatistics,
+  getRepositoryAccessLogs,
+  getRepositoryActivity,
+  getRepositoryBranches,
+  getRepositoryComments,
+  getRepositoryCommits,
+  getRepositoryDeployKeys,
+  getRepositoryEnvironments,
+  getRepositoryIssues,
+  getRepositoryLabels,
+  getRepositoryMilestones,
   getRepositoryNotifications,
-  markRepositoryNotificationsAsRead
-} = require('../services/repositoryService');
-const { hasPermission } = require('../services/accessControlService');
-const logger = require('../utils/logger');
+  getRepositoryPermissions,
+  getRepositoryProtectedBranches,
+  getRepositoryPullRequests,
+  getRepositoryStats,
+  getRepositoryTeams,
+  getRepositoryUsers,
+  getRepositoryWebhooks,
+  markRepositoryNotificationsAsRead,
+  removeTeamFromRepository,
+  removeUserFromRepository,
+  syncRepository,
+  updateRepository,
+  updateRepositoryPermissions,
+  updateRepositoryProtectedBranch
+} from '../services/repositoryService.js';
+import logger from '../utils/logger.js';
 
 const router = express.Router();
 
@@ -66,16 +66,16 @@ const router = express.Router();
 router.get('/', async (req, res) => {
   try {
     const hasViewPermission = await hasPermission(req.user.id, 'view:repositories');
-    
+
     if (!hasViewPermission) {
       return res.status(403).json({ error: 'Forbidden: Insufficient permissions' });
     }
-    
+
     const organizationId = req.params.organizationId;
     const filters = req.query;
-    
+
     const repositories = await getRepositories(organizationId, filters);
-    
+
     res.json(repositories);
   } catch (error) {
     logger.error('Error getting repositories:', error);
@@ -93,16 +93,16 @@ router.get('/', async (req, res) => {
 router.post('/', async (req, res) => {
   try {
     const hasCreatePermission = await hasPermission(req.user.id, 'create:repositories');
-    
+
     if (!hasCreatePermission) {
       return res.status(403).json({ error: 'Forbidden: Insufficient permissions' });
     }
-    
+
     const organizationId = req.params.organizationId;
     const repositoryData = req.body;
-    
+
     const repository = await createRepository(organizationId, repositoryData);
-    
+
     res.status(201).json(repository);
   } catch (error) {
     logger.error('Error creating repository:', error);
@@ -120,16 +120,16 @@ router.post('/', async (req, res) => {
 router.put('/:id', async (req, res) => {
   try {
     const hasUpdatePermission = await hasPermission(req.user.id, 'update:repositories');
-    
+
     if (!hasUpdatePermission) {
       return res.status(403).json({ error: 'Forbidden: Insufficient permissions' });
     }
-    
+
     const { organizationId, repoId } = req.params;
     const repositoryData = req.body;
-    
+
     const repository = await updateRepository(organizationId, repoId, repositoryData);
-    
+
     res.json(repository);
   } catch (error) {
     logger.error('Error updating repository:', error);
@@ -146,15 +146,15 @@ router.put('/:id', async (req, res) => {
 router.delete('/:id', async (req, res) => {
   try {
     const hasDeletePermission = await hasPermission(req.user.id, 'delete:repositories');
-    
+
     if (!hasDeletePermission) {
       return res.status(403).json({ error: 'Forbidden: Insufficient permissions' });
     }
-    
+
     const { organizationId, repoId } = req.params;
-    
+
     await deleteRepository(organizationId, repoId);
-    
+
     res.status(204).send();
   } catch (error) {
     logger.error('Error deleting repository:', error);
@@ -171,15 +171,15 @@ router.delete('/:id', async (req, res) => {
 router.get('/:id/teams', async (req, res) => {
   try {
     const hasViewPermission = await hasPermission(req.user.id, 'view:repository_teams');
-    
+
     if (!hasViewPermission) {
       return res.status(403).json({ error: 'Forbidden: Insufficient permissions' });
     }
-    
+
     const { organizationId, repoId } = req.params;
-    
+
     const teams = await getRepositoryTeams(organizationId, repoId);
-    
+
     res.json(teams);
   } catch (error) {
     logger.error('Error getting repository teams:', error);
@@ -197,16 +197,16 @@ router.get('/:id/teams', async (req, res) => {
 router.post('/:id/teams', async (req, res) => {
   try {
     const hasManagePermission = await hasPermission(req.user.id, 'manage:repository_teams');
-    
+
     if (!hasManagePermission) {
       return res.status(403).json({ error: 'Forbidden: Insufficient permissions' });
     }
-    
+
     const { organizationId, repoId } = req.params;
     const { teamId } = req.body;
-    
+
     const result = await addTeamToRepository(organizationId, repoId, teamId);
-    
+
     res.json(result);
   } catch (error) {
     logger.error('Error adding team to repository:', error);
@@ -224,15 +224,15 @@ router.post('/:id/teams', async (req, res) => {
 router.delete('/:id/teams/:teamId', async (req, res) => {
   try {
     const hasManagePermission = await hasPermission(req.user.id, 'manage:repository_teams');
-    
+
     if (!hasManagePermission) {
       return res.status(403).json({ error: 'Forbidden: Insufficient permissions' });
     }
-    
+
     const { organizationId, repoId, teamId } = req.params;
-    
+
     await removeTeamFromRepository(organizationId, repoId, teamId);
-    
+
     res.status(204).send();
   } catch (error) {
     logger.error('Error removing team from repository:', error);
@@ -249,15 +249,15 @@ router.delete('/:id/teams/:teamId', async (req, res) => {
 router.get('/:id/users', async (req, res) => {
   try {
     const hasViewPermission = await hasPermission(req.user.id, 'view:repository_users');
-    
+
     if (!hasViewPermission) {
       return res.status(403).json({ error: 'Forbidden: Insufficient permissions' });
     }
-    
+
     const { organizationId, repoId } = req.params;
-    
+
     const users = await getRepositoryUsers(organizationId, repoId);
-    
+
     res.json(users);
   } catch (error) {
     logger.error('Error getting repository users:', error);
@@ -275,16 +275,16 @@ router.get('/:id/users', async (req, res) => {
 router.post('/:id/users', async (req, res) => {
   try {
     const hasManagePermission = await hasPermission(req.user.id, 'manage:repository_users');
-    
+
     if (!hasManagePermission) {
       return res.status(403).json({ error: 'Forbidden: Insufficient permissions' });
     }
-    
+
     const { organizationId, repoId } = req.params;
     const { userId } = req.body;
-    
+
     const result = await addUserToRepository(organizationId, repoId, userId);
-    
+
     res.json(result);
   } catch (error) {
     logger.error('Error adding user to repository:', error);
@@ -302,15 +302,15 @@ router.post('/:id/users', async (req, res) => {
 router.delete('/:id/users/:userId', async (req, res) => {
   try {
     const hasManagePermission = await hasPermission(req.user.id, 'manage:repository_users');
-    
+
     if (!hasManagePermission) {
       return res.status(403).json({ error: 'Forbidden: Insufficient permissions' });
     }
-    
+
     const { organizationId, repoId, userId } = req.params;
-    
+
     await removeUserFromRepository(organizationId, repoId, userId);
-    
+
     res.status(204).send();
   } catch (error) {
     logger.error('Error removing user from repository:', error);
@@ -327,15 +327,15 @@ router.delete('/:id/users/:userId', async (req, res) => {
 router.get('/:id/permissions', async (req, res) => {
   try {
     const hasViewPermission = await hasPermission(req.user.id, 'view:repository_permissions');
-    
+
     if (!hasViewPermission) {
       return res.status(403).json({ error: 'Forbidden: Insufficient permissions' });
     }
-    
+
     const { organizationId, repoId } = req.params;
-    
+
     const permissions = await getRepositoryPermissions(organizationId, repoId);
-    
+
     res.json(permissions);
   } catch (error) {
     logger.error('Error getting repository permissions:', error);
@@ -353,16 +353,16 @@ router.get('/:id/permissions', async (req, res) => {
 router.put('/:id/permissions', async (req, res) => {
   try {
     const hasManagePermission = await hasPermission(req.user.id, 'manage:repository_permissions');
-    
+
     if (!hasManagePermission) {
       return res.status(403).json({ error: 'Forbidden: Insufficient permissions' });
     }
-    
+
     const { organizationId, repoId } = req.params;
     const permissions = req.body;
-    
+
     const result = await updateRepositoryPermissions(organizationId, repoId, permissions);
-    
+
     res.json(result);
   } catch (error) {
     logger.error('Error updating repository permissions:', error);
@@ -379,15 +379,15 @@ router.put('/:id/permissions', async (req, res) => {
 router.get('/:id/branches', async (req, res) => {
   try {
     const hasViewPermission = await hasPermission(req.user.id, 'view:repository_branches');
-    
+
     if (!hasViewPermission) {
       return res.status(403).json({ error: 'Forbidden: Insufficient permissions' });
     }
-    
+
     const { organizationId, repoId } = req.params;
-    
+
     const branches = await getRepositoryBranches(organizationId, repoId);
-    
+
     res.json(branches);
   } catch (error) {
     logger.error('Error getting repository branches:', error);
@@ -405,16 +405,16 @@ router.get('/:id/branches', async (req, res) => {
 router.get('/:id/commits', async (req, res) => {
   try {
     const hasViewPermission = await hasPermission(req.user.id, 'view:repository_commits');
-    
+
     if (!hasViewPermission) {
       return res.status(403).json({ error: 'Forbidden: Insufficient permissions' });
     }
-    
+
     const { organizationId, repoId } = req.params;
     const { branch } = req.query;
-    
+
     const commits = await getRepositoryCommits(organizationId, repoId, branch);
-    
+
     res.json(commits);
   } catch (error) {
     logger.error('Error getting repository commits:', error);
@@ -431,15 +431,15 @@ router.get('/:id/commits', async (req, res) => {
 router.post('/:id/sync', async (req, res) => {
   try {
     const hasManagePermission = await hasPermission(req.user.id, 'manage:repository_sync');
-    
+
     if (!hasManagePermission) {
       return res.status(403).json({ error: 'Forbidden: Insufficient permissions' });
     }
-    
+
     const { organizationId, repoId } = req.params;
-    
+
     const repository = await syncRepository(organizationId, repoId);
-    
+
     res.json(repository);
   } catch (error) {
     logger.error('Error syncing repository:', error);
@@ -456,15 +456,15 @@ router.post('/:id/sync', async (req, res) => {
 router.get('/:id/stats', async (req, res) => {
   try {
     const hasViewPermission = await hasPermission(req.user.id, 'view:repository_stats');
-    
+
     if (!hasViewPermission) {
       return res.status(403).json({ error: 'Forbidden: Insufficient permissions' });
     }
-    
+
     const { organizationId, repoId } = req.params;
-    
+
     const stats = await getRepositoryStats(organizationId, repoId);
-    
+
     res.json(stats);
   } catch (error) {
     logger.error('Error getting repository stats:', error);
@@ -482,15 +482,15 @@ router.get('/:id/stats', async (req, res) => {
 router.get('/:id/activity', async (req, res) => {
   try {
     const hasViewPermission = await hasPermission(req.user.id, 'view:repository_activity');
-    
+
     if (!hasViewPermission) {
       return res.status(403).json({ error: 'Forbidden: Insufficient permissions' });
     }
-    
+
     const { organizationId, repoId } = req.params;
-    
+
     const activity = await getRepositoryActivity(organizationId, repoId);
-    
+
     res.json(activity);
   } catch (error) {
     logger.error('Error getting repository activity:', error);
@@ -508,15 +508,15 @@ router.get('/:id/activity', async (req, res) => {
 router.get('/:id/access-logs', async (req, res) => {
   try {
     const hasViewPermission = await hasPermission(req.user.id, 'view:repository_access_logs');
-    
+
     if (!hasViewPermission) {
       return res.status(403).json({ error: 'Forbidden: Insufficient permissions' });
     }
-    
+
     const { organizationId, repoId } = req.params;
-    
+
     const logs = await getRepositoryAccessLogs(organizationId, repoId);
-    
+
     res.json(logs);
   } catch (error) {
     logger.error('Error getting repository access logs:', error);
@@ -533,16 +533,16 @@ router.get('/:id/access-logs', async (req, res) => {
 router.post('/batch', async (req, res) => {
   try {
     const hasCreatePermission = await hasPermission(req.user.id, 'create:repositories');
-    
+
     if (!hasCreatePermission) {
       return res.status(403).json({ error: 'Forbidden: Insufficient permissions' });
     }
-    
+
     const organizationId = req.params.organizationId;
     const repositoriesData = req.body;
-    
+
     const repositories = await batchCreateRepositories(organizationId, repositoriesData);
-    
+
     res.status(201).json(repositories);
   } catch (error) {
     logger.error('Error batch creating repositories:', error);
@@ -559,16 +559,16 @@ router.post('/batch', async (req, res) => {
 router.put('/batch', async (req, res) => {
   try {
     const hasUpdatePermission = await hasPermission(req.user.id, 'update:repositories');
-    
+
     if (!hasUpdatePermission) {
       return res.status(403).json({ error: 'Forbidden: Insufficient permissions' });
     }
-    
+
     const organizationId = req.params.organizationId;
     const updates = req.body;
-    
+
     const repositories = await batchUpdateRepositories(organizationId, updates);
-    
+
     res.json(repositories);
   } catch (error) {
     logger.error('Error batch updating repositories:', error);
@@ -585,16 +585,16 @@ router.put('/batch', async (req, res) => {
 router.delete('/batch', async (req, res) => {
   try {
     const hasDeletePermission = await hasPermission(req.user.id, 'delete:repositories');
-    
+
     if (!hasDeletePermission) {
       return res.status(403).json({ error: 'Forbidden: Insufficient permissions' });
     }
-    
+
     const organizationId = req.params.organizationId;
     const { repoIds } = req.body;
-    
+
     await batchDeleteRepositories(organizationId, repoIds);
-    
+
     res.status(204).send();
   } catch (error) {
     logger.error('Error batch deleting repositories:', error);
@@ -611,16 +611,16 @@ router.delete('/batch', async (req, res) => {
 router.get('/search', async (req, res) => {
   try {
     const hasViewPermission = await hasPermission(req.user.id, 'view:repositories');
-    
+
     if (!hasViewPermission) {
       return res.status(403).json({ error: 'Forbidden: Insufficient permissions' });
     }
-    
+
     const organizationId = req.params.organizationId;
     const searchCriteria = req.query;
-    
+
     const repositories = await advancedSearchRepositories(organizationId, searchCriteria);
-    
+
     res.json(repositories);
   } catch (error) {
     logger.error('Error searching repositories:', error);
@@ -637,16 +637,16 @@ router.get('/search', async (req, res) => {
 router.get('/export', async (req, res) => {
   try {
     const hasExportPermission = await hasPermission(req.user.id, 'export:repositories');
-    
+
     if (!hasExportPermission) {
       return res.status(403).json({ error: 'Forbidden: Insufficient permissions' });
     }
-    
+
     const organizationId = req.params.organizationId;
     const exportOptions = req.query;
-    
+
     const exportData = await exportRepositories(organizationId, exportOptions);
-    
+
     res.json(exportData);
   } catch (error) {
     logger.error('Error exporting repositories:', error);
@@ -663,15 +663,15 @@ router.get('/export', async (req, res) => {
 router.get('/statistics', async (req, res) => {
   try {
     const hasViewPermission = await hasPermission(req.user.id, 'view:repository_statistics');
-    
+
     if (!hasViewPermission) {
       return res.status(403).json({ error: 'Forbidden: Insufficient permissions' });
     }
-    
+
     const organizationId = req.params.organizationId;
-    
+
     const statistics = await getRepositoriesStatistics(organizationId);
-    
+
     res.json(statistics);
   } catch (error) {
     logger.error('Error getting repositories statistics:', error);
@@ -688,15 +688,15 @@ router.get('/statistics', async (req, res) => {
 router.get('/:id/protected-branches', async (req, res) => {
   try {
     const hasViewPermission = await hasPermission(req.user.id, 'view:repository_protection');
-    
+
     if (!hasViewPermission) {
       return res.status(403).json({ error: 'Forbidden: Insufficient permissions' });
     }
-    
+
     const { organizationId, repoId } = req.params;
-    
+
     const branches = await getRepositoryProtectedBranches(organizationId, repoId);
-    
+
     res.json(branches);
   } catch (error) {
     logger.error('Error getting repository protected branches:', error);
@@ -715,16 +715,16 @@ router.get('/:id/protected-branches', async (req, res) => {
 router.put('/:id/protected-branches/:branch', async (req, res) => {
   try {
     const hasUpdatePermission = await hasPermission(req.user.id, 'update:repository_protection');
-    
+
     if (!hasUpdatePermission) {
       return res.status(403).json({ error: 'Forbidden: Insufficient permissions' });
     }
-    
+
     const { organizationId, repoId, branch } = req.params;
     const protection = req.body;
-    
+
     const updatedProtection = await updateRepositoryProtectedBranch(organizationId, repoId, branch, protection);
-    
+
     res.json(updatedProtection);
   } catch (error) {
     logger.error('Error updating repository protected branch:', error);
@@ -741,15 +741,15 @@ router.put('/:id/protected-branches/:branch', async (req, res) => {
 router.get('/:id/webhooks', async (req, res) => {
   try {
     const hasViewPermission = await hasPermission(req.user.id, 'view:repository_webhooks');
-    
+
     if (!hasViewPermission) {
       return res.status(403).json({ error: 'Forbidden: Insufficient permissions' });
     }
-    
+
     const { organizationId, repoId } = req.params;
-    
+
     const webhooks = await getRepositoryWebhooks(organizationId, repoId);
-    
+
     res.json(webhooks);
   } catch (error) {
     logger.error('Error getting repository webhooks:', error);
@@ -767,16 +767,16 @@ router.get('/:id/webhooks', async (req, res) => {
 router.post('/:id/webhooks', async (req, res) => {
   try {
     const hasCreatePermission = await hasPermission(req.user.id, 'create:repository_webhooks');
-    
+
     if (!hasCreatePermission) {
       return res.status(403).json({ error: 'Forbidden: Insufficient permissions' });
     }
-    
+
     const { organizationId, repoId } = req.params;
     const webhookData = req.body;
-    
+
     const webhook = await createRepositoryWebhook(organizationId, repoId, webhookData);
-    
+
     res.status(201).json(webhook);
   } catch (error) {
     logger.error('Error creating repository webhook:', error);
@@ -793,15 +793,15 @@ router.post('/:id/webhooks', async (req, res) => {
 router.get('/:id/deploy-keys', async (req, res) => {
   try {
     const hasViewPermission = await hasPermission(req.user.id, 'view:repository_deploy_keys');
-    
+
     if (!hasViewPermission) {
       return res.status(403).json({ error: 'Forbidden: Insufficient permissions' });
     }
-    
+
     const { organizationId, repoId } = req.params;
-    
+
     const keys = await getRepositoryDeployKeys(organizationId, repoId);
-    
+
     res.json(keys);
   } catch (error) {
     logger.error('Error getting repository deploy keys:', error);
@@ -819,16 +819,16 @@ router.get('/:id/deploy-keys', async (req, res) => {
 router.post('/:id/deploy-keys', async (req, res) => {
   try {
     const hasCreatePermission = await hasPermission(req.user.id, 'create:repository_deploy_keys');
-    
+
     if (!hasCreatePermission) {
       return res.status(403).json({ error: 'Forbidden: Insufficient permissions' });
     }
-    
+
     const { organizationId, repoId } = req.params;
     const keyData = req.body;
-    
+
     const key = await addRepositoryDeployKey(organizationId, repoId, keyData);
-    
+
     res.status(201).json(key);
   } catch (error) {
     logger.error('Error adding repository deploy key:', error);
@@ -845,15 +845,15 @@ router.post('/:id/deploy-keys', async (req, res) => {
 router.get('/:id/environments', async (req, res) => {
   try {
     const hasViewPermission = await hasPermission(req.user.id, 'view:repository_environments');
-    
+
     if (!hasViewPermission) {
       return res.status(403).json({ error: 'Forbidden: Insufficient permissions' });
     }
-    
+
     const { organizationId, repoId } = req.params;
-    
+
     const environments = await getRepositoryEnvironments(organizationId, repoId);
-    
+
     res.json(environments);
   } catch (error) {
     logger.error('Error getting repository environments:', error);
@@ -871,16 +871,16 @@ router.get('/:id/environments', async (req, res) => {
 router.post('/:id/environments', async (req, res) => {
   try {
     const hasCreatePermission = await hasPermission(req.user.id, 'create:repository_environments');
-    
+
     if (!hasCreatePermission) {
       return res.status(403).json({ error: 'Forbidden: Insufficient permissions' });
     }
-    
+
     const { organizationId, repoId } = req.params;
     const environmentData = req.body;
-    
+
     const environment = await createRepositoryEnvironment(organizationId, repoId, environmentData);
-    
+
     res.status(201).json(environment);
   } catch (error) {
     logger.error('Error creating repository environment:', error);
@@ -897,15 +897,15 @@ router.post('/:id/environments', async (req, res) => {
 router.get('/:id/labels', async (req, res) => {
   try {
     const hasViewPermission = await hasPermission(req.user.id, 'view:repository_labels');
-    
+
     if (!hasViewPermission) {
       return res.status(403).json({ error: 'Forbidden: Insufficient permissions' });
     }
-    
+
     const { organizationId, repoId } = req.params;
-    
+
     const labels = await getRepositoryLabels(organizationId, repoId);
-    
+
     res.json(labels);
   } catch (error) {
     logger.error('Error getting repository labels:', error);
@@ -923,16 +923,16 @@ router.get('/:id/labels', async (req, res) => {
 router.post('/:id/labels', async (req, res) => {
   try {
     const hasCreatePermission = await hasPermission(req.user.id, 'create:repository_labels');
-    
+
     if (!hasCreatePermission) {
       return res.status(403).json({ error: 'Forbidden: Insufficient permissions' });
     }
-    
+
     const { organizationId, repoId } = req.params;
     const labelData = req.body;
-    
+
     const label = await createRepositoryLabel(organizationId, repoId, labelData);
-    
+
     res.status(201).json(label);
   } catch (error) {
     logger.error('Error creating repository label:', error);
@@ -949,15 +949,15 @@ router.post('/:id/labels', async (req, res) => {
 router.get('/:id/milestones', async (req, res) => {
   try {
     const hasViewPermission = await hasPermission(req.user.id, 'view:repository_milestones');
-    
+
     if (!hasViewPermission) {
       return res.status(403).json({ error: 'Forbidden: Insufficient permissions' });
     }
-    
+
     const { organizationId, repoId } = req.params;
-    
+
     const milestones = await getRepositoryMilestones(organizationId, repoId);
-    
+
     res.json(milestones);
   } catch (error) {
     logger.error('Error getting repository milestones:', error);
@@ -975,16 +975,16 @@ router.get('/:id/milestones', async (req, res) => {
 router.post('/:id/milestones', async (req, res) => {
   try {
     const hasCreatePermission = await hasPermission(req.user.id, 'create:repository_milestones');
-    
+
     if (!hasCreatePermission) {
       return res.status(403).json({ error: 'Forbidden: Insufficient permissions' });
     }
-    
+
     const { organizationId, repoId } = req.params;
     const milestoneData = req.body;
-    
+
     const milestone = await createRepositoryMilestone(organizationId, repoId, milestoneData);
-    
+
     res.status(201).json(milestone);
   } catch (error) {
     logger.error('Error creating repository milestone:', error);
@@ -1002,16 +1002,16 @@ router.post('/:id/milestones', async (req, res) => {
 router.get('/:id/issues', async (req, res) => {
   try {
     const hasViewPermission = await hasPermission(req.user.id, 'view:repository_issues');
-    
+
     if (!hasViewPermission) {
       return res.status(403).json({ error: 'Forbidden: Insufficient permissions' });
     }
-    
+
     const { organizationId, repoId } = req.params;
     const filters = req.query;
-    
+
     const issues = await getRepositoryIssues(organizationId, repoId, filters);
-    
+
     res.json(issues);
   } catch (error) {
     logger.error('Error getting repository issues:', error);
@@ -1029,16 +1029,16 @@ router.get('/:id/issues', async (req, res) => {
 router.post('/:id/issues', async (req, res) => {
   try {
     const hasCreatePermission = await hasPermission(req.user.id, 'create:repository_issues');
-    
+
     if (!hasCreatePermission) {
       return res.status(403).json({ error: 'Forbidden: Insufficient permissions' });
     }
-    
+
     const { organizationId, repoId } = req.params;
     const issueData = req.body;
-    
+
     const issue = await createRepositoryIssue(organizationId, repoId, issueData);
-    
+
     res.status(201).json(issue);
   } catch (error) {
     logger.error('Error creating repository issue:', error);
@@ -1056,16 +1056,16 @@ router.post('/:id/issues', async (req, res) => {
 router.get('/:id/pulls', async (req, res) => {
   try {
     const hasViewPermission = await hasPermission(req.user.id, 'view:repository_pull_requests');
-    
+
     if (!hasViewPermission) {
       return res.status(403).json({ error: 'Forbidden: Insufficient permissions' });
     }
-    
+
     const { organizationId, repoId } = req.params;
     const filters = req.query;
-    
+
     const pullRequests = await getRepositoryPullRequests(organizationId, repoId, filters);
-    
+
     res.json(pullRequests);
   } catch (error) {
     logger.error('Error getting repository pull requests:', error);
@@ -1083,16 +1083,16 @@ router.get('/:id/pulls', async (req, res) => {
 router.post('/:id/pulls', async (req, res) => {
   try {
     const hasCreatePermission = await hasPermission(req.user.id, 'create:repository_pull_requests');
-    
+
     if (!hasCreatePermission) {
       return res.status(403).json({ error: 'Forbidden: Insufficient permissions' });
     }
-    
+
     const { organizationId, repoId } = req.params;
     const prData = req.body;
-    
+
     const pullRequest = await createRepositoryPullRequest(organizationId, repoId, prData);
-    
+
     res.status(201).json(pullRequest);
   } catch (error) {
     logger.error('Error creating repository pull request:', error);
@@ -1111,16 +1111,16 @@ router.post('/:id/pulls', async (req, res) => {
 router.get('/:id/comments', async (req, res) => {
   try {
     const hasViewPermission = await hasPermission(req.user.id, 'view:repository_comments');
-    
+
     if (!hasViewPermission) {
       return res.status(403).json({ error: 'Forbidden: Insufficient permissions' });
     }
-    
+
     const { organizationId, repoId } = req.params;
     const { type, number } = req.query;
-    
+
     const comments = await getRepositoryComments(organizationId, repoId, type, number);
-    
+
     res.json(comments);
   } catch (error) {
     logger.error('Error getting repository comments:', error);
@@ -1140,17 +1140,17 @@ router.get('/:id/comments', async (req, res) => {
 router.post('/:id/comments', async (req, res) => {
   try {
     const hasCreatePermission = await hasPermission(req.user.id, 'create:repository_comments');
-    
+
     if (!hasCreatePermission) {
       return res.status(403).json({ error: 'Forbidden: Insufficient permissions' });
     }
-    
+
     const { organizationId, repoId } = req.params;
     const { type, number } = req.query;
     const commentData = req.body;
-    
+
     const comment = await createRepositoryComment(organizationId, repoId, type, number, commentData);
-    
+
     res.status(201).json(comment);
   } catch (error) {
     logger.error('Error creating repository comment:', error);
@@ -1167,15 +1167,15 @@ router.post('/:id/comments', async (req, res) => {
 router.get('/:id/notifications', async (req, res) => {
   try {
     const hasViewPermission = await hasPermission(req.user.id, 'view:repository_notifications');
-    
+
     if (!hasViewPermission) {
       return res.status(403).json({ error: 'Forbidden: Insufficient permissions' });
     }
-    
+
     const { organizationId, repoId } = req.params;
-    
+
     const notifications = await getRepositoryNotifications(organizationId, repoId);
-    
+
     res.json(notifications);
   } catch (error) {
     logger.error('Error getting repository notifications:', error);
@@ -1193,16 +1193,16 @@ router.get('/:id/notifications', async (req, res) => {
 router.put('/:id/notifications/read', async (req, res) => {
   try {
     const hasUpdatePermission = await hasPermission(req.user.id, 'update:repository_notifications');
-    
+
     if (!hasUpdatePermission) {
       return res.status(403).json({ error: 'Forbidden: Insufficient permissions' });
     }
-    
+
     const { organizationId, repoId } = req.params;
     const { lastReadAt } = req.body;
-    
+
     await markRepositoryNotificationsAsRead(organizationId, repoId, lastReadAt);
-    
+
     res.status(204).send();
   } catch (error) {
     logger.error('Error marking repository notifications as read:', error);
@@ -1210,4 +1210,4 @@ router.put('/:id/notifications/read', async (req, res) => {
   }
 });
 
-module.exports = router; 
+export default router;

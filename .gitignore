@@ -4,6 +4,7 @@ npm-debug.log
 yarn-debug.log
 yarn-error.log
 .history/
+.env.local
 
 # Build files
 frontend/build/
@@ -22,6 +23,9 @@ backend/dist/
 .idea/
 *.swp
 *.swo
+.tmp/
+.backup/
+standalone-logs/
 
 # OS files
 .DS_Store

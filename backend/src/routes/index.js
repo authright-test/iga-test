@@ -1,10 +1,10 @@
-const express = require('express');
-const { authenticateJWT, authenticateGitHubApp } = require('../middleware/auth');
-const authRoutes = require('./auth');
-const rolesRoutes = require('./roles');
-const policiesRoutes = require('./policies');
-const auditRoutes = require('./audit');
-const logger = require('../utils/logger');
+import express from 'express';
+import { authenticateGitHubApp, authenticateJWT } from '../middleware/auth.js';
+import logger from '../utils/logger.js';
+import auditRoutes from './audit.js';
+import authRoutes from './auth.js';
+import policiesRoutes from './policies.js';
+import rolesRoutes from './roles.js';
 
 function setupRoutes(app) {
   const router = express.Router();
@@ -83,6 +83,4 @@ function setupRoutes(app) {
   app.use(router);
 }
 
-module.exports = {
-  setupRoutes
-}; 
+export { setupRoutes };

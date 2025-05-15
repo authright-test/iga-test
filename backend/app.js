@@ -1,11 +1,11 @@
-const { router: userRoutes } = require('./routes/userRoutes');
-const { router: organizationRoutes } = require('./routes/organizationRoutes');
-const { router: repositoryRoutes } = require('./routes/repositoryRoutes');
-const { router: policyRoutes } = require('./routes/policyRoutes');
-const { router: roleRoutes } = require('./routes/roleRoutes');
-const { router: authRoutes } = require('./routes/authRoutes');
-const { router: teamRoutes } = require('./routes/teamRoutes');
-const { router: auditRoutes } = require('./routes/auditRoutes');
+import { router as userRoutes } from './routes/userRoutes.js';
+import { router as organizationRoutes } from './routes/organizationRoutes.js';
+import { router as repositoryRoutes } from './routes/repositoryRoutes.js';
+import { router as policyRoutes } from './routes/policyRoutes.js';
+import { router as roleRoutes } from './routes/roleRoutes.js';
+import { router as authRoutes } from './routes/authRoutes.js';
+import { router as teamRoutes } from './routes/teamRoutes.js';
+import { router as auditRoutes } from './routes/auditRoutes.js';
 
 // 路由
 app.use('/api/auth', authRoutes);

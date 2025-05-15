@@ -1,7 +1,7 @@
-const fs = require('fs');
-const path = require('path');
-const { sequelize } = require('../config/database');
-const logger = require('../utils/logger');
+import fs from 'fs';
+import path from 'path';
+import { sequelize } from '../config/database.js';
+import logger from '../utils/logger.js';
 
 async function initializeDatabase() {
   try {
@@ -32,4 +32,4 @@ if (require.main === module) {
     });
 }
 
-module.exports = initializeDatabase; 
+export { initializeDatabase }; 

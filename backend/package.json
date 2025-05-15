@@ -2,25 +2,30 @@
   "name": "github-access-control-backend",
   "version": "1.0.0",
   "description": "GitHub Access Control Backend",
+  "license": "MIT",
   "main": "src/index.js",
   "scripts": {
     "start": "node src/index.js",
     "dev": "nodemon src/index.js",
     "test": "jest"
   },
+  "type": "module",
   "dependencies": {
-    "@octokit/app": "^5.1.0",
-    "@octokit/webhooks": "^9.0.0",
+    "@octokit/app": "^15.1.6",
+    "@octokit/auth-app": "^7.2.1",
+    "@octokit/rest": "^21.1.1",
+    "@octokit/webhooks": "^13.9.0",
     "axios": "^1.9.0",
     "cors": "^2.8.5",
     "dotenv": "^16.0.3",
     "express": "^4.18.2",
     "helmet": "^6.0.1",
+    "json2csv": "^6.0.0-alpha.2",
     "jsonwebtoken": "^9.0.2",
     "mysql2": "^3.2.0",
     "redis": "^4.6.5",
     "sequelize": "^6.31.0",
-    "winston": "^3.8.2"
+    "winston": "^3.17.0"
   },
   "devDependencies": {
     "jest": "^29.5.0",

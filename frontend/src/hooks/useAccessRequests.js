@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
-import api from '../services/api';
+import { useEffect, useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
+import api from '../services/api';
 
 export const useAccessRequests = () => {
   const [requests, setRequests] = useState([]);
@@ -12,12 +12,12 @@ export const useAccessRequests = () => {
     try {
       setIsLoading(true);
       setError(null);
-      
+
       const response = await api.get(
         `/organizations/${organization.id}/access-requests`,
         { params: filters }
       );
-      
+
       setRequests(response.data);
     } catch (err) {
       setError(err.response?.data?.error || err.message);
@@ -45,7 +45,7 @@ export const useAccessRequests = () => {
         `/organizations/${organization.id}/access-requests/${requestId}/approve`,
         approvalData
       );
-      setRequests(requests.map(request => 
+      setRequests(requests.map(request =>
         request.id === requestId ? response.data : request
       ));
       return response.data;
@@ -60,7 +60,7 @@ export const useAccessRequests = () => {
         `/organizations/${organization.id}/access-requests/${requestId}/reject`,
         rejectionData
       );
-      setRequests(requests.map(request => 
+      setRequests(requests.map(request =>
         request.id === requestId ? response.data : request
       ));
       return response.data;
@@ -74,7 +74,7 @@ export const useAccessRequests = () => {
       const response = await api.post(
         `/organizations/${organization.id}/access-requests/${requestId}/cancel`
       );
-      setRequests(requests.map(request => 
+      setRequests(requests.map(request =>
         request.id === requestId ? response.data : request
       ));
       return response.data;
@@ -123,4 +123,4 @@ export const useAccessRequests = () => {
     getRequestHistory,
     refreshRequests: fetchRequests,
   };
-}; 
+};

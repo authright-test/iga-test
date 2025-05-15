@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
-import api from '../services/api';
+import { useEffect, useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
+import api from '../services/api';
 
 export const useAccessResources = () => {
   const [resources, setResources] = useState([]);
@@ -12,12 +12,12 @@ export const useAccessResources = () => {
     try {
       setIsLoading(true);
       setError(null);
-      
+
       const response = await api.get(
         `/organizations/${organization.id}/access-resources`,
         { params: filters }
       );
-      
+
       setResources(response.data);
     } catch (err) {
       setError(err.response?.data?.error || err.message);
@@ -45,7 +45,7 @@ export const useAccessResources = () => {
         `/organizations/${organization.id}/access-resources/${resourceId}`,
         resourceData
       );
-      setResources(resources.map(resource => 
+      setResources(resources.map(resource =>
         resource.id === resourceId ? response.data : resource
       ));
       return response.data;
@@ -153,4 +153,4 @@ export const useAccessResources = () => {
     getResourceStats,
     refreshResources: fetchResources,
   };
-}; 
+};

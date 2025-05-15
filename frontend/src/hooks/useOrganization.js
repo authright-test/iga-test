@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
-import api from '../services/api';
+import { useEffect, useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
+import api from '../services/api';
 
 export const useOrganization = () => {
   const [organization, setOrganization] = useState(null);
@@ -12,11 +12,11 @@ export const useOrganization = () => {
     try {
       setIsLoading(true);
       setError(null);
-      
+
       const response = await api.get(
         `/organizations/${authOrg.id}`
       );
-      
+
       setOrganization(response.data);
     } catch (err) {
       setError(err.response?.data?.error || err.message);
@@ -124,4 +124,4 @@ export const useOrganization = () => {
     getOrganizationTeams,
     refreshOrganization: fetchOrganization,
   };
-}; 
+};

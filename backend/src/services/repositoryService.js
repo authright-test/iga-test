@@ -1,8 +1,7 @@
-const { Repository, User, Team, Organization, AuditLog } = require('../models');
-const { Octokit } = require('@octokit/rest');
-const logger = require('../utils/logger');
-const { Op } = require('sequelize');
-const sequelize = require('sequelize');
+import { Octokit } from '@octokit/rest';
+import { DataTypes, Op } from 'sequelize';
+import { AuditLog, Organization, Repository, Team, User } from '../models/index.js';
+import logger from '../utils/logger.js';
 
 /**
  * Get all repositories for an organization
@@ -15,17 +14,17 @@ const getRepositories = async (organizationId, filters = {}) => {
     const where = {
       organizationId
     };
-    
+
     if (filters.name) {
       where.name = {
         [Op.like]: `%${filters.name}%`
       };
     }
-    
+
     if (filters.visibility) {
       where.visibility = filters.visibility;
     }
-    
+
     const repositories = await Repository.findAll({
       where,
       include: [
@@ -36,7 +35,7 @@ const getRepositories = async (organizationId, filters = {}) => {
       ],
       order: [['name', 'ASC']]
     });
-    
+
     return repositories;
   } catch (error) {
     logger.error('Error getting repositories:', error);
@@ -53,15 +52,15 @@ const getRepositories = async (organizationId, filters = {}) => {
 const createRepository = async (organizationId, repositoryData) => {
   try {
     const organization = await Organization.findByPk(organizationId);
-    
+
     if (!organization) {
       throw new Error('Organization not found');
     }
-    
+
     const octokit = new Octokit({
       auth: organization.githubToken
     });
-    
+
     // Create repository in GitHub
     const githubRepo = await octokit.repos.createInOrg({
       org: organization.githubLogin,
@@ -70,7 +69,7 @@ const createRepository = async (organizationId, repositoryData) => {
       private: repositoryData.visibility === 'private',
       auto_init: true
     });
-    
+
     // Create repository in database
     const repository = await Repository.create({
       organizationId,
@@ -84,7 +83,7 @@ const createRepository = async (organizationId, repositoryData) => {
       cloneUrl: githubRepo.data.clone_url,
       sshUrl: githubRepo.data.ssh_url
     });
-    
+
     return repository;
   } catch (error) {
     logger.error('Error creating repository:', error);
@@ -107,17 +106,17 @@ const updateRepository = async (organizationId, repoId, repositoryData) => {
         organizationId
       }
     });
-    
+
     if (!repository) {
       throw new Error('Repository not found');
     }
-    
+
     const organization = await Organization.findByPk(organizationId);
-    
+
     const octokit = new Octokit({
       auth: organization.githubToken
     });
-    
+
     // Update repository in GitHub
     const githubRepo = await octokit.repos.update({
       owner: organization.githubLogin,
@@ -126,7 +125,7 @@ const updateRepository = async (organizationId, repoId, repositoryData) => {
       description: repositoryData.description,
       private: repositoryData.visibility === 'private'
     });
-    
+
     // Update repository in database
     await repository.update({
       name: githubRepo.data.name,
@@ -138,7 +137,7 @@ const updateRepository = async (organizationId, repoId, repositoryData) => {
       cloneUrl: githubRepo.data.clone_url,
       sshUrl: githubRepo.data.ssh_url
     });
-    
+
     return repository;
   } catch (error) {
     logger.error('Error updating repository:', error);
@@ -159,23 +158,23 @@ const deleteRepository = async (organizationId, repoId) => {
         organizationId
       }
     });
-    
+
     if (!repository) {
       throw new Error('Repository not found');
     }
-    
+
     const organization = await Organization.findByPk(organizationId);
-    
+
     const octokit = new Octokit({
       auth: organization.githubToken
     });
-    
+
     // Delete repository in GitHub
     await octokit.repos.delete({
       owner: organization.githubLogin,
       repo: repository.name
     });
-    
+
     // Delete repository in database
     await repository.destroy();
   } catch (error) {
@@ -204,11 +203,11 @@ const getRepositoryTeams = async (organizationId, repoId) => {
         }
       ]
     });
-    
+
     if (!repository) {
       throw new Error('Repository not found');
     }
-    
+
     return repository.Teams;
   } catch (error) {
     logger.error('Error getting repository teams:', error);
@@ -234,21 +233,21 @@ const addTeamToRepository = async (organizationId, repoId, teamId) => {
       }),
       Team.findByPk(teamId)
     ]);
-    
+
     if (!repository) {
       throw new Error('Repository not found');
     }
-    
+
     if (!team) {
       throw new Error('Team not found');
     }
-    
+
     const organization = await Organization.findByPk(organizationId);
-    
+
     const octokit = new Octokit({
       auth: organization.githubToken
     });
-    
+
     // Add team to repository in GitHub
     await octokit.teams.addOrUpdateRepoPermissionsInOrg({
       org: organization.githubLogin,
@@ -257,12 +256,12 @@ const addTeamToRepository = async (organizationId, repoId, teamId) => {
       repo: repository.name,
       permission: 'push'
     });
-    
+
     // Add team to repository in database
     await repository.addTeam(team, {
       through: { permission: 'push' }
     });
-    
+
     return repository;
   } catch (error) {
     logger.error('Error adding team to repository:', error);
@@ -287,21 +286,21 @@ const removeTeamFromRepository = async (organizationId, repoId, teamId) => {
       }),
       Team.findByPk(teamId)
     ]);
-    
+
     if (!repository) {
       throw new Error('Repository not found');
     }
-    
+
     if (!team) {
       throw new Error('Team not found');
     }
-    
+
     const organization = await Organization.findByPk(organizationId);
-    
+
     const octokit = new Octokit({
       auth: organization.githubToken
     });
-    
+
     // Remove team from repository in GitHub
     await octokit.teams.removeRepoInOrg({
       org: organization.githubLogin,
@@ -309,7 +308,7 @@ const removeTeamFromRepository = async (organizationId, repoId, teamId) => {
       owner: organization.githubLogin,
       repo: repository.name
     });
-    
+
     // Remove team from repository in database
     await repository.removeTeam(team);
   } catch (error) {
@@ -338,11 +337,11 @@ const getRepositoryUsers = async (organizationId, repoId) => {
         }
       ]
     });
-    
+
     if (!repository) {
       throw new Error('Repository not found');
     }
-    
+
     return repository.Users;
   } catch (error) {
     logger.error('Error getting repository users:', error);
@@ -368,21 +367,21 @@ const addUserToRepository = async (organizationId, repoId, userId) => {
       }),
       User.findByPk(userId)
     ]);
-    
+
     if (!repository) {
       throw new Error('Repository not found');
     }
-    
+
     if (!user) {
       throw new Error('User not found');
     }
-    
+
     const organization = await Organization.findByPk(organizationId);
-    
+
     const octokit = new Octokit({
       auth: organization.githubToken
     });
-    
+
     // Add user to repository in GitHub
     await octokit.repos.addCollaborator({
       owner: organization.githubLogin,
@@ -390,12 +389,12 @@ const addUserToRepository = async (organizationId, repoId, userId) => {
       username: user.githubLogin,
       permission: 'push'
     });
-    
+
     // Add user to repository in database
     await repository.addUser(user, {
       through: { permission: 'push' }
     });
-    
+
     return repository;
   } catch (error) {
     logger.error('Error adding user to repository:', error);
@@ -420,28 +419,28 @@ const removeUserFromRepository = async (organizationId, repoId, userId) => {
       }),
       User.findByPk(userId)
     ]);
-    
+
     if (!repository) {
       throw new Error('Repository not found');
     }
-    
+
     if (!user) {
       throw new Error('User not found');
     }
-    
+
     const organization = await Organization.findByPk(organizationId);
-    
+
     const octokit = new Octokit({
       auth: organization.githubToken
     });
-    
+
     // Remove user from repository in GitHub
     await octokit.repos.removeCollaborator({
       owner: organization.githubLogin,
       repo: repository.name,
       username: user.githubLogin
     });
-    
+
     // Remove user from repository in database
     await repository.removeUser(user);
   } catch (error) {
@@ -474,11 +473,11 @@ const getRepositoryPermissions = async (organizationId, repoId) => {
         }
       ]
     });
-    
+
     if (!repository) {
       throw new Error('Repository not found');
     }
-    
+
     return {
       users: repository.Users.map(user => ({
         id: user.id,
@@ -512,17 +511,17 @@ const updateRepositoryPermissions = async (organizationId, repoId, permissions) 
         organizationId
       }
     });
-    
+
     if (!repository) {
       throw new Error('Repository not found');
     }
-    
+
     const organization = await Organization.findByPk(organizationId);
-    
+
     const octokit = new Octokit({
       auth: organization.githubToken
     });
-    
+
     // Update user permissions in GitHub
     for (const user of permissions.users) {
       await octokit.repos.addCollaborator({
@@ -532,7 +531,7 @@ const updateRepositoryPermissions = async (organizationId, repoId, permissions) 
         permission: user.permission
       });
     }
-    
+
     // Update team permissions in GitHub
     for (const team of permissions.teams) {
       await octokit.teams.addOrUpdateRepoPermissionsInOrg({
@@ -543,7 +542,7 @@ const updateRepositoryPermissions = async (organizationId, repoId, permissions) 
         permission: team.permission
       });
     }
-    
+
     // Update permissions in database
     await Promise.all([
       // Update user permissions
@@ -559,7 +558,7 @@ const updateRepositoryPermissions = async (organizationId, repoId, permissions) 
         })
       )
     ]);
-    
+
     return repository;
   } catch (error) {
     logger.error('Error updating repository permissions:', error);
@@ -581,23 +580,23 @@ const getRepositoryBranches = async (organizationId, repoId) => {
         organizationId
       }
     });
-    
+
     if (!repository) {
       throw new Error('Repository not found');
     }
-    
+
     const organization = await Organization.findByPk(organizationId);
-    
+
     const octokit = new Octokit({
       auth: organization.githubToken
     });
-    
+
     // Get branches from GitHub
     const { data: branches } = await octokit.repos.listBranches({
       owner: organization.githubLogin,
       repo: repository.name
     });
-    
+
     return branches;
   } catch (error) {
     logger.error('Error getting repository branches:', error);
@@ -620,24 +619,24 @@ const getRepositoryCommits = async (organizationId, repoId, branch) => {
         organizationId
       }
     });
-    
+
     if (!repository) {
       throw new Error('Repository not found');
     }
-    
+
     const organization = await Organization.findByPk(organizationId);
-    
+
     const octokit = new Octokit({
       auth: organization.githubToken
     });
-    
+
     // Get commits from GitHub
     const { data: commits } = await octokit.repos.listCommits({
       owner: organization.githubLogin,
       repo: repository.name,
       sha: branch
     });
-    
+
     return commits;
   } catch (error) {
     logger.error('Error getting repository commits:', error);
@@ -659,23 +658,23 @@ const syncRepository = async (organizationId, repoId) => {
         organizationId
       }
     });
-    
+
     if (!repository) {
       throw new Error('Repository not found');
     }
-    
+
     const organization = await Organization.findByPk(organizationId);
-    
+
     const octokit = new Octokit({
       auth: organization.githubToken
     });
-    
+
     // Get repository data from GitHub
     const { data: githubRepo } = await octokit.repos.get({
       owner: organization.githubLogin,
       repo: repository.name
     });
-    
+
     // Update repository in database
     await repository.update({
       name: githubRepo.name,
@@ -687,7 +686,7 @@ const syncRepository = async (organizationId, repoId) => {
       cloneUrl: githubRepo.clone_url,
       sshUrl: githubRepo.ssh_url
     });
-    
+
     return repository;
   } catch (error) {
     logger.error('Error syncing repository:', error);
@@ -709,17 +708,17 @@ const getRepositoryStats = async (organizationId, repoId) => {
         organizationId
       }
     });
-    
+
     if (!repository) {
       throw new Error('Repository not found');
     }
-    
+
     const organization = await Organization.findByPk(organizationId);
-    
+
     const octokit = new Octokit({
       auth: organization.githubToken
     });
-    
+
     // Get repository statistics from GitHub
     const [
       { data: contributors },
@@ -739,7 +738,7 @@ const getRepositoryStats = async (organizationId, repoId) => {
         repo: repository.name
       })
     ]);
-    
+
     return {
       contributors: contributors.length,
       languages,
@@ -766,17 +765,17 @@ const getRepositoryActivity = async (organizationId, repoId) => {
         organizationId
       }
     });
-    
+
     if (!repository) {
       throw new Error('Repository not found');
     }
-    
+
     const organization = await Organization.findByPk(organizationId);
-    
+
     const octokit = new Octokit({
       auth: organization.githubToken
     });
-    
+
     // Get repository activity from GitHub
     const [
       { data: commits },
@@ -798,7 +797,7 @@ const getRepositoryActivity = async (organizationId, repoId) => {
         state: 'all'
       })
     ]);
-    
+
     return {
       commits: commits.length,
       issues: issues.length,
@@ -824,11 +823,11 @@ const getRepositoryAccessLogs = async (organizationId, repoId) => {
         organizationId
       }
     });
-    
+
     if (!repository) {
       throw new Error('Repository not found');
     }
-    
+
     // Get access logs from database
     const logs = await AuditLog.findAll({
       where: {
@@ -844,7 +843,7 @@ const getRepositoryAccessLogs = async (organizationId, repoId) => {
       order: [['createdAt', 'DESC']],
       limit: 100
     });
-    
+
     return logs;
   } catch (error) {
     logger.error('Error getting repository access logs:', error);
@@ -861,17 +860,17 @@ const getRepositoryAccessLogs = async (organizationId, repoId) => {
 const batchCreateRepositories = async (organizationId, repositoriesData) => {
   try {
     const organization = await Organization.findByPk(organizationId);
-    
+
     if (!organization) {
       throw new Error('Organization not found');
     }
-    
+
     const octokit = new Octokit({
       auth: organization.githubToken
     });
-    
+
     const createdRepositories = [];
-    
+
     for (const repoData of repositoriesData) {
       // Create repository in GitHub
       const githubRepo = await octokit.repos.createInOrg({
@@ -881,7 +880,7 @@ const batchCreateRepositories = async (organizationId, repositoriesData) => {
         private: repoData.visibility === 'private',
         auto_init: true
       });
-      
+
       // Create repository in database
       const repository = await Repository.create({
         organizationId,
@@ -895,10 +894,10 @@ const batchCreateRepositories = async (organizationId, repositoriesData) => {
         cloneUrl: githubRepo.data.clone_url,
         sshUrl: githubRepo.data.ssh_url
       });
-      
+
       createdRepositories.push(repository);
     }
-    
+
     return createdRepositories;
   } catch (error) {
     logger.error('Error batch creating repositories:', error);
@@ -915,17 +914,17 @@ const batchCreateRepositories = async (organizationId, repositoriesData) => {
 const batchUpdateRepositories = async (organizationId, updates) => {
   try {
     const organization = await Organization.findByPk(organizationId);
-    
+
     if (!organization) {
       throw new Error('Organization not found');
     }
-    
+
     const octokit = new Octokit({
       auth: organization.githubToken
     });
-    
+
     const updatedRepositories = [];
-    
+
     for (const update of updates) {
       const repository = await Repository.findOne({
         where: {
@@ -933,11 +932,11 @@ const batchUpdateRepositories = async (organizationId, updates) => {
           organizationId
         }
       });
-      
+
       if (!repository) {
         continue;
       }
-      
+
       // Update repository in GitHub
       const githubRepo = await octokit.repos.update({
         owner: organization.githubLogin,
@@ -946,7 +945,7 @@ const batchUpdateRepositories = async (organizationId, updates) => {
         description: update.description,
         private: update.visibility === 'private'
       });
-      
+
       // Update repository in database
       await repository.update({
         name: githubRepo.data.name,
@@ -958,10 +957,10 @@ const batchUpdateRepositories = async (organizationId, updates) => {
         cloneUrl: githubRepo.data.clone_url,
         sshUrl: githubRepo.data.ssh_url
       });
-      
+
       updatedRepositories.push(repository);
     }
-    
+
     return updatedRepositories;
   } catch (error) {
     logger.error('Error batch updating repositories:', error);
@@ -977,15 +976,15 @@ const batchUpdateRepositories = async (organizationId, updates) => {
 const batchDeleteRepositories = async (organizationId, repoIds) => {
   try {
     const organization = await Organization.findByPk(organizationId);
-    
+
     if (!organization) {
       throw new Error('Organization not found');
     }
-    
+
     const octokit = new Octokit({
       auth: organization.githubToken
     });
-    
+
     const repositories = await Repository.findAll({
       where: {
         id: {
@@ -994,14 +993,14 @@ const batchDeleteRepositories = async (organizationId, repoIds) => {
         organizationId
       }
     });
-    
+
     for (const repository of repositories) {
       // Delete repository in GitHub
       await octokit.repos.delete({
         owner: organization.githubLogin,
         repo: repository.name
       });
-      
+
       // Delete repository in database
       await repository.destroy();
     }
@@ -1022,19 +1021,19 @@ const advancedSearchRepositories = async (organizationId, searchCriteria) => {
     const where = {
       organizationId
     };
-    
+
     // Name search
     if (searchCriteria.name) {
       where.name = {
         [Op.like]: `%${searchCriteria.name}%`
       };
     }
-    
+
     // Visibility filter
     if (searchCriteria.visibility) {
       where.visibility = searchCriteria.visibility;
     }
-    
+
     // Created date range
     if (searchCriteria.createdAfter || searchCriteria.createdBefore) {
       where.createdAt = {};
@@ -1045,7 +1044,7 @@ const advancedSearchRepositories = async (organizationId, searchCriteria) => {
         where.createdAt[Op.lte] = new Date(searchCriteria.createdBefore);
       }
     }
-    
+
     // Updated date range
     if (searchCriteria.updatedAfter || searchCriteria.updatedBefore) {
       where.updatedAt = {};
@@ -1056,17 +1055,17 @@ const advancedSearchRepositories = async (organizationId, searchCriteria) => {
         where.updatedAt[Op.lte] = new Date(searchCriteria.updatedBefore);
       }
     }
-    
+
     // Team filter
     if (searchCriteria.teamId) {
       where['$Teams.id$'] = searchCriteria.teamId;
     }
-    
+
     // User filter
     if (searchCriteria.userId) {
       where['$Users.id$'] = searchCriteria.userId;
     }
-    
+
     const repositories = await Repository.findAll({
       where,
       include: [
@@ -1089,7 +1088,7 @@ const advancedSearchRepositories = async (organizationId, searchCriteria) => {
       limit: searchCriteria.limit || 100,
       offset: searchCriteria.offset || 0
     });
-    
+
     return repositories;
   } catch (error) {
     logger.error('Error advanced searching repositories:', error);
@@ -1106,7 +1105,7 @@ const advancedSearchRepositories = async (organizationId, searchCriteria) => {
 const exportRepositories = async (organizationId, exportOptions) => {
   try {
     const repositories = await advancedSearchRepositories(organizationId, exportOptions.searchCriteria);
-    
+
     const exportData = repositories.map(repo => ({
       id: repo.id,
       name: repo.name,
@@ -1128,7 +1127,7 @@ const exportRepositories = async (organizationId, exportOptions) => {
       createdAt: repo.createdAt,
       updatedAt: repo.updatedAt
     }));
-    
+
     return exportData;
   } catch (error) {
     logger.error('Error exporting repositories:', error);
@@ -1156,7 +1155,7 @@ const getRepositoriesStatistics = async (organizationId) => {
       Repository.count({
         where: { organizationId }
       }),
-      
+
       // Public repositories
       Repository.count({
         where: {
@@ -1164,7 +1163,7 @@ const getRepositoriesStatistics = async (organizationId) => {
           visibility: 'public'
         }
       }),
-      
+
       // Private repositories
       Repository.count({
         where: {
@@ -1172,7 +1171,7 @@ const getRepositoriesStatistics = async (organizationId) => {
           visibility: 'private'
         }
       }),
-      
+
       // Repositories by team
       Repository.findAll({
         where: { organizationId },
@@ -1182,10 +1181,10 @@ const getRepositoriesStatistics = async (organizationId) => {
         }],
         group: ['Team.id'],
         attributes: [
-          [sequelize.fn('COUNT', sequelize.col('Repository.id')), 'count']
+          [DataTypes.fn('COUNT', DataTypes.col('Repository.id')), 'count']
         ]
       }),
-      
+
       // Repositories by user
       Repository.findAll({
         where: { organizationId },
@@ -1195,32 +1194,32 @@ const getRepositoriesStatistics = async (organizationId) => {
         }],
         group: ['User.id'],
         attributes: [
-          [sequelize.fn('COUNT', sequelize.col('Repository.id')), 'count']
+          [DataTypes.fn('COUNT', DataTypes.col('Repository.id')), 'count']
         ]
       }),
-      
+
       // Repositories by visibility
       Repository.findAll({
         where: { organizationId },
         group: ['visibility'],
         attributes: [
           'visibility',
-          [sequelize.fn('COUNT', sequelize.col('id')), 'count']
+          [DataTypes.fn('COUNT', DataTypes.col('id')), 'count']
         ]
       }),
-      
+
       // Repositories by creation date
       Repository.findAll({
         where: { organizationId },
         attributes: [
-          [sequelize.fn('DATE', sequelize.col('createdAt')), 'date'],
-          [sequelize.fn('COUNT', sequelize.col('id')), 'count']
+          [DataTypes.fn('DATE', DataTypes.col('createdAt')), 'date'],
+          [DataTypes.fn('COUNT', DataTypes.col('id')), 'count']
         ],
-        group: [sequelize.fn('DATE', sequelize.col('createdAt'))],
-        order: [[sequelize.fn('DATE', sequelize.col('createdAt')), 'ASC']]
+        group: [DataTypes.fn('DATE', DataTypes.col('createdAt'))],
+        order: [[DataTypes.fn('DATE', DataTypes.col('createdAt')), 'ASC']]
       })
     ]);
-    
+
     return {
       total: totalRepositories,
       public: publicRepositories,
@@ -1250,22 +1249,22 @@ const getRepositoryProtectedBranches = async (organizationId, repoId) => {
         organizationId
       }
     });
-    
+
     if (!repository) {
       throw new Error('Repository not found');
     }
-    
+
     const organization = await Organization.findByPk(organizationId);
-    
+
     const octokit = new Octokit({
       auth: organization.githubToken
     });
-    
+
     const { data: branches } = await octokit.repos.listProtectedBranches({
       owner: organization.githubLogin,
       repo: repository.name
     });
-    
+
     return branches;
   } catch (error) {
     logger.error('Error getting repository protected branches:', error);
@@ -1289,17 +1288,17 @@ const updateRepositoryProtectedBranch = async (organizationId, repoId, branch, p
         organizationId
       }
     });
-    
+
     if (!repository) {
       throw new Error('Repository not found');
     }
-    
+
     const organization = await Organization.findByPk(organizationId);
-    
+
     const octokit = new Octokit({
       auth: organization.githubToken
     });
-    
+
     const { data } = await octokit.repos.updateBranchProtection({
       owner: organization.githubLogin,
       repo: repository.name,
@@ -1309,7 +1308,7 @@ const updateRepositoryProtectedBranch = async (organizationId, repoId, branch, p
       required_pull_request_reviews: protection.requiredPullRequestReviews,
       restrictions: protection.restrictions
     });
-    
+
     return data;
   } catch (error) {
     logger.error('Error updating repository protected branch:', error);
@@ -1331,22 +1330,22 @@ const getRepositoryWebhooks = async (organizationId, repoId) => {
         organizationId
       }
     });
-    
+
     if (!repository) {
       throw new Error('Repository not found');
     }
-    
+
     const organization = await Organization.findByPk(organizationId);
-    
+
     const octokit = new Octokit({
       auth: organization.githubToken
     });
-    
+
     const { data: webhooks } = await octokit.repos.listWebhooks({
       owner: organization.githubLogin,
       repo: repository.name
     });
-    
+
     return webhooks;
   } catch (error) {
     logger.error('Error getting repository webhooks:', error);
@@ -1369,17 +1368,17 @@ const createRepositoryWebhook = async (organizationId, repoId, webhookData) => {
         organizationId
       }
     });
-    
+
     if (!repository) {
       throw new Error('Repository not found');
     }
-    
+
     const organization = await Organization.findByPk(organizationId);
-    
+
     const octokit = new Octokit({
       auth: organization.githubToken
     });
-    
+
     const { data: webhook } = await octokit.repos.createWebhook({
       owner: organization.githubLogin,
       repo: repository.name,
@@ -1388,7 +1387,7 @@ const createRepositoryWebhook = async (organizationId, repoId, webhookData) => {
       events: webhookData.events,
       active: webhookData.active
     });
-    
+
     return webhook;
   } catch (error) {
     logger.error('Error creating repository webhook:', error);
@@ -1410,22 +1409,22 @@ const getRepositoryDeployKeys = async (organizationId, repoId) => {
         organizationId
       }
     });
-    
+
     if (!repository) {
       throw new Error('Repository not found');
     }
-    
+
     const organization = await Organization.findByPk(organizationId);
-    
+
     const octokit = new Octokit({
       auth: organization.githubToken
     });
-    
+
     const { data: keys } = await octokit.repos.listDeployKeys({
       owner: organization.githubLogin,
       repo: repository.name
     });
-    
+
     return keys;
   } catch (error) {
     logger.error('Error getting repository deploy keys:', error);
@@ -1448,17 +1447,17 @@ const addRepositoryDeployKey = async (organizationId, repoId, keyData) => {
         organizationId
       }
     });
-    
+
     if (!repository) {
       throw new Error('Repository not found');
     }
-    
+
     const organization = await Organization.findByPk(organizationId);
-    
+
     const octokit = new Octokit({
       auth: organization.githubToken
     });
-    
+
     const { data: key } = await octokit.repos.createDeployKey({
       owner: organization.githubLogin,
       repo: repository.name,
@@ -1466,7 +1465,7 @@ const addRepositoryDeployKey = async (organizationId, repoId, keyData) => {
       key: keyData.key,
       read_only: keyData.readOnly
     });
-    
+
     return key;
   } catch (error) {
     logger.error('Error adding repository deploy key:', error);
@@ -1488,22 +1487,22 @@ const getRepositoryEnvironments = async (organizationId, repoId) => {
         organizationId
       }
     });
-    
+
     if (!repository) {
       throw new Error('Repository not found');
     }
-    
+
     const organization = await Organization.findByPk(organizationId);
-    
+
     const octokit = new Octokit({
       auth: organization.githubToken
     });
-    
+
     const { data: environments } = await octokit.repos.getAllEnvironments({
       owner: organization.githubLogin,
       repo: repository.name
     });
-    
+
     return environments;
   } catch (error) {
     logger.error('Error getting repository environments:', error);
@@ -1526,17 +1525,17 @@ const createRepositoryEnvironment = async (organizationId, repoId, environmentDa
         organizationId
       }
     });
-    
+
     if (!repository) {
       throw new Error('Repository not found');
     }
-    
+
     const organization = await Organization.findByPk(organizationId);
-    
+
     const octokit = new Octokit({
       auth: organization.githubToken
     });
-    
+
     const { data: environment } = await octokit.repos.createOrUpdateEnvironment({
       owner: organization.githubLogin,
       repo: repository.name,
@@ -1545,7 +1544,7 @@ const createRepositoryEnvironment = async (organizationId, repoId, environmentDa
       reviewers: environmentData.reviewers,
       deployment_branch_policy: environmentData.deploymentBranchPolicy
     });
-    
+
     return environment;
   } catch (error) {
     logger.error('Error creating repository environment:', error);
@@ -1567,22 +1566,22 @@ const getRepositoryLabels = async (organizationId, repoId) => {
         organizationId
       }
     });
-    
+
     if (!repository) {
       throw new Error('Repository not found');
     }
-    
+
     const organization = await Organization.findByPk(organizationId);
-    
+
     const octokit = new Octokit({
       auth: organization.githubToken
     });
-    
+
     const { data: labels } = await octokit.issues.listLabelsForRepo({
       owner: organization.githubLogin,
       repo: repository.name
     });
-    
+
     return labels;
   } catch (error) {
     logger.error('Error getting repository labels:', error);
@@ -1605,17 +1604,17 @@ const createRepositoryLabel = async (organizationId, repoId, labelData) => {
         organizationId
       }
     });
-    
+
     if (!repository) {
       throw new Error('Repository not found');
     }
-    
+
     const organization = await Organization.findByPk(organizationId);
-    
+
     const octokit = new Octokit({
       auth: organization.githubToken
     });
-    
+
     const { data: label } = await octokit.issues.createLabel({
       owner: organization.githubLogin,
       repo: repository.name,
@@ -1623,7 +1622,7 @@ const createRepositoryLabel = async (organizationId, repoId, labelData) => {
       color: labelData.color,
       description: labelData.description
     });
-    
+
     return label;
   } catch (error) {
     logger.error('Error creating repository label:', error);
@@ -1645,22 +1644,22 @@ const getRepositoryMilestones = async (organizationId, repoId) => {
         organizationId
       }
     });
-    
+
     if (!repository) {
       throw new Error('Repository not found');
     }
-    
+
     const organization = await Organization.findByPk(organizationId);
-    
+
     const octokit = new Octokit({
       auth: organization.githubToken
     });
-    
+
     const { data: milestones } = await octokit.issues.listMilestones({
       owner: organization.githubLogin,
       repo: repository.name
     });
-    
+
     return milestones;
   } catch (error) {
     logger.error('Error getting repository milestones:', error);
@@ -1683,17 +1682,17 @@ const createRepositoryMilestone = async (organizationId, repoId, milestoneData) 
         organizationId
       }
     });
-    
+
     if (!repository) {
       throw new Error('Repository not found');
     }
-    
+
     const organization = await Organization.findByPk(organizationId);
-    
+
     const octokit = new Octokit({
       auth: organization.githubToken
     });
-    
+
     const { data: milestone } = await octokit.issues.createMilestone({
       owner: organization.githubLogin,
       repo: repository.name,
@@ -1701,7 +1700,7 @@ const createRepositoryMilestone = async (organizationId, repoId, milestoneData) 
       description: milestoneData.description,
       due_on: milestoneData.dueOn
     });
-    
+
     return milestone;
   } catch (error) {
     logger.error('Error creating repository milestone:', error);
@@ -1724,17 +1723,17 @@ const getRepositoryIssues = async (organizationId, repoId, filters = {}) => {
         organizationId
       }
     });
-    
+
     if (!repository) {
       throw new Error('Repository not found');
     }
-    
+
     const organization = await Organization.findByPk(organizationId);
-    
+
     const octokit = new Octokit({
       auth: organization.githubToken
     });
-    
+
     const { data: issues } = await octokit.issues.listForRepo({
       owner: organization.githubLogin,
       repo: repository.name,
@@ -1746,7 +1745,7 @@ const getRepositoryIssues = async (organizationId, repoId, filters = {}) => {
       per_page: filters.perPage,
       page: filters.page
     });
-    
+
     return issues;
   } catch (error) {
     logger.error('Error getting repository issues:', error);
@@ -1769,17 +1768,17 @@ const createRepositoryIssue = async (organizationId, repoId, issueData) => {
         organizationId
       }
     });
-    
+
     if (!repository) {
       throw new Error('Repository not found');
     }
-    
+
     const organization = await Organization.findByPk(organizationId);
-    
+
     const octokit = new Octokit({
       auth: organization.githubToken
     });
-    
+
     const { data: issue } = await octokit.issues.create({
       owner: organization.githubLogin,
       repo: repository.name,
@@ -1789,7 +1788,7 @@ const createRepositoryIssue = async (organizationId, repoId, issueData) => {
       labels: issueData.labels,
       milestone: issueData.milestone
     });
-    
+
     return issue;
   } catch (error) {
     logger.error('Error creating repository issue:', error);
@@ -1812,17 +1811,17 @@ const getRepositoryPullRequests = async (organizationId, repoId, filters = {}) =
         organizationId
       }
     });
-    
+
     if (!repository) {
       throw new Error('Repository not found');
     }
-    
+
     const organization = await Organization.findByPk(organizationId);
-    
+
     const octokit = new Octokit({
       auth: organization.githubToken
     });
-    
+
     const { data: pullRequests } = await octokit.pulls.list({
       owner: organization.githubLogin,
       repo: repository.name,
@@ -1834,7 +1833,7 @@ const getRepositoryPullRequests = async (organizationId, repoId, filters = {}) =
       per_page: filters.perPage,
       page: filters.page
     });
-    
+
     return pullRequests;
   } catch (error) {
     logger.error('Error getting repository pull requests:', error);
@@ -1857,17 +1856,17 @@ const createRepositoryPullRequest = async (organizationId, repoId, prData) => {
         organizationId
       }
     });
-    
+
     if (!repository) {
       throw new Error('Repository not found');
     }
-    
+
     const organization = await Organization.findByPk(organizationId);
-    
+
     const octokit = new Octokit({
       auth: organization.githubToken
     });
-    
+
     const { data: pullRequest } = await octokit.pulls.create({
       owner: organization.githubLogin,
       repo: repository.name,
@@ -1877,7 +1876,7 @@ const createRepositoryPullRequest = async (organizationId, repoId, prData) => {
       body: prData.body,
       draft: prData.draft
     });
-    
+
     return pullRequest;
   } catch (error) {
     logger.error('Error creating repository pull request:', error);
@@ -1901,23 +1900,23 @@ const getRepositoryComments = async (organizationId, repoId, type, number) => {
         organizationId
       }
     });
-    
+
     if (!repository) {
       throw new Error('Repository not found');
     }
-    
+
     const organization = await Organization.findByPk(organizationId);
-    
+
     const octokit = new Octokit({
       auth: organization.githubToken
     });
-    
+
     const { data: comments } = await octokit.issues.listComments({
       owner: organization.githubLogin,
       repo: repository.name,
       issue_number: number
     });
-    
+
     return comments;
   } catch (error) {
     logger.error('Error getting repository comments:', error);
@@ -1942,24 +1941,24 @@ const createRepositoryComment = async (organizationId, repoId, type, number, com
         organizationId
       }
     });
-    
+
     if (!repository) {
       throw new Error('Repository not found');
     }
-    
+
     const organization = await Organization.findByPk(organizationId);
-    
+
     const octokit = new Octokit({
       auth: organization.githubToken
     });
-    
+
     const { data: comment } = await octokit.issues.createComment({
       owner: organization.githubLogin,
       repo: repository.name,
       issue_number: number,
       body: commentData.body
     });
-    
+
     return comment;
   } catch (error) {
     logger.error('Error creating repository comment:', error);
@@ -1981,22 +1980,22 @@ const getRepositoryNotifications = async (organizationId, repoId) => {
         organizationId
       }
     });
-    
+
     if (!repository) {
       throw new Error('Repository not found');
     }
-    
+
     const organization = await Organization.findByPk(organizationId);
-    
+
     const octokit = new Octokit({
       auth: organization.githubToken
     });
-    
+
     const { data: notifications } = await octokit.activity.listRepoNotifications({
       owner: organization.githubLogin,
       repo: repository.name
     });
-    
+
     return notifications;
   } catch (error) {
     logger.error('Error getting repository notifications:', error);
@@ -2018,17 +2017,17 @@ const markRepositoryNotificationsAsRead = async (organizationId, repoId, lastRea
         organizationId
       }
     });
-    
+
     if (!repository) {
       throw new Error('Repository not found');
     }
-    
+
     const organization = await Organization.findByPk(organizationId);
-    
+
     const octokit = new Octokit({
       auth: organization.githubToken
     });
-    
+
     await octokit.activity.markRepoNotificationsAsRead({
       owner: organization.githubLogin,
       repo: repository.name,
@@ -2040,49 +2039,14 @@ const markRepositoryNotificationsAsRead = async (organizationId, repoId, lastRea
   }
 };
 
-module.exports = {
-  getRepositories,
+export {
   createRepository,
   updateRepository,
   deleteRepository,
-  getRepositoryTeams,
+  getRepository,
+  getRepositories,
+  getRepositoriesByOrganization,
+  getRepositoriesByTeam,
   addTeamToRepository,
-  removeTeamFromRepository,
-  getRepositoryUsers,
-  addUserToRepository,
-  removeUserFromRepository,
-  getRepositoryPermissions,
-  updateRepositoryPermissions,
-  getRepositoryBranches,
-  getRepositoryCommits,
-  syncRepository,
-  getRepositoryStats,
-  getRepositoryActivity,
-  getRepositoryAccessLogs,
-  batchCreateRepositories,
-  batchUpdateRepositories,
-  batchDeleteRepositories,
-  advancedSearchRepositories,
-  exportRepositories,
-  getRepositoriesStatistics,
-  getRepositoryProtectedBranches,
-  updateRepositoryProtectedBranch,
-  getRepositoryWebhooks,
-  createRepositoryWebhook,
-  getRepositoryDeployKeys,
-  addRepositoryDeployKey,
-  getRepositoryEnvironments,
-  createRepositoryEnvironment,
-  getRepositoryLabels,
-  createRepositoryLabel,
-  getRepositoryMilestones,
-  createRepositoryMilestone,
-  getRepositoryIssues,
-  createRepositoryIssue,
-  getRepositoryPullRequests,
-  createRepositoryPullRequest,
-  getRepositoryComments,
-  createRepositoryComment,
-  getRepositoryNotifications,
-  markRepositoryNotificationsAsRead
-}; 
+  removeTeamFromRepository
+};

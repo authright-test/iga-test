@@ -1,19 +1,8 @@
+import { Box, Button, Container, Flex, Heading, Stack, Text, useColorModeValue, VStack } from '@chakra-ui/react';
 import React, { useEffect } from 'react';
-import {
-  Box,
-  Button,
-  Flex,
-  Heading,
-  Image,
-  Stack,
-  Text,
-  useColorModeValue,
-  Container,
-  VStack
-} from '@chakra-ui/react';
 import { FiGithub } from 'react-icons/fi';
-import { useAuth } from '../contexts/AuthContext';
 import { useLocation } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
 
 const LoginPage = () => {
   const { login } = useAuth();
@@ -31,11 +20,11 @@ const LoginPage = () => {
     // Check if there's a code in the URL (OAuth callback)
     const urlParams = new URLSearchParams(location.search);
     const code = urlParams.get('code');
-    
+
     if (code) {
       // Exchange code for token
       login(code);
-      
+
       // Clean the URL
       const cleanUrl = window.location.origin + window.location.pathname;
       window.history.replaceState({}, document.title, cleanUrl);
@@ -97,4 +86,4 @@ const LoginPage = () => {
   );
 };
 
-export default LoginPage; 
+export default LoginPage;

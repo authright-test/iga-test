@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
-import api from '../services/api';
+import { useEffect, useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
+import api from '../services/api';
 
 export const useAccessRoles = () => {
   const [roles, setRoles] = useState([]);
@@ -12,12 +12,12 @@ export const useAccessRoles = () => {
     try {
       setIsLoading(true);
       setError(null);
-      
+
       const response = await api.get(
         `/organizations/${organization.id}/access-roles`,
         { params: filters }
       );
-      
+
       setRoles(response.data);
     } catch (err) {
       setError(err.response?.data?.error || err.message);
@@ -45,7 +45,7 @@ export const useAccessRoles = () => {
         `/organizations/${organization.id}/access-roles/${roleId}`,
         roleData
       );
-      setRoles(roles.map(role => 
+      setRoles(roles.map(role =>
         role.id === roleId ? response.data : role
       ));
       return response.data;
@@ -153,4 +153,4 @@ export const useAccessRoles = () => {
     updateRolePermissions,
     refreshRoles: fetchRoles,
   };
-}; 
+};

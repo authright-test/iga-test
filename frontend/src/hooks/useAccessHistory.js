@@ -1,5 +1,5 @@
-import { useState, useCallback } from 'react';
 import axios from 'axios';
+import { useCallback, useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 
 export const useAccessHistory = () => {
@@ -12,7 +12,7 @@ export const useAccessHistory = () => {
     try {
       setIsLoading(true);
       setError(null);
-      
+
       const response = await axios.get(`/api/organizations/${organization.id}/access-history`, {
         params: {
           page: params.page || 1,
@@ -25,7 +25,7 @@ export const useAccessHistory = () => {
           teamId: params.teamId,
         },
       });
-      
+
       setHistory(response.data);
       return response.data;
     } catch (err) {
@@ -40,7 +40,7 @@ export const useAccessHistory = () => {
     try {
       setIsLoading(true);
       setError(null);
-      
+
       const response = await axios.get(`/api/organizations/${organization.id}/access-history/users/${userId}`, {
         params: {
           page: params.page || 1,
@@ -50,7 +50,7 @@ export const useAccessHistory = () => {
           type: params.type,
         },
       });
-      
+
       setHistory(response.data);
       return response.data;
     } catch (err) {
@@ -65,7 +65,7 @@ export const useAccessHistory = () => {
     try {
       setIsLoading(true);
       setError(null);
-      
+
       const response = await axios.get(`/api/organizations/${organization.id}/access-history/repositories/${repositoryId}`, {
         params: {
           page: params.page || 1,
@@ -75,7 +75,7 @@ export const useAccessHistory = () => {
           type: params.type,
         },
       });
-      
+
       setHistory(response.data);
       return response.data;
     } catch (err) {
@@ -90,7 +90,7 @@ export const useAccessHistory = () => {
     try {
       setIsLoading(true);
       setError(null);
-      
+
       const response = await axios.get(`/api/organizations/${organization.id}/access-history/teams/${teamId}`, {
         params: {
           page: params.page || 1,
@@ -100,7 +100,7 @@ export const useAccessHistory = () => {
           type: params.type,
         },
       });
-      
+
       setHistory(response.data);
       return response.data;
     } catch (err) {
@@ -115,7 +115,7 @@ export const useAccessHistory = () => {
     try {
       setIsLoading(true);
       setError(null);
-      
+
       const response = await axios.get(`/api/organizations/${organization.id}/access-history/export`, {
         params: {
           startDate: params.startDate,
@@ -128,7 +128,7 @@ export const useAccessHistory = () => {
         },
         responseType: 'blob',
       });
-      
+
       // Create a download link
       const url = window.URL.createObjectURL(new Blob([response.data]));
       const link = document.createElement('a');
@@ -137,7 +137,7 @@ export const useAccessHistory = () => {
       document.body.appendChild(link);
       link.click();
       link.remove();
-      
+
       return true;
     } catch (err) {
       setError(err.response?.data?.error || err.message);
@@ -157,4 +157,4 @@ export const useAccessHistory = () => {
     getHistoryByTeam,
     exportHistory,
   };
-}; 
+};

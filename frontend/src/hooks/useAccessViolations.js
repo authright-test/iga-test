@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
-import api from '../services/api';
+import { useEffect, useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
+import api from '../services/api';
 
 export const useAccessViolations = () => {
   const [violations, setViolations] = useState([]);
@@ -12,12 +12,12 @@ export const useAccessViolations = () => {
     try {
       setIsLoading(true);
       setError(null);
-      
+
       const response = await api.get(
         `/organizations/${organization.id}/access-violations`,
         { params: filters }
       );
-      
+
       setViolations(response.data);
     } catch (err) {
       setError(err.response?.data?.error || err.message);
@@ -43,7 +43,7 @@ export const useAccessViolations = () => {
         `/organizations/${organization.id}/access-violations/${violationId}/resolve`,
         resolutionData
       );
-      setViolations(violations.map(violation => 
+      setViolations(violations.map(violation =>
         violation.id === violationId ? response.data : violation
       ));
       return response.data;
@@ -78,7 +78,7 @@ export const useAccessViolations = () => {
     try {
       const response = await api.get(
         `/organizations/${organization.id}/access-violations/export`,
-        { 
+        {
           params: { ...filters, format },
           responseType: 'blob'
         }
@@ -106,4 +106,4 @@ export const useAccessViolations = () => {
     exportViolations,
     refreshViolations: fetchViolations,
   };
-}; 
+};

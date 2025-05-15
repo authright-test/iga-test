@@ -1,41 +1,37 @@
-import React, { useState, useEffect } from 'react';
 import {
-  Box,
-  Card,
-  CardHeader,
-  CardBody,
-  Heading,
-  Text,
-  Stack,
-  HStack,
-  VStack,
-  Icon,
-  Badge,
-  Progress,
-  useColorModeValue,
-  Button,
-  Menu,
-  MenuButton,
-  MenuList,
-  MenuItem,
-  SimpleGrid,
   Alert,
+  AlertDescription,
   AlertIcon,
   AlertTitle,
-  AlertDescription,
-  useToast,
+  Badge,
+  Box,
+  Button,
+  Card,
+  CardBody,
+  CardHeader,
+  Heading,
+  HStack,
+  Icon,
   Modal,
-  ModalOverlay,
+  ModalBody,
+  ModalCloseButton,
   ModalContent,
   ModalHeader,
-  ModalCloseButton,
-  ModalBody,
+  ModalOverlay,
+  Progress,
+  SimpleGrid,
+  Stack,
+  Text,
+  useColorModeValue,
+  useToast,
+  VStack,
 } from '@chakra-ui/react';
-import { FiShield, FiAlertCircle, FiLock, FiKey, FiActivity, FiUser, FiServer, FiDatabase } from 'react-icons/fi';
+import React, { useEffect, useState } from 'react';
+import { FiActivity, FiAlertCircle, FiDatabase, FiLock, FiServer, FiShield, FiUser } from 'react-icons/fi';
 import { useSecurityStats } from '../../hooks/useSecurityStats';
 import { ErrorBoundary } from '../common/ErrorBoundary';
-import { LoadingOverlay, LoadingSkeleton } from '../common/LoadingState';
 import { ErrorAlert, ErrorInline } from '../common/ErrorMessage';
+import { LoadingOverlay, LoadingSkeleton } from '../common/LoadingState';
 
 const SecurityMonitor = () => {
   const { stats, isLoading, error, refreshStats, getThreatDetails, getVulnerabilityReport } = useSecurityStats();
@@ -114,8 +110,8 @@ const SecurityMonitor = () => {
             <CardHeader>
               <HStack justify="space-between">
                 <Heading size="md">Security Overview</Heading>
-                <Button 
-                  size="sm" 
+                <Button
+                  size="sm"
                   onClick={() => {
                     refreshStats().catch(err => {
                       setErrorMessage('Failed to refresh security stats');
@@ -141,8 +137,8 @@ const SecurityMonitor = () => {
                         {stats?.score || 0}%
                       </Badge>
                     </HStack>
-                    <Progress 
-                      value={stats?.score || 0} 
+                    <Progress
+                      value={stats?.score || 0}
                       colorScheme={stats?.score > 80 ? 'green' : stats?.score > 60 ? 'yellow' : 'red'}
                       borderRadius="full"
                     />
@@ -245,8 +241,8 @@ const SecurityMonitor = () => {
               ) : (
                 <Stack spacing={4}>
                   {stats?.recentEvents?.map((event) => (
-                    <SecurityEvent 
-                      key={event.id} 
+                    <SecurityEvent
+                      key={event.id}
                       event={event}
                       onViewDetails={() => setSelectedThreat(event)}
                     />
@@ -269,8 +265,8 @@ const SecurityMonitor = () => {
               ) : (
                 <Stack spacing={4}>
                   {stats?.recommendations?.map((rec) => (
-                    <SecurityRecommendation 
-                      key={rec.id} 
+                    <SecurityRecommendation
+                      key={rec.id}
                       recommendation={rec}
                       onApply={() => {/* 应用建议 */}}
                     />
@@ -307,7 +303,7 @@ const SecurityMetric = ({ title, value, icon, color }) => (
 // 安全事件组件
 const SecurityEvent = ({ event, onViewDetails }) => {
   const severityColor = getSeverityColor(event.severity);
-  
+
   return (
     <HStack spacing={4} p={3} borderRadius="md" _hover={{ bg: 'gray.50' }}>
       <Icon as={FiAlertCircle} boxSize={5} color={`${severityColor}.500`} />
@@ -368,4 +364,4 @@ const ThreatDetailsModal = ({ threat, onClose }) => {
   );
 };
 
-export default SecurityMonitor; 
+export default SecurityMonitor;

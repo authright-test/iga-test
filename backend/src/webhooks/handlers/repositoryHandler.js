@@ -1,7 +1,6 @@
-const logger = require('../../utils/logger');
-const { User, Organization, Repository, AuditLog } = require('../../models');
-const { evaluatePolicy, executePolicyActions } = require('../../services/policyService');
-const { getOrganizationPolicies } = require('../../services/policyService');
+import { AuditLog, Organization, Repository, User } from '../../models/index.js';
+import { evaluatePolicy, executePolicyActions, getOrganizationPolicies } from '../../services/policyService.js';
+import logger from '../../utils/logger.js';
 
 /**
  * Handle repository created events
@@ -10,19 +9,19 @@ const { getOrganizationPolicies } = require('../../services/policyService');
 async function handleRepositoryCreated(payload) {
   try {
     logger.info('Repository created event received');
-    
+
     const { sender, repository, organization } = payload;
-    
+
     // Get organization from database
     const orgRecord = await Organization.findOne({
       where: { githubId: organization.id.toString() }
     });
-    
+
     if (!orgRecord) {
       logger.warn(`Organization not found: ${organization.login}`);
       return;
     }
-    
+
     // Find or create the sender
     const [senderRecord] = await User.findOrCreate({
       where: { githubId: sender.id.toString() },
@@ -31,7 +30,7 @@ async function handleRepositoryCreated(payload) {
         avatarUrl: sender.avatar_url
       }
     });
-    
+
     // Create or update repository record
     const [repoRecord, created] = await Repository.findOrCreate({
       where: { githubId: repository.id.toString() },
@@ -44,7 +43,7 @@ async function handleRepositoryCreated(payload) {
         OrganizationId: orgRecord.id
       }
     });
-    
+
     if (!created) {
       await repoRecord.update({
         name: repository.name,
@@ -55,7 +54,7 @@ async function handleRepositoryCreated(payload) {
         OrganizationId: orgRecord.id
       });
     }
-    
+
     // Create audit log
     await AuditLog.create({
       action: 'repository_created',
@@ -68,22 +67,22 @@ async function handleRepositoryCreated(payload) {
       },
       UserId: senderRecord.id
     });
-    
+
     // Check policies
     const policies = await getOrganizationPolicies(orgRecord.id);
-    
+
     // Process applicable policies
     for (const policy of policies) {
       if (!policy.isActive) continue;
-      
+
       const isViolated = await evaluatePolicy(policy, payload, {
         event: 'repository_created',
         organization: orgRecord
       });
-      
+
       if (isViolated) {
         logger.info(`Policy ${policy.name} violated for repository created event`);
-        
+
         // Execute policy actions
         await executePolicyActions(policy, payload, {
           event: 'repository_created',
@@ -107,19 +106,19 @@ async function handleRepositoryCreated(payload) {
 async function handleRepositoryDeleted(payload) {
   try {
     logger.info('Repository deleted event received');
-    
+
     const { sender, repository, organization } = payload;
-    
+
     // Get organization from database
     const orgRecord = await Organization.findOne({
       where: { githubId: organization.id.toString() }
     });
-    
+
     if (!orgRecord) {
       logger.warn(`Organization not found: ${organization.login}`);
       return;
     }
-    
+
     // Find or create the sender
     const [senderRecord] = await User.findOrCreate({
       where: { githubId: sender.id.toString() },
@@ -128,12 +127,12 @@ async function handleRepositoryDeleted(payload) {
         avatarUrl: sender.avatar_url
       }
     });
-    
+
     // Find repository record
     const repoRecord = await Repository.findOne({
       where: { githubId: repository.id.toString() }
     });
-    
+
     // Create audit log
     await AuditLog.create({
       action: 'repository_deleted',
@@ -145,29 +144,29 @@ async function handleRepositoryDeleted(payload) {
       },
       UserId: senderRecord.id
     });
-    
+
     // Update repository record if found
     if (repoRecord) {
       await repoRecord.update({
         isActive: false
       });
     }
-    
+
     // Check policies
     const policies = await getOrganizationPolicies(orgRecord.id);
-    
+
     // Process applicable policies
     for (const policy of policies) {
       if (!policy.isActive) continue;
-      
+
       const isViolated = await evaluatePolicy(policy, payload, {
         event: 'repository_deleted',
         organization: orgRecord
       });
-      
+
       if (isViolated) {
         logger.info(`Policy ${policy.name} violated for repository deleted event`);
-        
+
         // Execute policy actions
         await executePolicyActions(policy, payload, {
           event: 'repository_deleted',
@@ -191,19 +190,19 @@ async function handleRepositoryDeleted(payload) {
 async function handleRepositoryVisibilityChanged(payload) {
   try {
     logger.info('Repository visibility changed event received');
-    
+
     const { sender, repository, organization, visibility } = payload;
-    
+
     // Get organization from database
     const orgRecord = await Organization.findOne({
       where: { githubId: organization.id.toString() }
     });
-    
+
     if (!orgRecord) {
       logger.warn(`Organization not found: ${organization.login}`);
       return;
     }
-    
+
     // Find or create the sender
     const [senderRecord] = await User.findOrCreate({
       where: { githubId: sender.id.toString() },
@@ -212,12 +211,12 @@ async function handleRepositoryVisibilityChanged(payload) {
         avatarUrl: sender.avatar_url
       }
     });
-    
+
     // Find repository record
     const repoRecord = await Repository.findOne({
       where: { githubId: repository.id.toString() }
     });
-    
+
     // Create audit log
     await AuditLog.create({
       action: 'repository_visibility_changed',
@@ -231,29 +230,29 @@ async function handleRepositoryVisibilityChanged(payload) {
       },
       UserId: senderRecord.id
     });
-    
+
     // Update repository record if found
     if (repoRecord) {
       await repoRecord.update({
         private: visibility === 'private'
       });
     }
-    
+
     // Check policies
     const policies = await getOrganizationPolicies(orgRecord.id);
-    
+
     // Process applicable policies
     for (const policy of policies) {
       if (!policy.isActive) continue;
-      
+
       const isViolated = await evaluatePolicy(policy, payload, {
         event: 'repository_visibility_changed',
         organization: orgRecord
       });
-      
+
       if (isViolated) {
         logger.info(`Policy ${policy.name} violated for repository visibility changed event`);
-        
+
         // Execute policy actions
         await executePolicyActions(policy, payload, {
           event: 'repository_visibility_changed',
@@ -270,8 +269,8 @@ async function handleRepositoryVisibilityChanged(payload) {
   }
 }
 
-module.exports = {
+export {
   handleRepositoryCreated,
   handleRepositoryDeleted,
   handleRepositoryVisibilityChanged
-}; 
+};

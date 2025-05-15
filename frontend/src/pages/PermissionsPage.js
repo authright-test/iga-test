@@ -1,46 +1,46 @@
-import React, { useState } from 'react';
 import {
+  Badge,
   Box,
   Button,
   Flex,
-  Heading,
-  Table,
-  Thead,
-  Tbody,
-  Tr,
-  Th,
-  Td,
-  useDisclosure,
-  Modal,
-  ModalOverlay,
-  ModalContent,
-  ModalHeader,
-  ModalBody,
-  ModalCloseButton,
   FormControl,
   FormLabel,
-  Input,
-  Select,
-  useToast,
-  Badge,
+  Heading,
+  HStack,
   IconButton,
+  Input,
   Menu,
   MenuButton,
-  MenuList,
   MenuItem,
-  useColorModeValue,
-  Text,
-  HStack,
-  VStack,
-  Tabs,
-  TabList,
-  TabPanels,
+  MenuList,
+  Modal,
+  ModalBody,
+  ModalCloseButton,
+  ModalContent,
+  ModalHeader,
+  ModalOverlay,
+  Select,
   Tab,
+  Table,
+  TabList,
   TabPanel,
+  TabPanels,
+  Tabs,
+  Tbody,
+  Td,
+  Text,
+  Th,
+  Thead,
+  Tr,
+  useColorModeValue,
+  useDisclosure,
+  useToast,
+  VStack,
 } from '@chakra-ui/react';
-import { FiMoreVertical, FiEdit2, FiTrash2, FiShield, FiUsers, FiGitBranch } from 'react-icons/fi';
-import { useAccessPermissions } from '../hooks/useAccessPermissions';
+import React, { useState } from 'react';
+import { FiEdit2, FiGitBranch, FiMoreVertical, FiShield, FiTrash2, FiUsers } from 'react-icons/fi';
 import { useAuth } from '../contexts/AuthContext';
+import { useAccessPermissions } from '../hooks/useAccessPermissions';
 
 const PermissionsPage = () => {
   const [selectedPermission, setSelectedPermission] = useState(null);
@@ -50,17 +50,17 @@ const PermissionsPage = () => {
     type: 'repository',
     level: 'read',
   });
-  
-  const { 
-    isOpen: isPermissionModalOpen, 
-    onOpen: onPermissionModalOpen, 
-    onClose: onPermissionModalClose 
+
+  const {
+    isOpen: isPermissionModalOpen,
+    onOpen: onPermissionModalOpen,
+    onClose: onPermissionModalClose
   } = useDisclosure();
-  
-  const { 
-    isOpen: isAssignModalOpen, 
-    onOpen: onAssignModalOpen, 
-    onClose: onAssignModalClose 
+
+  const {
+    isOpen: isAssignModalOpen,
+    onOpen: onAssignModalOpen,
+    onClose: onAssignModalClose
   } = useDisclosure();
 
   const toast = useToast();
@@ -96,14 +96,14 @@ const PermissionsPage = () => {
       }
 
       const newPermission = await createPermission(formData);
-      
+
       logAuditEvent(
         'permission_created',
         'permission',
         newPermission.id.toString(),
         { name: formData.name }
       );
-      
+
       toast({
         title: 'Permission created',
         description: `Permission "${formData.name}" has been created.`,
@@ -111,7 +111,7 @@ const PermissionsPage = () => {
         duration: 3000,
         isClosable: true,
       });
-      
+
       onPermissionModalClose();
     } catch (err) {
       toast({
@@ -129,14 +129,14 @@ const PermissionsPage = () => {
       if (!selectedPermission) return;
 
       const updatedPermission = await updatePermission(selectedPermission.id, formData);
-      
+
       logAuditEvent(
         'permission_updated',
         'permission',
         selectedPermission.id.toString(),
         { name: formData.name }
       );
-      
+
       toast({
         title: 'Permission updated',
         description: `Permission "${formData.name}" has been updated.`,
@@ -144,7 +144,7 @@ const PermissionsPage = () => {
         duration: 3000,
         isClosable: true,
       });
-      
+
       onPermissionModalClose();
     } catch (err) {
       toast({
@@ -160,14 +160,14 @@ const PermissionsPage = () => {
   const handleDeletePermission = async (permission) => {
     try {
       await deletePermission(permission.id);
-      
+
       logAuditEvent(
         'permission_deleted',
         'permission',
         permission.id.toString(),
         { name: permission.name }
       );
-      
+
       toast({
         title: 'Permission deleted',
         description: `Permission "${permission.name}" has been deleted.`,
@@ -189,14 +189,14 @@ const PermissionsPage = () => {
   const handleAddTeam = async (permissionId, teamId) => {
     try {
       await addTeam(permissionId, teamId);
-      
+
       logAuditEvent(
         'team_added',
         'permission',
         permissionId.toString(),
         { teamId }
       );
-      
+
       toast({
         title: 'Team added',
         description: 'Team has been added to the permission.',
@@ -218,14 +218,14 @@ const PermissionsPage = () => {
   const handleRemoveTeam = async (permissionId, teamId) => {
     try {
       await removeTeam(permissionId, teamId);
-      
+
       logAuditEvent(
         'team_removed',
         'permission',
         permissionId.toString(),
         { teamId }
       );
-      
+
       toast({
         title: 'Team removed',
         description: 'Team has been removed from the permission.',
@@ -270,7 +270,7 @@ const PermissionsPage = () => {
       const teams = await getPermissionTeams(permission.id);
       const users = await getPermissionUsers(permission.id);
       const repositories = await getPermissionRepositories(permission.id);
-      
+
       setSelectedPermission(permission);
       setFormData(prev => ({
         ...prev,
@@ -550,4 +550,4 @@ const PermissionsPage = () => {
   );
 };
 
-export default PermissionsPage; 
+export default PermissionsPage;

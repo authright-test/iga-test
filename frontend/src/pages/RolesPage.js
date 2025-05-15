@@ -1,39 +1,38 @@
-import React, { useState } from 'react';
 import {
+  Badge,
   Box,
   Button,
   Flex,
-  Heading,
-  Table,
-  Thead,
-  Tbody,
-  Tr,
-  Th,
-  Td,
-  useDisclosure,
-  Modal,
-  ModalOverlay,
-  ModalContent,
-  ModalHeader,
-  ModalBody,
-  ModalCloseButton,
   FormControl,
   FormLabel,
-  Input,
-  Textarea,
-  Select,
-  useToast,
-  Badge,
+  Heading,
   IconButton,
+  Input,
   Menu,
   MenuButton,
-  MenuList,
   MenuItem,
+  MenuList,
+  Modal,
+  ModalBody,
+  ModalCloseButton,
+  ModalContent,
+  ModalHeader,
+  ModalOverlay,
+  Table,
+  Tbody,
+  Td,
+  Textarea,
+  Th,
+  Thead,
+  Tr,
   useColorModeValue,
+  useDisclosure,
+  useToast,
 } from '@chakra-ui/react';
-import { FiMoreVertical, FiEdit2, FiTrash2, FiUserPlus, FiUserMinus } from 'react-icons/fi';
-import { useRoles } from '../hooks/useRoles';
+import React, { useState } from 'react';
+import { FiEdit2, FiMoreVertical, FiTrash2, FiUserMinus, FiUserPlus } from 'react-icons/fi';
 import { useAuth } from '../contexts/AuthContext';
+import { useRoles } from '../hooks/useRoles';
 
 const RolesPage = () => {
   const [selectedRole, setSelectedRole] = useState(null);
@@ -42,17 +41,17 @@ const RolesPage = () => {
     description: '',
     permissions: [],
   });
-  
-  const { 
-    isOpen: isRoleModalOpen, 
-    onOpen: onRoleModalOpen, 
-    onClose: onRoleModalClose 
+
+  const {
+    isOpen: isRoleModalOpen,
+    onOpen: onRoleModalOpen,
+    onClose: onRoleModalClose
   } = useDisclosure();
-  
-  const { 
-    isOpen: isPermissionsModalOpen, 
-    onOpen: onPermissionsModalOpen, 
-    onClose: onPermissionsModalClose 
+
+  const {
+    isOpen: isPermissionsModalOpen,
+    onOpen: onPermissionsModalOpen,
+    onClose: onPermissionsModalClose
   } = useDisclosure();
 
   const toast = useToast();
@@ -87,14 +86,14 @@ const RolesPage = () => {
       }
 
       const newRole = await createRole(formData);
-      
+
       logAuditEvent(
         'role_created',
         'role',
         newRole.id.toString(),
         { name: formData.name }
       );
-      
+
       toast({
         title: 'Role created',
         description: `Role "${formData.name}" has been created.`,
@@ -102,7 +101,7 @@ const RolesPage = () => {
         duration: 3000,
         isClosable: true,
       });
-      
+
       onRoleModalClose();
     } catch (err) {
       toast({
@@ -120,14 +119,14 @@ const RolesPage = () => {
       if (!selectedRole) return;
 
       const updatedRole = await updateRole(selectedRole.id, formData);
-      
+
       logAuditEvent(
         'role_updated',
         'role',
         selectedRole.id.toString(),
         { name: formData.name }
       );
-      
+
       toast({
         title: 'Role updated',
         description: `Role "${formData.name}" has been updated.`,
@@ -135,7 +134,7 @@ const RolesPage = () => {
         duration: 3000,
         isClosable: true,
       });
-      
+
       onRoleModalClose();
     } catch (err) {
       toast({
@@ -151,14 +150,14 @@ const RolesPage = () => {
   const handleDeleteRole = async (role) => {
     try {
       await deleteRole(role.id);
-      
+
       logAuditEvent(
         'role_deleted',
         'role',
         role.id.toString(),
         { name: role.name }
       );
-      
+
       toast({
         title: 'Role deleted',
         description: `Role "${role.name}" has been deleted.`,
@@ -180,14 +179,14 @@ const RolesPage = () => {
   const handleAssignRole = async (roleId, userId) => {
     try {
       await assignRole(roleId, userId);
-      
+
       logAuditEvent(
         'role_assigned',
         'role',
         roleId.toString(),
         { userId }
       );
-      
+
       toast({
         title: 'Role assigned',
         description: 'Role has been assigned to user.',
@@ -209,14 +208,14 @@ const RolesPage = () => {
   const handleRevokeRole = async (roleId, userId) => {
     try {
       await revokeRole(roleId, userId);
-      
+
       logAuditEvent(
         'role_revoked',
         'role',
         roleId.toString(),
         { userId }
       );
-      
+
       toast({
         title: 'Role revoked',
         description: 'Role has been revoked from user.',
@@ -238,14 +237,14 @@ const RolesPage = () => {
   const handleUpdatePermissions = async (roleId, permissions) => {
     try {
       await updateRolePermissions(roleId, permissions);
-      
+
       logAuditEvent(
         'role_permissions_updated',
         'role',
         roleId.toString(),
         { permissions }
       );
-      
+
       toast({
         title: 'Permissions updated',
         description: 'Role permissions have been updated.',
@@ -253,7 +252,7 @@ const RolesPage = () => {
         duration: 3000,
         isClosable: true,
       });
-      
+
       onPermissionsModalClose();
     } catch (err) {
       toast({
@@ -465,4 +464,4 @@ const RolesPage = () => {
   );
 };
 
-export default RolesPage; 
+export default RolesPage;

@@ -1,15 +1,5 @@
+import { Alert, AlertDescription, AlertIcon, AlertTitle, Box, Button, useColorModeValue, } from '@chakra-ui/react';
 import React from 'react';
-import {
-  Box,
-  Alert,
-  AlertIcon,
-  AlertTitle,
-  AlertDescription,
-  Button,
-  VStack,
-  Text,
-  useColorModeValue,
-} from '@chakra-ui/react';
 
 class ErrorBoundary extends React.Component {
   constructor(props) {
@@ -68,4 +58,4 @@ class ErrorBoundary extends React.Component {
   }
 }
 
-export default ErrorBoundary; 
+export default ErrorBoundary;

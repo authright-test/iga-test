@@ -1,7 +1,6 @@
-const logger = require('../../utils/logger');
-const { User, Organization, AuditLog } = require('../../models');
-const { evaluatePolicy, executePolicyActions } = require('../../services/policyService');
-const { getOrganizationPolicies } = require('../../services/policyService');
+import { AuditLog, Organization, User } from '../../models/index.js';
+import { evaluatePolicy, executePolicyActions, getOrganizationPolicies } from '../../services/policyService.js';
+import logger from '../../utils/logger.js';
 
 /**
  * Handle member added events
@@ -10,19 +9,19 @@ const { getOrganizationPolicies } = require('../../services/policyService');
 async function handleMemberAdded(payload) {
   try {
     logger.info('Member added event received');
-    
+
     const { sender, repository, member, organization } = payload;
-    
+
     // Get organization from database
     const orgRecord = await Organization.findOne({
       where: { githubId: organization.id.toString() }
     });
-    
+
     if (!orgRecord) {
       logger.warn(`Organization not found: ${organization.login}`);
       return;
     }
-    
+
     // Find or create the added member
     const [userRecord] = await User.findOrCreate({
       where: { githubId: member.id.toString() },
@@ -31,7 +30,7 @@ async function handleMemberAdded(payload) {
         avatarUrl: member.avatar_url
       }
     });
-    
+
     // Find or create the sender
     const [senderRecord] = await User.findOrCreate({
       where: { githubId: sender.id.toString() },
@@ -40,7 +39,7 @@ async function handleMemberAdded(payload) {
         avatarUrl: sender.avatar_url
       }
     });
-    
+
     // Create audit log
     await AuditLog.create({
       action: 'member_added',
@@ -53,22 +52,22 @@ async function handleMemberAdded(payload) {
       },
       UserId: senderRecord.id
     });
-    
+
     // Check policies
     const policies = await getOrganizationPolicies(orgRecord.id);
-    
+
     // Process applicable policies
     for (const policy of policies) {
       if (!policy.isActive) continue;
-      
+
       const isViolated = await evaluatePolicy(policy, payload, {
         event: 'member_added',
         organization: orgRecord
       });
-      
+
       if (isViolated) {
         logger.info(`Policy ${policy.name} violated for member added event`);
-        
+
         // Execute policy actions
         await executePolicyActions(policy, payload, {
           event: 'member_added',
@@ -92,19 +91,19 @@ async function handleMemberAdded(payload) {
 async function handleMemberRemoved(payload) {
   try {
     logger.info('Member removed event received');
-    
+
     const { sender, repository, member, organization } = payload;
-    
+
     // Get organization from database
     const orgRecord = await Organization.findOne({
       where: { githubId: organization.id.toString() }
     });
-    
+
     if (!orgRecord) {
       logger.warn(`Organization not found: ${organization.login}`);
       return;
     }
-    
+
     // Find or create the removed member
     const [userRecord] = await User.findOrCreate({
       where: { githubId: member.id.toString() },
@@ -113,7 +112,7 @@ async function handleMemberRemoved(payload) {
         avatarUrl: member.avatar_url
       }
     });
-    
+
     // Find or create the sender
     const [senderRecord] = await User.findOrCreate({
       where: { githubId: sender.id.toString() },
@@ -122,7 +121,7 @@ async function handleMemberRemoved(payload) {
         avatarUrl: sender.avatar_url
       }
     });
-    
+
     // Create audit log
     await AuditLog.create({
       action: 'member_removed',
@@ -135,22 +134,22 @@ async function handleMemberRemoved(payload) {
       },
       UserId: senderRecord.id
     });
-    
+
     // Check policies
     const policies = await getOrganizationPolicies(orgRecord.id);
-    
+
     // Process applicable policies
     for (const policy of policies) {
       if (!policy.isActive) continue;
-      
+
       const isViolated = await evaluatePolicy(policy, payload, {
         event: 'member_removed',
         organization: orgRecord
       });
-      
+
       if (isViolated) {
         logger.info(`Policy ${policy.name} violated for member removed event`);
-        
+
         // Execute policy actions
         await executePolicyActions(policy, payload, {
           event: 'member_removed',
@@ -174,19 +173,19 @@ async function handleMemberRemoved(payload) {
 async function handleMemberUpdated(payload) {
   try {
     logger.info('Member updated event received');
-    
+
     const { sender, repository, member, changes, organization } = payload;
-    
+
     // Get organization from database
     const orgRecord = await Organization.findOne({
       where: { githubId: organization.id.toString() }
     });
-    
+
     if (!orgRecord) {
       logger.warn(`Organization not found: ${organization.login}`);
       return;
     }
-    
+
     // Find or create the updated member
     const [userRecord] = await User.findOrCreate({
       where: { githubId: member.id.toString() },
@@ -195,7 +194,7 @@ async function handleMemberUpdated(payload) {
         avatarUrl: member.avatar_url
       }
     });
-    
+
     // Find or create the sender
     const [senderRecord] = await User.findOrCreate({
       where: { githubId: sender.id.toString() },
@@ -204,7 +203,7 @@ async function handleMemberUpdated(payload) {
         avatarUrl: sender.avatar_url
       }
     });
-    
+
     // Create audit log
     await AuditLog.create({
       action: 'member_updated',
@@ -219,22 +218,22 @@ async function handleMemberUpdated(payload) {
       },
       UserId: senderRecord.id
     });
-    
+
     // Check policies
     const policies = await getOrganizationPolicies(orgRecord.id);
-    
+
     // Process applicable policies
     for (const policy of policies) {
       if (!policy.isActive) continue;
-      
+
       const isViolated = await evaluatePolicy(policy, payload, {
         event: 'member_updated',
         organization: orgRecord
       });
-      
+
       if (isViolated) {
         logger.info(`Policy ${policy.name} violated for member updated event`);
-        
+
         // Execute policy actions
         await executePolicyActions(policy, payload, {
           event: 'member_updated',
@@ -251,8 +250,8 @@ async function handleMemberUpdated(payload) {
   }
 }
 
-module.exports = {
+export {
   handleMemberAdded,
   handleMemberRemoved,
   handleMemberUpdated
-}; 
+};

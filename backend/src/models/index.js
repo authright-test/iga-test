@@ -1,11 +1,11 @@
-const User = require('./User');
-const Role = require('./Role');
-const Permission = require('./Permission');
-const Organization = require('./Organization');
-const Repository = require('./Repository');
-const Team = require('./Team');
-const Policy = require('./Policy');
-const AuditLog = require('./AuditLog');
+import AuditLog from './AuditLog.js';
+import Organization from './Organization.js';
+import Permission from './Permission.js';
+import Policy from './Policy.js';
+import Repository from './Repository.js';
+import Role from './Role.js';
+import Team from './Team.js';
+import User from './User.js';
 
 // Define associations
 // User <-> Role (Many-to-Many)
@@ -44,7 +44,7 @@ AuditLog.belongsTo(User);
 Organization.belongsToMany(Policy, { through: 'OrganizationPolicies' });
 Policy.belongsToMany(Organization, { through: 'OrganizationPolicies' });
 
-module.exports = {
+export {
   User,
   Role,
   Permission,
@@ -53,4 +53,4 @@ module.exports = {
   Team,
   Policy,
   AuditLog
-}; 
+};

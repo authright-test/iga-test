@@ -1,35 +1,32 @@
-import React, { useState } from 'react';
 import {
-  Box,
-  Card,
-  CardHeader,
-  CardBody,
-  Heading,
-  Text,
-  Stack,
-  HStack,
-  VStack,
-  Icon,
   Badge,
-  useColorModeValue,
   Button,
-  Input,
-  Select,
+  Card,
+  CardBody,
+  CardHeader,
   DateRangePicker,
-  Table,
-  Thead,
-  Tbody,
-  Tr,
-  Th,
-  Td,
+  Heading,
+  HStack,
+  Icon,
+  IconButton,
+  Input,
   Menu,
   MenuButton,
-  MenuList,
   MenuItem,
-  IconButton,
+  MenuList,
+  Select,
+  Stack,
+  Table,
+  Tbody,
+  Td,
+  Th,
+  Thead,
   Tooltip,
+  Tr,
+  useColorModeValue,
 } from '@chakra-ui/react';
-import { FiFilter, FiDownload, FiSearch, FiRefreshCw, FiAlertCircle } from 'react-icons/fi';
+import React, { useState } from 'react';
+import { FiAlertCircle, FiDownload, FiRefreshCw, FiSearch } from 'react-icons/fi';
 import { useAuditLogs } from '../../hooks/useAuditLogs';
 
 const AuditLogViewer = () => {
@@ -197,4 +194,4 @@ const AuditLogViewer = () => {
   );
 };
 
-export default AuditLogViewer; 
+export default AuditLogViewer;

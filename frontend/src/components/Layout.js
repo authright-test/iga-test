@@ -1,41 +1,41 @@
-import React from 'react';
-import { Link as RouterLink, useLocation } from 'react-router-dom';
 import {
+  Avatar,
   Box,
-  Flex,
-  Icon,
-  Text,
-  HStack,
-  VStack,
+  CloseButton,
   Drawer,
   DrawerContent,
   DrawerOverlay,
-  useDisclosure,
+  Flex,
+  Heading,
+  HStack,
+  Icon,
   IconButton,
-  CloseButton,
-  Avatar,
+  Link,
   Menu,
   MenuButton,
-  MenuList,
-  MenuItem,
   MenuDivider,
+  MenuItem,
+  MenuList,
+  Text,
   useColorModeValue,
-  Heading,
-  Link,
+  useDisclosure,
+  VStack,
 } from '@chakra-ui/react';
+import React from 'react';
 import {
-  FiMenu,
-  FiHome,
-  FiUsers,
-  FiShield,
-  FiList,
   FiActivity,
-  FiServer,
   FiCpu,
   FiGitBranch,
+  FiHome,
+  FiList,
   FiLogOut,
+  FiMenu,
+  FiServer,
+  FiShield,
   FiUser,
+  FiUsers,
 } from 'react-icons/fi';
+import { Link as RouterLink, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 
 const SidebarContent = ({ onClose, ...rest }) => {
@@ -181,7 +181,7 @@ const MobileNav = ({ onOpen, ...rest }) => {
 };
 
 const Layout = ({ children, drawerDisclosure }) => {
-  const { isOpen, onOpen, onClose } = drawerDisclosure || useDisclosure();
+  const { isOpen, onOpen, onClose } = useDisclosure();
 
   return (
     <Box minH="100vh" bg={useColorModeValue('gray.50', 'gray.800')}>

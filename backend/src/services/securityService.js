@@ -1,13 +1,13 @@
-const { models } = require('../models');
-const cacheService = require('./cacheService');
-const { Op } = require('sequelize');
+import { Op } from 'sequelize';
+import { models } from '../models/index.js';
+import cacheService from './cacheService.js';
 
 class SecurityService {
   // 使用批量查询和分页优化，并添加缓存
   async getSecurityStats(orgId, page = 1, limit = 20) {
     return cacheService.getSecurityStats(orgId, async () => {
       const offset = (page - 1) * limit;
-      
+
       const [
         totalThreats,
         totalVulnerabilities,
@@ -16,19 +16,19 @@ class SecurityService {
         recommendations
       ] = await Promise.all([
         models.SecurityThreat.count({
-          where: { 
+          where: {
             organizationId: orgId,
             status: 'active'
           }
         }),
         models.Vulnerability.count({
-          where: { 
+          where: {
             organizationId: orgId,
             status: 'open'
           }
         }),
         models.AccessViolation.count({
-          where: { 
+          where: {
             organizationId: orgId,
             status: 'pending'
           }
@@ -41,7 +41,7 @@ class SecurityService {
           offset
         }),
         models.SecurityRecommendation.findAll({
-          where: { 
+          where: {
             organizationId: orgId,
             status: 'pending'
           },
@@ -65,7 +65,7 @@ class SecurityService {
   async getSecurityEvents(orgId, filters = {}, page = 1, limit = 20) {
     return cacheService.getSecurityEvents(orgId, filters, async () => {
       const offset = (page - 1) * limit;
-      
+
       const where = {
         organizationId: orgId,
         ...(filters.severity && { severity: filters.severity }),
@@ -160,4 +160,8 @@ class SecurityService {
   }
 }
 
-module.exports = new SecurityService(); 
+export {
+  checkSecurityCompliance,
+  enforceSecurityPolicies,
+  monitorSecurityEvents
+};

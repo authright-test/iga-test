@@ -1,5 +1,5 @@
-const { Sequelize } = require('sequelize');
-const logger = require('../utils/logger');
+import { Sequelize } from 'sequelize';
+import logger from '../utils/logger.js';
 
 const sequelize = new Sequelize(
   process.env.DB_NAME,
@@ -23,7 +23,7 @@ async function setupDatabase() {
   try {
     await sequelize.authenticate();
     logger.info('Database connection has been established successfully.');
-    
+
     // Sync all models
     await sequelize.sync({ alter: process.env.NODE_ENV === 'development' });
     logger.info('Database models synchronized successfully.');
@@ -33,7 +33,4 @@ async function setupDatabase() {
   }
 }
 
-module.exports = {
-  sequelize,
-  setupDatabase
-}; 
+export { sequelize, setupDatabase };

@@ -1,12 +1,13 @@
-const { createClient } = require('redis');
-const logger = require('../utils/logger');
+import { createClient } from 'redis';
+import logger from '../utils/logger.js';
 
 const redisClient = createClient({
-  url: `redis://${process.env.REDIS_HOST}:${process.env.REDIS_PORT}`,
-  password: process.env.REDIS_PASSWORD
+  url: process.env.REDIS_URL || 'redis://localhost:6379'
 });
 
-async function setupRedis() {
+redisClient.on('error', (err) => console.error('Redis Client Error', err));
+
+export const setupRedis = async () => {
   try {
     await redisClient.connect();
     logger.info('Redis connection has been established successfully.');
@@ -14,13 +15,6 @@ async function setupRedis() {
     logger.error('Unable to connect to Redis:', error);
     throw error;
   }
-}
+};
 
-redisClient.on('error', (err) => {
-  logger.error('Redis Client Error:', err);
-});
-
-module.exports = {
-  redisClient,
-  setupRedis
-}; 
+export { redisClient };

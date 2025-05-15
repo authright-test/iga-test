@@ -1,41 +1,41 @@
-import React, { useState, useEffect } from 'react';
 import {
-  Box,
-  Button,
-  Heading,
-  Table,
-  Thead,
-  Tbody,
-  Tr,
-  Th,
-  Td,
-  Badge,
-  Flex,
-  useDisclosure,
-  Modal,
-  ModalOverlay,
-  ModalContent,
-  ModalHeader,
-  ModalFooter,
-  ModalBody,
-  ModalCloseButton,
-  FormControl,
-  FormLabel,
-  Input,
-  Textarea,
-  IconButton,
-  useToast,
-  Spinner,
-  Text,
-  HStack,
   Alert,
   AlertIcon,
-  Select,
-  Switch,
+  Badge,
+  Box,
+  Button,
+  Flex,
+  FormControl,
   FormHelperText,
+  FormLabel,
+  Heading,
+  HStack,
+  IconButton,
+  Input,
+  Modal,
+  ModalBody,
+  ModalCloseButton,
+  ModalContent,
+  ModalFooter,
+  ModalHeader,
+  ModalOverlay,
+  Select,
+  Spinner,
+  Switch,
+  Table,
+  Tbody,
+  Td,
+  Text,
+  Textarea,
+  Th,
+  Thead,
+  Tr,
+  useDisclosure,
+  useToast,
 } from '@chakra-ui/react';
-import { FiEdit, FiTrash2, FiPlus, FiEye, FiCheck, FiX } from 'react-icons/fi';
 import axios from 'axios';
+import React, { useEffect, useState } from 'react';
+import { FiCheck, FiEdit, FiPlus, FiTrash2, FiX } from 'react-icons/fi';
 import { useAuth } from '../contexts/AuthContext';
 
 const PoliciesPage = () => {
@@ -69,11 +69,11 @@ const PoliciesPage = () => {
     try {
       setIsLoading(true);
       setError(null);
-      
+
       const response = await axios.get(`/api/policies?organizationId=${orgId}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      
+
       setPolicies(response.data);
     } catch (err) {
       setError('Failed to fetch policies: ' + (err.response?.data?.error || err.message));
@@ -94,20 +94,20 @@ const PoliciesPage = () => {
     const { name, value } = e.target;
     setFormData({ ...formData, [name]: value });
   };
-  
+
   // Handle toggle change
   const handleToggleChange = (e) => {
     const { name, checked } = e.target;
     setFormData({ ...formData, [name]: checked });
   };
-  
+
   // Handle condition changes
   const handleConditionChange = (index, field, value) => {
     const updatedConditions = [...formData.conditions];
     updatedConditions[index] = { ...updatedConditions[index], [field]: value };
     setFormData({ ...formData, conditions: updatedConditions });
   };
-  
+
   // Add a new condition
   const addCondition = () => {
     setFormData({
@@ -115,21 +115,21 @@ const PoliciesPage = () => {
       conditions: [...formData.conditions, { type: 'equals', field: '', value: '' }]
     });
   };
-  
+
   // Remove a condition
   const removeCondition = (index) => {
     const updatedConditions = [...formData.conditions];
     updatedConditions.splice(index, 1);
     setFormData({ ...formData, conditions: updatedConditions });
   };
-  
+
   // Handle action changes
   const handleActionChange = (index, value) => {
     const updatedActions = [...formData.actions];
     updatedActions[index] = { type: value };
     setFormData({ ...formData, actions: updatedActions });
   };
-  
+
   // Add a new action
   const addAction = () => {
     setFormData({
@@ -137,7 +137,7 @@ const PoliciesPage = () => {
       actions: [...formData.actions, { type: 'notify_admin' }]
     });
   };
-  
+
   // Remove an action
   const removeAction = (index) => {
     const updatedActions = [...formData.actions];
@@ -193,10 +193,10 @@ const PoliciesPage = () => {
           headers: { Authorization: `Bearer ${token}` }
         });
       }
-      
+
       // Refresh policies
       fetchPolicies(organization.id);
-      
+
       toast({
         title: policy.isActive ? 'Policy deactivated' : 'Policy activated',
         description: `The policy "${policy.name}" has been ${policy.isActive ? 'deactivated' : 'activated'}.`,
@@ -248,7 +248,7 @@ const PoliciesPage = () => {
         await axios.put(`/api/policies/${selectedPolicy.id}`, formData, {
           headers: { Authorization: `Bearer ${token}` }
         });
-        
+
         toast({
           title: 'Policy updated',
           description: `The policy "${formData.name}" has been updated.`,
@@ -261,7 +261,7 @@ const PoliciesPage = () => {
         await axios.post('/api/policies', formData, {
           headers: { Authorization: `Bearer ${token}` }
         });
-        
+
         toast({
           title: 'Policy created',
           description: `The policy "${formData.name}" has been created.`,
@@ -270,7 +270,7 @@ const PoliciesPage = () => {
           isClosable: true,
         });
       }
-      
+
       // Close modal and refresh policies
       onPolicyModalClose();
       fetchPolicies(organization.id);
@@ -291,7 +291,7 @@ const PoliciesPage = () => {
       await axios.delete(`/api/policies/${selectedPolicy.id}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      
+
       toast({
         title: 'Policy deleted',
         description: `The policy "${selectedPolicy.name}" has been deleted.`,
@@ -299,7 +299,7 @@ const PoliciesPage = () => {
         duration: 3000,
         isClosable: true,
       });
-      
+
       // Close modal and refresh policies
       onDeleteModalClose();
       fetchPolicies(organization.id);
@@ -322,7 +322,7 @@ const PoliciesPage = () => {
       high: 'orange',
       critical: 'red'
     };
-    
+
     return (
       <Badge colorScheme={colorMap[severity] || 'gray'}>
         {severity.charAt(0).toUpperCase() + severity.slice(1)}
@@ -338,14 +338,14 @@ const PoliciesPage = () => {
           Create Policy
         </Button>
       </Flex>
-      
+
       {error && (
         <Alert status="error" mb={4}>
           <AlertIcon />
           {error}
         </Alert>
       )}
-      
+
       {isLoading ? (
         <Flex justify="center" align="center" height="200px">
           <Spinner size="xl" color="brand.500" />
@@ -430,7 +430,7 @@ const PoliciesPage = () => {
                 placeholder="Enter policy name"
               />
             </FormControl>
-            
+
             <FormControl id="description" mb={4}>
               <FormLabel>Description</FormLabel>
               <Textarea
@@ -440,12 +440,12 @@ const PoliciesPage = () => {
                 placeholder="Enter policy description"
               />
             </FormControl>
-            
+
             <Flex gap={4} mb={4}>
               <FormControl id="severity">
                 <FormLabel>Severity</FormLabel>
-                <Select 
-                  name="severity" 
+                <Select
+                  name="severity"
                   value={formData.severity}
                   onChange={handleInputChange}
                 >
@@ -455,10 +455,10 @@ const PoliciesPage = () => {
                   <option value="critical">Critical</option>
                 </Select>
               </FormControl>
-              
+
               <FormControl id="isActive" display="flex" alignItems="center">
                 <FormLabel mb="0">Active</FormLabel>
-                <Switch 
+                <Switch
                   name="isActive"
                   isChecked={formData.isActive}
                   onChange={handleToggleChange}
@@ -467,11 +467,11 @@ const PoliciesPage = () => {
                 />
               </FormControl>
             </Flex>
-            
+
             <Box mb={4}>
               <FormLabel>Conditions</FormLabel>
               <FormHelperText mb={2}>Define when this policy should be triggered.</FormHelperText>
-              
+
               {formData.conditions.map((condition, index) => (
                 <Flex key={index} gap={2} mb={2} align="center">
                   <Select
@@ -485,19 +485,19 @@ const PoliciesPage = () => {
                     <option value="greater_than">Greater Than</option>
                     <option value="less_than">Less Than</option>
                   </Select>
-                  
+
                   <Input
                     placeholder="Field (e.g., repository.visibility)"
                     value={condition.field}
                     onChange={(e) => handleConditionChange(index, 'field', e.target.value)}
                   />
-                  
+
                   <Input
                     placeholder="Value"
                     value={condition.value}
                     onChange={(e) => handleConditionChange(index, 'value', e.target.value)}
                   />
-                  
+
                   <IconButton
                     icon={<FiTrash2 />}
                     colorScheme="red"
@@ -508,16 +508,16 @@ const PoliciesPage = () => {
                   />
                 </Flex>
               ))}
-              
+
               <Button size="sm" onClick={addCondition} mt={2}>
                 Add Condition
               </Button>
             </Box>
-            
+
             <Box mb={4}>
               <FormLabel>Actions</FormLabel>
               <FormHelperText mb={2}>Define what should happen when policy is triggered.</FormHelperText>
-              
+
               {formData.actions.map((action, index) => (
                 <Flex key={index} gap={2} mb={2} align="center">
                   <Select
@@ -529,7 +529,7 @@ const PoliciesPage = () => {
                     <option value="log_event">Log Event</option>
                     <option value="remove_permission">Remove Permission</option>
                   </Select>
-                  
+
                   <IconButton
                     icon={<FiTrash2 />}
                     colorScheme="red"
@@ -540,7 +540,7 @@ const PoliciesPage = () => {
                   />
                 </Flex>
               ))}
-              
+
               <Button size="sm" onClick={addAction} mt={2}>
                 Add Action
               </Button>
@@ -582,4 +582,4 @@ const PoliciesPage = () => {
   );
 };
 
-export default PoliciesPage; 
+export default PoliciesPage;

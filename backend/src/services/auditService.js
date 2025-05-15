@@ -1,7 +1,7 @@
-const { AuditLog, User, Organization, Repository, Team } = require('../models');
-const logger = require('../utils/logger');
-const { Op } = require('sequelize');
-const { Parser } = require('json2csv');
+import { Parser } from 'json2csv';
+import { Op } from 'sequelize';
+import { AuditLog, Organization, Repository, Team, User } from '../models/index.js';
+import logger from '../utils/logger.js';
 
 /**
  * Create an audit log entry
@@ -19,7 +19,7 @@ const createAuditLog = async (logData) => {
       userAgent: logData.userAgent,
       UserId: logData.userId
     });
-    
+
     return auditLog;
   } catch (error) {
     logger.error('Error creating audit log:', error);
@@ -37,26 +37,26 @@ const createAuditLog = async (logData) => {
 const getAuditLogs = async (filters = {}, page = 1, limit = 20) => {
   try {
     const offset = (page - 1) * limit;
-    
+
     // Build query conditions
     const where = {};
-    
+
     if (filters.action) {
       where.action = filters.action;
     }
-    
+
     if (filters.resourceType) {
       where.resourceType = filters.resourceType;
     }
-    
+
     if (filters.resourceId) {
       where.resourceId = filters.resourceId;
     }
-    
+
     if (filters.userId) {
       where.UserId = filters.userId;
     }
-    
+
     if (filters.startDate && filters.endDate) {
       where.createdAt = {
         [Op.between]: [new Date(filters.startDate), new Date(filters.endDate)]
@@ -70,7 +70,7 @@ const getAuditLogs = async (filters = {}, page = 1, limit = 20) => {
         [Op.lte]: new Date(filters.endDate)
       };
     }
-    
+
     // Search in details JSON
     if (filters.searchTerm) {
       where[Op.or] = [
@@ -79,7 +79,7 @@ const getAuditLogs = async (filters = {}, page = 1, limit = 20) => {
         { resourceType: { [Op.like]: `%${filters.searchTerm}%` } }
       ];
     }
-    
+
     // Get audit logs with pagination
     const { count, rows } = await AuditLog.findAndCountAll({
       where,
@@ -93,7 +93,7 @@ const getAuditLogs = async (filters = {}, page = 1, limit = 20) => {
       limit,
       offset
     });
-    
+
     return {
       logs: rows,
       total: count,
@@ -130,22 +130,22 @@ const getOrganizationAuditLogs = async (organizationId, filters = {}, page = 1, 
         }
       ]
     });
-    
+
     if (!organization) {
       throw new Error('Organization not found');
     }
-    
+
     // Get resource IDs
     const repositoryIds = organization.Repositories.map(repo => repo.id.toString());
     const teamIds = organization.Teams.map(team => team.id.toString());
-    
+
     // Include organization ID
     const resourceIds = [
       organizationId.toString(),
       ...repositoryIds,
       ...teamIds
     ];
-    
+
     // Override resourceId filter to include all organization resources
     const orgFilters = {
       ...filters,
@@ -153,7 +153,7 @@ const getOrganizationAuditLogs = async (organizationId, filters = {}, page = 1, 
         [Op.in]: resourceIds
       }
     };
-    
+
     return getAuditLogs(orgFilters, page, limit);
   } catch (error) {
     logger.error('Error getting organization audit logs:', error);
@@ -170,7 +170,7 @@ const getAuditLogStats = async (filters = {}) => {
   try {
     // Build query conditions based on filters
     const where = {};
-    
+
     if (filters.startDate && filters.endDate) {
       where.createdAt = {
         [Op.between]: [new Date(filters.startDate), new Date(filters.endDate)]
@@ -184,11 +184,11 @@ const getAuditLogStats = async (filters = {}) => {
         [Op.lte]: new Date(filters.endDate)
       };
     }
-    
+
     if (filters.resourceType) {
       where.resourceType = filters.resourceType;
     }
-    
+
     // Count by action type
     const actionCounts = await AuditLog.findAll({
       where,
@@ -199,7 +199,7 @@ const getAuditLogStats = async (filters = {}) => {
       group: ['action'],
       order: [[AuditLog.sequelize.literal('count'), 'DESC']]
     });
-    
+
     // Count by resource type
     const resourceCounts = await AuditLog.findAll({
       where,
@@ -210,7 +210,7 @@ const getAuditLogStats = async (filters = {}) => {
       group: ['resourceType'],
       order: [[AuditLog.sequelize.literal('count'), 'DESC']]
     });
-    
+
     // Count by user
     const userCounts = await AuditLog.findAll({
       where,
@@ -228,11 +228,11 @@ const getAuditLogStats = async (filters = {}) => {
       order: [[AuditLog.sequelize.literal('count'), 'DESC']],
       limit: 10
     });
-    
+
     // Get recent activity trend (last 7 days)
     const sevenDaysAgo = new Date();
     sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-    
+
     const activityTrend = await AuditLog.findAll({
       where: {
         ...where,
@@ -247,7 +247,7 @@ const getAuditLogStats = async (filters = {}) => {
       group: [AuditLog.sequelize.fn('DATE', AuditLog.sequelize.col('createdAt'))],
       order: [[AuditLog.sequelize.literal('date'), 'ASC']]
     });
-    
+
     return {
       actionCounts,
       resourceCounts,
@@ -271,28 +271,28 @@ const getAuditLogStats = async (filters = {}) => {
 const getAccessHistory = async (organizationId, filters = {}, page = 1, limit = 50) => {
   try {
     const offset = (page - 1) * limit;
-    
+
     // Build query conditions
     const where = {
       organizationId
     };
-    
+
     if (filters.type) {
       where.type = filters.type;
     }
-    
+
     if (filters.userId) {
       where.UserId = filters.userId;
     }
-    
+
     if (filters.repositoryId) {
       where.RepositoryId = filters.repositoryId;
     }
-    
+
     if (filters.teamId) {
       where.TeamId = filters.teamId;
     }
-    
+
     if (filters.startDate && filters.endDate) {
       where.createdAt = {
         [Op.between]: [new Date(filters.startDate), new Date(filters.endDate)]
@@ -306,7 +306,7 @@ const getAccessHistory = async (organizationId, filters = {}, page = 1, limit = 
         [Op.lte]: new Date(filters.endDate)
       };
     }
-    
+
     // Get access history with pagination
     const { count, rows } = await AuditLog.findAndCountAll({
       where,
@@ -328,7 +328,7 @@ const getAccessHistory = async (organizationId, filters = {}, page = 1, limit = 
       limit,
       offset
     });
-    
+
     return {
       history: rows,
       total: count,
@@ -407,7 +407,7 @@ const exportAccessHistory = async (organizationId, filters = {}, format = 'csv')
   try {
     // Get all matching records without pagination
     const { history } = await getAccessHistory(organizationId, filters, 1, 10000);
-    
+
     // Format data for export
     const exportData = history.map(record => ({
       timestamp: record.createdAt,
@@ -418,10 +418,10 @@ const exportAccessHistory = async (organizationId, filters = {}, format = 'csv')
       team: record.Team?.name,
       details: JSON.stringify(record.details)
     }));
-    
+
     let data;
     let filename;
-    
+
     if (format === 'csv') {
       const fields = ['timestamp', 'type', 'action', 'user', 'repository', 'team', 'details'];
       const parser = new Parser({ fields });
@@ -431,7 +431,7 @@ const exportAccessHistory = async (organizationId, filters = {}, format = 'csv')
       data = JSON.stringify(exportData, null, 2);
       filename = `access-history-${new Date().toISOString()}.json`;
     }
-    
+
     return { data, filename };
   } catch (error) {
     logger.error('Error exporting access history:', error);
@@ -439,7 +439,7 @@ const exportAccessHistory = async (organizationId, filters = {}, format = 'csv')
   }
 };
 
-module.exports = {
+export {
   createAuditLog,
   getAuditLogs,
   getOrganizationAuditLogs,
@@ -449,4 +449,4 @@ module.exports = {
   getAccessHistoryByRepository,
   getAccessHistoryByTeam,
   exportAccessHistory
-}; 
+};

@@ -1,55 +1,44 @@
-import React, { useEffect, useState } from 'react';
 import {
-  Box,
-  Button,
-  Heading,
-  Text,
-  Flex,
-  SimpleGrid,
-  Stat,
-  StatLabel,
-  StatNumber,
-  StatHelpText,
-  Icon,
-  Avatar,
-  useColorModeValue,
-  useDisclosure,
-  Modal,
-  ModalOverlay,
-  ModalContent,
-  ModalHeader,
-  ModalFooter,
-  ModalBody,
-  ModalCloseButton,
-  FormControl,
-  FormLabel,
-  Input,
-  Textarea,
-  Stack,
-  Divider,
-  Spinner,
   Alert,
   AlertIcon,
-  useToast,
+  Avatar,
+  Box,
+  Button,
   Card,
-  CardHeader,
   CardBody,
   CardFooter,
-  Tag,
+  CardHeader,
+  Flex,
+  FormControl,
+  FormLabel,
+  Heading,
   HStack,
+  Icon,
+  Input,
+  Modal,
+  ModalBody,
+  ModalCloseButton,
+  ModalContent,
+  ModalFooter,
+  ModalHeader,
+  ModalOverlay,
+  SimpleGrid,
+  Spinner,
+  Stack,
+  Stat,
+  StatHelpText,
+  StatLabel,
+  StatNumber,
+  Tag,
+  Text,
+  Textarea,
+  useColorModeValue,
+  useDisclosure,
+  useToast,
 } from '@chakra-ui/react';
-import { 
-  FiEdit, 
-  FiUsers, 
-  FiGitBranch, 
-  FiShield, 
-  FiList, 
-  FiMail, 
-  FiGlobe, 
-  FiClock,
-  FiInfo,
-} from 'react-icons/fi';
 import axios from 'axios';
+import React, { useEffect, useState } from 'react';
+import { FiClock, FiEdit, FiGitBranch, FiGlobe, FiInfo, FiList, FiMail, FiShield, FiUsers, } from 'react-icons/fi';
 import { useAuth } from '../contexts/AuthContext';
 
 const OrganizationPage = () => {
@@ -64,16 +53,16 @@ const OrganizationPage = () => {
     website: '',
     location: '',
   });
-  
+
   const { isOpen, onOpen, onClose } = useDisclosure();
   const toast = useToast();
-  
+
   // 获取组织详细信息
   const fetchOrganizationDetails = async () => {
     try {
       setIsLoading(true);
       setError(null);
-      
+
       if (!organization?.id) {
         // 如果没有组织信息，使用模拟数据
         const mockOrgDetails = {
@@ -95,7 +84,7 @@ const OrganizationPage = () => {
             policies: 8,
           }
         };
-        
+
         setOrgDetails(mockOrgDetails);
         setFormData({
           name: mockOrgDetails.name,
@@ -106,14 +95,14 @@ const OrganizationPage = () => {
         });
         return;
       }
-      
+
       // 获取真实组织数据
       const response = await axios.get(`/api/organizations/${organization.id}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      
+
       setOrgDetails(response.data);
-      
+
       // 设置表单数据
       setFormData({
         name: response.data.name,
@@ -129,18 +118,18 @@ const OrganizationPage = () => {
       setIsLoading(false);
     }
   };
-  
+
   // 页面加载时获取组织数据
   useEffect(() => {
     fetchOrganizationDetails();
   }, [organization?.id]);
-  
+
   // 处理表单输入变化
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData({ ...formData, [name]: value });
   };
-  
+
   // 提交组织信息更新
   const handleUpdateOrganization = async () => {
     try {
@@ -154,7 +143,7 @@ const OrganizationPage = () => {
         });
         return;
       }
-      
+
       if (!organization?.id) {
         toast({
           title: 'Demo Mode',
@@ -163,7 +152,7 @@ const OrganizationPage = () => {
           duration: 3000,
           isClosable: true,
         });
-        
+
         // 更新本地状态以模拟更新
         const updatedOrgDetails = {
           ...orgDetails,
@@ -174,31 +163,31 @@ const OrganizationPage = () => {
           location: formData.location,
           updatedAt: new Date().toISOString(),
         };
-        
+
         setOrgDetails(updatedOrgDetails);
         onClose();
         return;
       }
-      
+
       // 更新组织信息
       const response = await axios.put(`/api/organizations/${organization.id}`, formData, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      
+
       setOrgDetails(response.data);
-      
+
       // 记录审计日志
       logAuditEvent(
         'organization_updated',
         'organization',
         organization.id.toString(),
-        { 
-          updatedFields: Object.keys(formData).filter(key => 
+        {
+          updatedFields: Object.keys(formData).filter(key =>
             formData[key] !== (orgDetails[key] || '')
-          ) 
+          )
         }
       );
-      
+
       toast({
         title: 'Organization Updated',
         description: 'Organization information has been updated successfully',
@@ -206,7 +195,7 @@ const OrganizationPage = () => {
         duration: 3000,
         isClosable: true,
       });
-      
+
       onClose();
     } catch (err) {
       toast({
@@ -218,15 +207,15 @@ const OrganizationPage = () => {
       });
     }
   };
-  
+
   // 计算组织的活跃时间
   const getOrganizationAge = () => {
     if (!orgDetails?.createdAt) return 'N/A';
-    
+
     const createdDate = new Date(orgDetails.createdAt);
     const now = new Date();
     const diffInDays = Math.floor((now - createdDate) / (1000 * 60 * 60 * 24));
-    
+
     if (diffInDays < 30) {
       return `${diffInDays} days`;
     } else if (diffInDays < 365) {
@@ -238,7 +227,7 @@ const OrganizationPage = () => {
       return `${years} year${years !== 1 ? 's' : ''}${remainingMonths > 0 ? ` ${remainingMonths} month${remainingMonths !== 1 ? 's' : ''}` : ''}`;
     }
   };
-  
+
   if (isLoading) {
     return (
       <Flex justify="center" align="center" height="300px">
@@ -246,7 +235,7 @@ const OrganizationPage = () => {
       </Flex>
     );
   }
-  
+
   if (error) {
     return (
       <Alert status="error" mb={4} borderRadius="md">
@@ -255,7 +244,7 @@ const OrganizationPage = () => {
       </Alert>
     );
   }
-  
+
   return (
     <Box>
       <Flex justifyContent="space-between" alignItems="center" mb={6}>
@@ -264,15 +253,15 @@ const OrganizationPage = () => {
           Edit Organization
         </Button>
       </Flex>
-      
+
       {/* Organization Profile Card */}
       <Card mb={8} borderRadius="lg" boxShadow="sm">
         <CardHeader>
           <Flex>
-            <Avatar 
-              size="xl" 
-              src={orgDetails?.avatarUrl || 'https://via.placeholder.com/100'} 
-              name={orgDetails?.name} 
+            <Avatar
+              size="xl"
+              src={orgDetails?.avatarUrl || 'https://via.placeholder.com/100'}
+              name={orgDetails?.name}
               mr={6}
               bg="brand.500"
             />
@@ -286,33 +275,33 @@ const OrganizationPage = () => {
             </Box>
           </Flex>
         </CardHeader>
-        
+
         <CardBody>
           <SimpleGrid columns={{ base: 1, md: 2 }} spacing={8}>
             <Stack spacing={4}>
               <Heading size="md" mb={2}>Organization Details</Heading>
-              
+
               <Flex align="center">
                 <Icon as={FiMail} mr={2} color="gray.500" />
                 <Text>{orgDetails?.email || 'No email available'}</Text>
               </Flex>
-              
+
               <Flex align="center">
                 <Icon as={FiGlobe} mr={2} color="gray.500" />
                 <Text>{orgDetails?.website || 'No website available'}</Text>
               </Flex>
-              
+
               <Flex align="center">
                 <Icon as={FiInfo} mr={2} color="gray.500" />
                 <Text>{orgDetails?.location || 'No location available'}</Text>
               </Flex>
-              
+
               <Flex align="center">
                 <Icon as={FiClock} mr={2} color="gray.500" />
                 <Text>Active for {getOrganizationAge()}</Text>
               </Flex>
             </Stack>
-            
+
             <Stack spacing={4}>
               <Heading size="md" mb={2}>Organization Statistics</Heading>
               <SimpleGrid columns={2} spacing={4}>
@@ -321,19 +310,19 @@ const OrganizationPage = () => {
                   <StatNumber>{orgDetails?.stats?.members || 0}</StatNumber>
                   <StatHelpText>Total organization members</StatHelpText>
                 </Stat>
-                
+
                 <Stat>
                   <StatLabel>Teams</StatLabel>
                   <StatNumber>{orgDetails?.stats?.teams || 0}</StatNumber>
                   <StatHelpText>Organization teams</StatHelpText>
                 </Stat>
-                
+
                 <Stat>
                   <StatLabel>Repositories</StatLabel>
                   <StatNumber>{orgDetails?.stats?.repositories || 0}</StatNumber>
                   <StatHelpText>Managed repositories</StatHelpText>
                 </Stat>
-                
+
                 <Stat>
                   <StatLabel>Policies</StatLabel>
                   <StatNumber>{orgDetails?.stats?.policies || 0}</StatNumber>
@@ -343,14 +332,14 @@ const OrganizationPage = () => {
             </Stack>
           </SimpleGrid>
         </CardBody>
-        
+
         <CardFooter>
           <Text fontSize="sm" color="gray.500">
             Last updated: {new Date(orgDetails?.updatedAt).toLocaleString()}
           </Text>
         </CardFooter>
       </Card>
-      
+
       {/* Key Resources Section */}
       <Heading size="md" mb={4}>Key Resources</Heading>
       <SimpleGrid columns={{ base: 1, md: 2, lg: 4 }} spacing={5} mb={6}>
@@ -361,7 +350,7 @@ const OrganizationPage = () => {
           linkTo="/users"
           iconColor="blue.500"
         />
-        
+
         <ResourceCard
           icon={FiUsers}
           title="Teams"
@@ -369,7 +358,7 @@ const OrganizationPage = () => {
           linkTo="/teams"
           iconColor="green.500"
         />
-        
+
         <ResourceCard
           icon={FiGitBranch}
           title="Repositories"
@@ -377,7 +366,7 @@ const OrganizationPage = () => {
           linkTo="/repositories"
           iconColor="purple.500"
         />
-        
+
         <ResourceCard
           icon={FiShield}
           title="Roles"
@@ -385,7 +374,7 @@ const OrganizationPage = () => {
           linkTo="/roles"
           iconColor="orange.500"
         />
-        
+
         <ResourceCard
           icon={FiList}
           title="Policies"
@@ -394,7 +383,7 @@ const OrganizationPage = () => {
           iconColor="cyan.500"
         />
       </SimpleGrid>
-      
+
       {/* Organization Update Modal */}
       <Modal isOpen={isOpen} onClose={onClose} size="lg">
         <ModalOverlay />
@@ -411,7 +400,7 @@ const OrganizationPage = () => {
                 placeholder="Enter organization name"
               />
             </FormControl>
-            
+
             <FormControl id="description" mb={4}>
               <FormLabel>Description</FormLabel>
               <Textarea
@@ -421,7 +410,7 @@ const OrganizationPage = () => {
                 placeholder="Enter organization description"
               />
             </FormControl>
-            
+
             <FormControl id="email" mb={4}>
               <FormLabel>Email</FormLabel>
               <Input
@@ -431,7 +420,7 @@ const OrganizationPage = () => {
                 placeholder="Enter organization email"
               />
             </FormControl>
-            
+
             <FormControl id="website" mb={4}>
               <FormLabel>Website</FormLabel>
               <Input
@@ -441,7 +430,7 @@ const OrganizationPage = () => {
                 placeholder="Enter organization website"
               />
             </FormControl>
-            
+
             <FormControl id="location" mb={4}>
               <FormLabel>Location</FormLabel>
               <Input
@@ -469,7 +458,7 @@ const OrganizationPage = () => {
 // Resource Card Component
 const ResourceCard = ({ icon, title, description, linkTo, iconColor = 'brand.500' }) => {
   const bgColor = useColorModeValue('white', 'gray.700');
-  
+
   return (
     <Card
       as="a"
@@ -492,4 +481,4 @@ const ResourceCard = ({ icon, title, description, linkTo, iconColor = 'brand.500
   );
 };
 
-export default OrganizationPage; 
+export default OrganizationPage;

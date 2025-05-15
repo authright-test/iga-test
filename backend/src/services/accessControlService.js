@@ -1,6 +1,6 @@
-const { User, Role, Permission, Repository, Team } = require('../models');
-const logger = require('../utils/logger');
-const { redisClient } = require('../config/redis');
+import { redisClient } from '../config/redis.js';
+import { Permission, Repository, Role, Team, User } from '../models/index.js';
+import logger from '../utils/logger.js';
 
 /**
  * Check if a user has a specific permission
@@ -14,7 +14,7 @@ const hasPermission = async (userId, permissionName, resource = null) => {
     // Try to get from cache first
     const cacheKey = `permission:${userId}:${permissionName}:${resource?.id || 'global'}`;
     const cachedResult = await redisClient.get(cacheKey);
-    
+
     if (cachedResult) {
       return cachedResult === 'true';
     }
@@ -90,19 +90,19 @@ const assignRoleToUser = async (userId, roleId) => {
   try {
     const user = await User.findByPk(userId);
     const role = await Role.findByPk(roleId);
-    
+
     if (!user || !role) {
       return false;
     }
-    
+
     await user.addRole(role);
-    
+
     // Invalidate permissions cache for this user
     const keys = await redisClient.keys(`permission:${userId}:*`);
     if (keys.length > 0) {
       await redisClient.del(keys);
     }
-    
+
     return true;
   } catch (error) {
     logger.error('Error assigning role to user:', error);
@@ -120,19 +120,19 @@ const removeRoleFromUser = async (userId, roleId) => {
   try {
     const user = await User.findByPk(userId);
     const role = await Role.findByPk(roleId);
-    
+
     if (!user || !role) {
       return false;
     }
-    
+
     await user.removeRole(role);
-    
+
     // Invalidate permissions cache for this user
     const keys = await redisClient.keys(`permission:${userId}:*`);
     if (keys.length > 0) {
       await redisClient.del(keys);
     }
-    
+
     return true;
   } catch (error) {
     logger.error('Error removing role from user:', error);
@@ -150,11 +150,11 @@ const getUserRoles = async (userId) => {
     const user = await User.findByPk(userId, {
       include: [Role]
     });
-    
+
     if (!user) {
       return [];
     }
-    
+
     return user.Roles;
   } catch (error) {
     logger.error('Error getting user roles:', error);
@@ -172,13 +172,13 @@ const addPermissionToRole = async (roleId, permissionId) => {
   try {
     const role = await Role.findByPk(roleId);
     const permission = await Permission.findByPk(permissionId);
-    
+
     if (!role || !permission) {
       return false;
     }
-    
+
     await role.addPermission(permission);
-    
+
     // Invalidate permissions cache for all users with this role
     const users = await User.findAll({
       include: [
@@ -188,14 +188,14 @@ const addPermissionToRole = async (roleId, permissionId) => {
         }
       ]
     });
-    
+
     for (const user of users) {
       const keys = await redisClient.keys(`permission:${user.id}:*`);
       if (keys.length > 0) {
         await redisClient.del(keys);
       }
     }
-    
+
     return true;
   } catch (error) {
     logger.error('Error adding permission to role:', error);
@@ -213,13 +213,13 @@ const removePermissionFromRole = async (roleId, permissionId) => {
   try {
     const role = await Role.findByPk(roleId);
     const permission = await Permission.findByPk(permissionId);
-    
+
     if (!role || !permission) {
       return false;
     }
-    
+
     await role.removePermission(permission);
-    
+
     // Invalidate permissions cache for all users with this role
     const users = await User.findAll({
       include: [
@@ -229,14 +229,14 @@ const removePermissionFromRole = async (roleId, permissionId) => {
         }
       ]
     });
-    
+
     for (const user of users) {
       const keys = await redisClient.keys(`permission:${user.id}:*`);
       if (keys.length > 0) {
         await redisClient.del(keys);
       }
     }
-    
+
     return true;
   } catch (error) {
     logger.error('Error removing permission from role:', error);
@@ -244,11 +244,11 @@ const removePermissionFromRole = async (roleId, permissionId) => {
   }
 };
 
-module.exports = {
+export {
   hasPermission,
   assignRoleToUser,
   removeRoleFromUser,
   getUserRoles,
   addPermissionToRole,
   removePermissionFromRole
-}; 
+};
