@@ -1,5 +1,14 @@
 version: '3.3'
 services:
+  iga-proxy:
+    container_name: iga-proxy
+    image: nginx
+    networks:
+      - iga-network
+    volumes:
+      - ./devops/local/etc/nginx/default.conf:/etc/nginx/conf.d/default.conf
+    ports:
+      - 8080:80
 
   iga-redis:
     container_name: iga-redis
@@ -7,7 +16,7 @@ services:
     command: redis-server --requirepass IGA_REDIS_adm_^123456
     # command: redis-server
     networks:
-      - iga
+      - iga-network
     ports:
       - "6379:6379"
     healthcheck:
@@ -29,15 +38,15 @@ services:
   iga-mysql:
     container_name: iga-mysql
     build:
-      context: .
+      context: ./devops/local
       dockerfile: ./etc/mysql/8/Dockerfile
-    image: mysql:8.0.30
     env_file:
-      - ./server.env
+      - ./devops/local/local.env
+    image: mysql:8.0.30
     volumes:
       - ./.tmp/mysql:/var/lib/mysql
     networks:
-      - iga
+      - iga-network
     ports:
       - "3306:3306"
     healthcheck:
@@ -47,4 +56,5 @@ services:
       retries: 10
 
 networks:
-  iga:
+  iga-network:
+    driver: bridge

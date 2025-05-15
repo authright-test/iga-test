@@ -37,6 +37,8 @@ async function startServer() {
     // Initialize Redis
     await setupRedis();
 
+
+
     app.listen(port, () => {
       logger.info(`Server is running on port ${port}`);
     });

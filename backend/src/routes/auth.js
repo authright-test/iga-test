@@ -11,6 +11,7 @@ const router = express.Router();
  */
 router.get('/github', (req, res) => {
   const githubAuthUrl = `https://github.com/login/oauth/authorize?client_id=${process.env.GITHUB_APP_CLIENT_ID}&redirect_uri=${process.env.GITHUB_CALLBACK_URL}&scope=user:email`;
+  console.log('Redirecting to GitHub OAuth URL:', githubAuthUrl);
   res.redirect(githubAuthUrl);
 });
 
