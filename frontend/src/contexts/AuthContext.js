@@ -1,7 +1,7 @@
-import { useToast } from '@chakra-ui/react';
-import api from '../services/api.js';
+import { toaster } from '@/components/ui/toaster';
 import jwt_decode from 'jwt-decode';
 import React, { createContext, useContext, useEffect, useState } from 'react';
+import api from '../services/api.js';
 
 const AuthContext = createContext();
 
@@ -12,8 +12,7 @@ export const AuthProvider = ({ children }) => {
   const [organization, setOrganization] = useState(null);
   const [token, setToken] = useState(localStorage.getItem('token'));
   const [refreshToken, setRefreshToken] = useState(localStorage.getItem('refreshToken'));
-  const [isLoading, setIsLoading] = useState(true);
-  const toast = useToast();
+  const [loading, setLoading] = useState(true);
 
   // Check if token is expired
   const isTokenExpired = (token) => {
@@ -62,7 +61,7 @@ export const AuthProvider = ({ children }) => {
     if (!token) {
       return;
     }
-    setIsLoading(true);
+    setLoading(true);
     if (!isTokenExpired(token)) {
       setAuthToken(token);
       try {
@@ -81,8 +80,8 @@ export const AuthProvider = ({ children }) => {
           setAuthToken(null);
           localStorage.removeItem('token');
           localStorage.removeItem('refreshToken');
-          
-          toast({
+
+          toaster.create({
             title: 'Session Expired',
             description: 'Please log in again',
             status: 'error',
@@ -103,8 +102,8 @@ export const AuthProvider = ({ children }) => {
         setAuthToken(null);
         localStorage.removeItem('token');
         localStorage.removeItem('refreshToken');
-        
-        toast({
+
+        toaster.create({
           title: 'Session Expired',
           description: 'Please log in again',
           status: 'error',
@@ -113,13 +112,13 @@ export const AuthProvider = ({ children }) => {
         });
       }
     }
-    setIsLoading(false);
+    setLoading(false);
   };
 
   // Login user
   const login = async (code) => {
     try {
-      setIsLoading(true);
+      setLoading(true);
       const res = await api.post('/auth/login', { code });
       const { token, refreshToken, user, organization } = res.data;
       setToken(token);
@@ -150,7 +149,7 @@ export const AuthProvider = ({ children }) => {
 
       return true;
     } catch (error) {
-      toast({
+      toaster.create({
         title: 'Authentication Error',
         description: error.response?.data?.error || 'Failed to authenticate with GitHub',
         status: 'error',
@@ -159,7 +158,7 @@ export const AuthProvider = ({ children }) => {
       });
       return false;
     } finally {
-      setIsLoading(false);
+      setLoading(false);
     }
   };
 
@@ -233,7 +232,9 @@ export const AuthProvider = ({ children }) => {
 
   // Verify token on app load
   useEffect(() => {
-    verifyToken(token);
+    verifyToken(token).then(() => {
+      setLoading(false);
+    });
   }, [token]);
 
   // Value to provide to consumers
@@ -241,8 +242,8 @@ export const AuthProvider = ({ children }) => {
     token,
     user,
     organization,
+    loading,
     isAuthenticated,
-    isLoading,
     verifyToken,
     login,
     logout,
@@ -251,4 +252,3 @@ export const AuthProvider = ({ children }) => {
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
-  

@@ -1,45 +1,31 @@
+import { toaster } from '@/components/ui/toaster';
 import {
   Alert,
-  AlertIcon,
   Avatar,
   Box,
   Button,
   Card,
-  CardBody,
   CardFooter,
-  CardHeader,
+  Dialog,
+  Field,
   Flex,
-  FormControl,
-  FormLabel,
   Heading,
-  HStack,
   Icon,
   Input,
-  Modal,
-  ModalBody,
-  ModalCloseButton,
-  ModalContent,
-  ModalFooter,
-  ModalHeader,
-  ModalOverlay,
   SimpleGrid,
   Spinner,
   Stack,
   Stat,
-  StatHelpText,
-  StatLabel,
-  StatNumber,
   Tag,
   Text,
   Textarea,
-  useColorModeValue,
   useDisclosure,
-  useToast,
 } from '@chakra-ui/react';
 import axios from 'axios';
 import React, { useEffect, useState } from 'react';
 import { FiClock, FiEdit, FiGitBranch, FiGlobe, FiInfo, FiList, FiMail, FiShield, FiUsers, } from 'react-icons/fi';
 import { useAuth } from '../contexts/AuthContext';
+import { usePermissions } from '../hooks/usePermissions';
 
 const OrganizationPage = () => {
   const { organization, token, logAuditEvent } = useAuth();
@@ -55,7 +41,8 @@ const OrganizationPage = () => {
   });
 
   const { isOpen, onOpen, onClose } = useDisclosure();
-  const toast = useToast();
+
+  const { hasPermission } = usePermissions();
 
   // 获取组织详细信息
   const fetchOrganizationDetails = async () => {
@@ -134,7 +121,7 @@ const OrganizationPage = () => {
   const handleUpdateOrganization = async () => {
     try {
       if (!formData.name) {
-        toast({
+        toaster.create({
           title: 'Validation Error',
           description: 'Organization name is required',
           status: 'error',
@@ -145,7 +132,7 @@ const OrganizationPage = () => {
       }
 
       if (!organization?.id) {
-        toast({
+        toaster.create({
           title: 'Demo Mode',
           description: 'Organization information would be updated in a real implementation',
           status: 'info',
@@ -188,7 +175,7 @@ const OrganizationPage = () => {
         }
       );
 
-      toast({
+      toaster.create({
         title: 'Organization Updated',
         description: 'Organization information has been updated successfully',
         status: 'success',
@@ -198,7 +185,7 @@ const OrganizationPage = () => {
 
       onClose();
     } catch (err) {
-      toast({
+      toaster.create({
         title: 'Error',
         description: err.response?.data?.error || err.message,
         status: 'error',
@@ -228,254 +215,262 @@ const OrganizationPage = () => {
     }
   };
 
-  if (isLoading) {
+  if (!hasPermission('organization.manage')) {
     return (
-      <Flex justify="center" align="center" height="300px">
-        <Spinner size="xl" color="brand.500" />
-      </Flex>
+      <Box p={4}>
+        <Heading size='lg' mb={4}>Access Denied</Heading>
+        <Text>You do not have permission to manage organization settings.</Text>
+      </Box>
     );
   }
 
-  if (error) {
+  if (isLoading) {
     return (
-      <Alert status="error" mb={4} borderRadius="md">
-        <AlertIcon />
-        {error}
-      </Alert>
+      <Flex justify='center' align='center' height='300px'>
+        <Spinner size='xl' color='brand.500' />
+      </Flex>
     );
   }
 
   return (
     <Box>
-      <Flex justifyContent="space-between" alignItems="center" mb={6}>
-        <Heading as="h1" size="lg">Organization</Heading>
-        <Button leftIcon={<FiEdit />} colorScheme="brand" onClick={onOpen}>
+      <Flex justifyContent='space-between' alignItems='center' mb={6}>
+        <Heading as='h1' size='lg'>Organization</Heading>
+        <Button leftIcon={<FiEdit />} colorScheme='brand' onClick={onOpen}>
           Edit Organization
         </Button>
       </Flex>
 
+      {error && (
+        <Alert.Root status='error' mb={4}>
+          <Alert.Indicator />
+          <Alert.Title>
+            {error}
+          </Alert.Title>
+        </Alert.Root>
+      )}
+
       {/* Organization Profile Card */}
-      <Card mb={8} borderRadius="lg" boxShadow="sm">
-        <CardHeader>
+      <Card mb={8} borderRadius='lg' boxShadow='sm' borderWidth='1px'>
+        <Card.Header>
           <Flex>
             <Avatar
-              size="xl"
+              size='xl'
               src={orgDetails?.avatarUrl || 'https://via.placeholder.com/100'}
               name={orgDetails?.name}
               mr={6}
-              bg="brand.500"
+              bg='brand.500'
             />
             <Box>
-              <Heading size="lg" mb={2}>{orgDetails?.name}</Heading>
-              <HStack spacing={2} mb={2}>
-                <Tag colorScheme="brand">{orgDetails?.login}</Tag>
-                {orgDetails?.isEnterprise && <Tag colorScheme="purple">Enterprise</Tag>}
-              </HStack>
-              <Text color="gray.600">{orgDetails?.description || 'No description available'}</Text>
+              <Heading size='lg' mb={2}>{orgDetails?.name}</Heading>
+              <Stack gap={2} mb={2}>
+                <Tag colorScheme='brand'>{orgDetails?.login}</Tag>
+                {orgDetails?.isEnterprise && <Tag colorScheme='purple'>Enterprise</Tag>}
+              </Stack>
+              <Text color='gray.600'>{orgDetails?.description || 'No description available'}</Text>
             </Box>
           </Flex>
-        </CardHeader>
+        </Card.Header>
 
-        <CardBody>
+        <Card.Body>
           <SimpleGrid columns={{ base: 1, md: 2 }} spacing={8}>
-            <Stack spacing={4}>
-              <Heading size="md" mb={2}>Organization Details</Heading>
+            <Stack gap={4}>
+              <Heading size='md' mb={2}>Organization Details</Heading>
 
-              <Flex align="center">
-                <Icon as={FiMail} mr={2} color="gray.500" />
+              <Flex align='center'>
+                <Icon as={FiMail} mr={2} color='gray.500' />
                 <Text>{orgDetails?.email || 'No email available'}</Text>
               </Flex>
 
-              <Flex align="center">
-                <Icon as={FiGlobe} mr={2} color="gray.500" />
+              <Flex align='center'>
+                <Icon as={FiGlobe} mr={2} color='gray.500' />
                 <Text>{orgDetails?.website || 'No website available'}</Text>
               </Flex>
 
-              <Flex align="center">
-                <Icon as={FiInfo} mr={2} color="gray.500" />
+              <Flex align='center'>
+                <Icon as={FiInfo} mr={2} color='gray.500' />
                 <Text>{orgDetails?.location || 'No location available'}</Text>
               </Flex>
 
-              <Flex align="center">
-                <Icon as={FiClock} mr={2} color="gray.500" />
+              <Flex align='center'>
+                <Icon as={FiClock} mr={2} color='gray.500' />
                 <Text>Active for {getOrganizationAge()}</Text>
               </Flex>
             </Stack>
 
-            <Stack spacing={4}>
-              <Heading size="md" mb={2}>Organization Statistics</Heading>
+            <Stack gap={4}>
+              <Heading size='md' mb={2}>Organization Statistics</Heading>
               <SimpleGrid columns={2} spacing={4}>
-                <Stat>
-                  <StatLabel>Members</StatLabel>
-                  <StatNumber>{orgDetails?.stats?.members || 0}</StatNumber>
-                  <StatHelpText>Total organization members</StatHelpText>
-                </Stat>
+                <Stat.Root>
+                  <Stat.Label>Members</Stat.Label>
+                  <Stat.ValueText>{orgDetails?.stats?.members || 0}</Stat.ValueText>
+                  <Stat.HelpText>Total organization members</Stat.HelpText>
+                </Stat.Root>
 
-                <Stat>
-                  <StatLabel>Teams</StatLabel>
-                  <StatNumber>{orgDetails?.stats?.teams || 0}</StatNumber>
-                  <StatHelpText>Organization teams</StatHelpText>
-                </Stat>
+                <Stat.Root>
+                  <Stat.Label>Teams</Stat.Label>
+                  <Stat.ValueText>{orgDetails?.stats?.teams || 0}</Stat.ValueText>
+                  <Stat.HelpText>Organization teams</Stat.HelpText>
+                </Stat.Root>
 
-                <Stat>
-                  <StatLabel>Repositories</StatLabel>
-                  <StatNumber>{orgDetails?.stats?.repositories || 0}</StatNumber>
-                  <StatHelpText>Managed repositories</StatHelpText>
-                </Stat>
+                <Stat.Root>
+                  <Stat.Label>Repositories</Stat.Label>
+                  <Stat.ValueText>{orgDetails?.stats?.repositories || 0}</Stat.ValueText>
+                  <Stat.HelpText>Managed repositories</Stat.HelpText>
+                </Stat.Root>
 
-                <Stat>
-                  <StatLabel>Policies</StatLabel>
-                  <StatNumber>{orgDetails?.stats?.policies || 0}</StatNumber>
-                  <StatHelpText>Active policies</StatHelpText>
-                </Stat>
+                <Stat.Root>
+                  <Stat.Label>Policies</Stat.Label>
+                  <Stat.ValueText>{orgDetails?.stats?.policies || 0}</Stat.ValueText>
+                  <Stat.HelpText>Active policies</Stat.HelpText>
+                </Stat.Root>
               </SimpleGrid>
             </Stack>
           </SimpleGrid>
-        </CardBody>
+        </Card.Body>
 
         <CardFooter>
-          <Text fontSize="sm" color="gray.500">
+          <Text fontSize='sm' color='gray.500'>
             Last updated: {new Date(orgDetails?.updatedAt).toLocaleString()}
           </Text>
         </CardFooter>
       </Card>
 
       {/* Key Resources Section */}
-      <Heading size="md" mb={4}>Key Resources</Heading>
+      <Heading size='md' mb={4}>Key Resources</Heading>
       <SimpleGrid columns={{ base: 1, md: 2, lg: 4 }} spacing={5} mb={6}>
         <ResourceCard
           icon={FiUsers}
-          title="Users"
-          description="Manage organization members and their access"
-          linkTo="/users"
-          iconColor="blue.500"
+          title='Users'
+          description='Manage organization members and their access'
+          linkTo='/users'
+          iconColor='blue.500'
         />
 
         <ResourceCard
           icon={FiUsers}
-          title="Teams"
-          description="Manage organization teams and permissions"
-          linkTo="/teams"
-          iconColor="green.500"
+          title='Teams'
+          description='Manage organization teams and permissions'
+          linkTo='/teams'
+          iconColor='green.500'
         />
 
         <ResourceCard
           icon={FiGitBranch}
-          title="Repositories"
-          description="Manage organization repositories"
-          linkTo="/repositories"
-          iconColor="purple.500"
+          title='Repositories'
+          description='Manage organization repositories'
+          linkTo='/repositories'
+          iconColor='purple.500'
         />
 
         <ResourceCard
           icon={FiShield}
-          title="Roles"
-          description="Configure role-based access control"
-          linkTo="/roles"
-          iconColor="orange.500"
+          title='Roles'
+          description='Configure role-based access control'
+          linkTo='/roles'
+          iconColor='orange.500'
         />
 
         <ResourceCard
           icon={FiList}
-          title="Policies"
-          description="Manage access policies and enforcement"
-          linkTo="/policies"
-          iconColor="cyan.500"
+          title='Policies'
+          description='Manage access policies and enforcement'
+          linkTo='/policies'
+          iconColor='cyan.500'
         />
       </SimpleGrid>
 
       {/* Organization Update Modal */}
-      <Modal isOpen={isOpen} onClose={onClose} size="lg">
-        <ModalOverlay />
-        <ModalContent>
-          <ModalHeader>Edit Organization</ModalHeader>
-          <ModalCloseButton />
-          <ModalBody>
-            <FormControl id="name" isRequired mb={4}>
-              <FormLabel>Organization Name</FormLabel>
+      <Dialog.Root open={isOpen} onClose={onClose} size='lg'>
+        <Dialog.Backdrop />
+        <Dialog.Content>
+          <Dialog.Header>Edit Organization</Dialog.Header>
+          <Dialog.CloseTrigger />
+          <Dialog.Body>
+            <Field.Root id='name' required mb={4}>
+              <Field.Label>Organization Name</Field.Label>
               <Input
-                name="name"
+                name='name'
                 value={formData.name}
                 onChange={handleInputChange}
-                placeholder="Enter organization name"
+                placeholder='Enter organization name'
               />
-            </FormControl>
+            </Field.Root>
 
-            <FormControl id="description" mb={4}>
-              <FormLabel>Description</FormLabel>
+            <Field.Root id='description' mb={4}>
+              <Field.Label>Description</Field.Label>
               <Textarea
-                name="description"
+                name='description'
                 value={formData.description}
                 onChange={handleInputChange}
-                placeholder="Enter organization description"
+                placeholder='Enter organization description'
               />
-            </FormControl>
+            </Field.Root>
 
-            <FormControl id="email" mb={4}>
-              <FormLabel>Email</FormLabel>
+            <Field.Root id='email' mb={4}>
+              <Field.Label>Email</Field.Label>
               <Input
-                name="email"
+                name='email'
                 value={formData.email}
                 onChange={handleInputChange}
-                placeholder="Enter organization email"
+                placeholder='Enter organization email'
               />
-            </FormControl>
+            </Field.Root>
 
-            <FormControl id="website" mb={4}>
-              <FormLabel>Website</FormLabel>
+            <Field.Root id='website' mb={4}>
+              <Field.Label>Website</Field.Label>
               <Input
-                name="website"
+                name='website'
                 value={formData.website}
                 onChange={handleInputChange}
-                placeholder="Enter organization website"
+                placeholder='Enter organization website'
               />
-            </FormControl>
+            </Field.Root>
 
-            <FormControl id="location" mb={4}>
-              <FormLabel>Location</FormLabel>
+            <Field.Root id='location' mb={4}>
+              <Field.Label>Location</Field.Label>
               <Input
-                name="location"
+                name='location'
                 value={formData.location}
                 onChange={handleInputChange}
-                placeholder="Enter organization location"
+                placeholder='Enter organization location'
               />
-            </FormControl>
-          </ModalBody>
-          <ModalFooter>
-            <Button variant="outline" mr={3} onClick={onClose}>
+            </Field.Root>
+          </Dialog.Body>
+          <Dialog.Footer>
+            <Button variant='outline' mr={3} onClick={onClose}>
               Cancel
             </Button>
-            <Button colorScheme="brand" onClick={handleUpdateOrganization}>
+            <Button colorScheme='brand' onClick={handleUpdateOrganization}>
               Save
             </Button>
-          </ModalFooter>
-        </ModalContent>
-      </Modal>
+          </Dialog.Footer>
+        </Dialog.Content>
+      </Dialog.Root>
     </Box>
   );
 };
 
 // Resource Card Component
 const ResourceCard = ({ icon, title, description, linkTo, iconColor = 'brand.500' }) => {
-  const bgColor = useColorModeValue('white', 'gray.700');
 
   return (
     <Card
-      as="a"
+      as='a'
       href={linkTo}
-      borderRadius="lg"
-      boxShadow="sm"
+      borderRadius='lg'
+      boxShadow='sm'
       p={4}
-      transition="all 0.2s"
+      transition='all 0.2s'
       _hover={{ transform: 'translateY(-2px)', boxShadow: 'md' }}
-      height="100%"
-      bg={bgColor}
-      cursor="pointer"
+      height='100%'
+      borderWidth='1px'
+      cursor='pointer'
     >
-      <Flex direction="column" align="center" textAlign="center">
+      <Flex direction='column' align='center' textAlign='center'>
         <Icon as={icon} boxSize={10} color={iconColor} mb={3} />
-        <Heading size="md" mb={2}>{title}</Heading>
-        <Text fontSize="sm" color="gray.500">{description}</Text>
+        <Heading size='md' mb={2}>{title}</Heading>
+        <Text fontSize='sm' color='gray.500'>{description}</Text>
       </Flex>
     </Card>
   );

@@ -1,46 +1,30 @@
+import { toaster } from '@/components/ui/toaster';
 import {
   Badge,
   Box,
   Button,
+  Dialog,
+  Field,
   Flex,
-  FormControl,
-  FormLabel,
   Heading,
-  HStack,
   IconButton,
   Input,
   Menu,
-  MenuButton,
   MenuItem,
-  MenuList,
-  Modal,
-  ModalBody,
-  ModalCloseButton,
-  ModalContent,
-  ModalHeader,
-  ModalOverlay,
+  MenuItemGroup,
   Select,
-  Tab,
+  Stack,
   Table,
-  TabList,
-  TabPanel,
-  TabPanels,
   Tabs,
-  Tbody,
-  Td,
   Text,
-  Th,
-  Thead,
-  Tr,
-  useColorModeValue,
+  Textarea,
   useDisclosure,
-  useToast,
-  VStack,
 } from '@chakra-ui/react';
 import React, { useState } from 'react';
-import { FiEdit2, FiGitBranch, FiMoreVertical, FiShield, FiTrash2, FiUsers } from 'react-icons/fi';
+import { FiEdit2, FiMoreVertical, FiShield, FiTrash2 } from 'react-icons/fi';
 import { useAuth } from '../contexts/AuthContext';
 import { useAccessPermissions } from '../hooks/useAccessPermissions';
+import { usePermissions } from '../hooks/usePermissions';
 
 const PermissionsPage = () => {
   const [selectedPermission, setSelectedPermission] = useState(null);
@@ -63,10 +47,8 @@ const PermissionsPage = () => {
     onClose: onAssignModalClose
   } = useDisclosure();
 
-  const toast = useToast();
   const { logAuditEvent } = useAuth();
-  const bgColor = useColorModeValue('white', 'gray.800');
-  const borderColor = useColorModeValue('gray.200', 'gray.700');
+  const { hasPermission } = usePermissions();
 
   const {
     permissions,
@@ -84,37 +66,22 @@ const PermissionsPage = () => {
 
   const handleCreatePermission = async () => {
     try {
-      if (!formData.name) {
-        toast({
-          title: 'Validation Error',
-          description: 'Permission name is required',
-          status: 'error',
-          duration: 3000,
-          isClosable: true,
-        });
-        return;
-      }
-
       const newPermission = await createPermission(formData);
-
       logAuditEvent(
         'permission_created',
         'permission',
         newPermission.id.toString(),
         { name: formData.name }
       );
-
-      toast({
+      toaster.create({
         title: 'Permission created',
-        description: `Permission "${formData.name}" has been created.`,
         status: 'success',
         duration: 3000,
         isClosable: true,
       });
-
       onPermissionModalClose();
     } catch (err) {
-      toast({
+      toaster.create({
         title: 'Error',
         description: err.response?.data?.error || err.message,
         status: 'error',
@@ -127,27 +94,22 @@ const PermissionsPage = () => {
   const handleUpdatePermission = async () => {
     try {
       if (!selectedPermission) return;
-
       const updatedPermission = await updatePermission(selectedPermission.id, formData);
-
       logAuditEvent(
         'permission_updated',
         'permission',
         selectedPermission.id.toString(),
         { name: formData.name }
       );
-
-      toast({
+      toaster.create({
         title: 'Permission updated',
-        description: `Permission "${formData.name}" has been updated.`,
         status: 'success',
         duration: 3000,
         isClosable: true,
       });
-
       onPermissionModalClose();
     } catch (err) {
-      toast({
+      toaster.create({
         title: 'Error',
         description: err.response?.data?.error || err.message,
         status: 'error',
@@ -158,89 +120,30 @@ const PermissionsPage = () => {
   };
 
   const handleDeletePermission = async (permission) => {
-    try {
-      await deletePermission(permission.id);
-
-      logAuditEvent(
-        'permission_deleted',
-        'permission',
-        permission.id.toString(),
-        { name: permission.name }
-      );
-
-      toast({
-        title: 'Permission deleted',
-        description: `Permission "${permission.name}" has been deleted.`,
-        status: 'success',
-        duration: 3000,
-        isClosable: true,
-      });
-    } catch (err) {
-      toast({
-        title: 'Error',
-        description: err.response?.data?.error || err.message,
-        status: 'error',
-        duration: 5000,
-        isClosable: true,
-      });
-    }
-  };
-
-  const handleAddTeam = async (permissionId, teamId) => {
-    try {
-      await addTeam(permissionId, teamId);
-
-      logAuditEvent(
-        'team_added',
-        'permission',
-        permissionId.toString(),
-        { teamId }
-      );
-
-      toast({
-        title: 'Team added',
-        description: 'Team has been added to the permission.',
-        status: 'success',
-        duration: 3000,
-        isClosable: true,
-      });
-    } catch (err) {
-      toast({
-        title: 'Error',
-        description: err.response?.data?.error || err.message,
-        status: 'error',
-        duration: 5000,
-        isClosable: true,
-      });
-    }
-  };
-
-  const handleRemoveTeam = async (permissionId, teamId) => {
-    try {
-      await removeTeam(permissionId, teamId);
-
-      logAuditEvent(
-        'team_removed',
-        'permission',
-        permissionId.toString(),
-        { teamId }
-      );
-
-      toast({
-        title: 'Team removed',
-        description: 'Team has been removed from the permission.',
-        status: 'success',
-        duration: 3000,
-        isClosable: true,
-      });
-    } catch (err) {
-      toast({
-        title: 'Error',
-        description: err.response?.data?.error || err.message,
-        status: 'error',
-        duration: 5000,
-        isClosable: true,
-      });
+    if (window.confirm('Are you sure you want to delete this permission?')) {
+      try {
+        await deletePermission(permission.id);
+        logAuditEvent(
+          'permission_deleted',
+          'permission',
+          permission.id.toString(),
+          { name: permission.name }
+        );
+        toaster.create({
+          title: 'Permission deleted',
+          status: 'success',
+          duration: 3000,
+          isClosable: true,
+        });
+      } catch (err) {
+        toaster.create({
+          title: 'Error',
+          description: err.response?.data?.error || err.message,
+          status: 'error',
+          duration: 5000,
+          isClosable: true,
+        });
+      }
     }
   };
 
@@ -280,7 +183,7 @@ const PermissionsPage = () => {
       }));
       onAssignModalOpen();
     } catch (err) {
-      toast({
+      toaster.create({
         title: 'Error',
         description: err.response?.data?.error || err.message,
         status: 'error',
@@ -293,7 +196,7 @@ const PermissionsPage = () => {
   if (isLoading) {
     return (
       <Box p={4}>
-        <Heading size="lg" mb={4}>Loading permissions...</Heading>
+        <Heading size='lg' mb={4}>Loading permissions...</Heading>
       </Box>
     );
   }
@@ -301,251 +204,254 @@ const PermissionsPage = () => {
   if (error) {
     return (
       <Box p={4}>
-        <Heading size="lg" mb={4}>Error loading permissions</Heading>
-        <Box color="red.500">{error}</Box>
+        <Heading size='lg' mb={4}>Error loading permissions</Heading>
+        <Box color='red.500'>{error}</Box>
       </Box>
     );
   }
 
   return (
     <Box p={4}>
-      <Flex justify="space-between" align="center" mb={4}>
-        <Heading size="lg">Permissions</Heading>
-        <Button colorScheme="blue" onClick={() => openPermissionModal()}>
-          Create Permission
-        </Button>
+      <Flex justify='space-between' align='center' mb={6}>
+        <Heading size='lg'>Permissions</Heading>
+        {hasPermission('permissions.create') && (
+          <Button
+            leftIcon={<FiShield />}
+            colorScheme='blue'
+            onClick={() => openPermissionModal()}
+          >
+            Create Permission
+          </Button>
+        )}
       </Flex>
 
       <Box
-        bg={bgColor}
-        shadow="sm"
-        rounded="lg"
-        borderWidth="1px"
-        borderColor={borderColor}
-        overflow="hidden"
+
+        borderWidth='1px'
+
+        borderRadius='md'
+        overflowX='auto'
       >
-        <Table variant="simple">
-          <Thead>
-            <Tr>
-              <Th>Permission</Th>
-              <Th>Type</Th>
-              <Th>Level</Th>
-              <Th>Teams</Th>
-              <Th>Users</Th>
-              <Th>Repositories</Th>
-              <Th>Actions</Th>
-            </Tr>
-          </Thead>
-          <Tbody>
+        <Table.Root>
+          <Table.Header>
+            <Table.Row>
+              <Table.Cell>Permission</Table.Cell>
+              <Table.Cell>Type</Table.Cell>
+              <Table.Cell>Level</Table.Cell>
+              <Table.Cell>Teams</Table.Cell>
+              <Table.Cell>Users</Table.Cell>
+              <Table.Cell>Repositories</Table.Cell>
+              <Table.Cell>Actions</Table.Cell>
+            </Table.Row>
+          </Table.Header>
+          <Table.Body>
             {permissions.map((permission) => (
-              <Tr key={permission.id}>
-                <Td>
-                  <VStack align="start" spacing={0}>
-                    <Text fontWeight="medium">{permission.name}</Text>
-                    <Text fontSize="sm" color="gray.500">
+              <Table.Row key={permission.id}>
+                <Table.Cell>
+                  <Stack direction="column" align='start' spacing={0}>
+                    <Text fontWeight='medium'>{permission.name}</Text>
+                    <Text fontSize='sm' color='gray.500'>
                       {permission.description}
                     </Text>
-                  </VStack>
-                </Td>
-                <Td>
-                  <Badge colorScheme="purple">{permission.type}</Badge>
-                </Td>
-                <Td>
-                  <Badge colorScheme="blue">{permission.level}</Badge>
-                </Td>
-                <Td>
-                  <HStack spacing={1}>
+                  </Stack>
+                </Table.Cell>
+                <Table.Cell>
+                  <Badge colorScheme='purple'>{permission.type}</Badge>
+                </Table.Cell>
+                <Table.Cell>
+                  <Badge colorScheme='blue'>{permission.level}</Badge>
+                </Table.Cell>
+                <Table.Cell>
+                  <Stack gap={1}>
                     {permission.teams?.map((team) => (
-                      <Badge key={team.id} colorScheme="purple">
+                      <Badge key={team.id} colorScheme='purple'>
                         {team.name}
                       </Badge>
                     ))}
-                  </HStack>
-                </Td>
-                <Td>
-                  <HStack spacing={1}>
+                  </Stack>
+                </Table.Cell>
+                <Table.Cell>
+                  <Stack gap={1}>
                     {permission.users?.map((user) => (
-                      <Badge key={user.id} colorScheme="green">
+                      <Badge key={user.id} colorScheme='green'>
                         {user.username}
                       </Badge>
                     ))}
-                  </HStack>
-                </Td>
-                <Td>
-                  <HStack spacing={1}>
+                  </Stack>
+                </Table.Cell>
+                <Table.Cell>
+                  <Stack gap={1}>
                     {permission.repositories?.map((repo) => (
-                      <Badge key={repo.id} colorScheme="orange">
+                      <Badge key={repo.id} colorScheme='orange'>
                         {repo.name}
                       </Badge>
                     ))}
-                  </HStack>
-                </Td>
-                <Td>
-                  <Menu>
-                    <MenuButton
-                      as={IconButton}
-                      icon={<FiMoreVertical />}
-                      variant="ghost"
-                      size="sm"
-                    />
-                    <MenuList>
-                      <MenuItem
+                  </Stack>
+                </Table.Cell>
+                <Table.Cell>
+                  <Stack gap={2}>
+                    {hasPermission('permissions.edit') && (
+                      <IconButton
+                        aria-label='Edit permission'
                         icon={<FiEdit2 />}
+                        size='sm'
                         onClick={() => openPermissionModal(permission)}
-                      >
-                        Edit Permission
-                      </MenuItem>
+                      />
+                    )}
+                    <Menu>
                       <MenuItem
-                        icon={<FiShield />}
-                        onClick={() => openAssignModal(permission)}
-                      >
-                        Manage Assignments
-                      </MenuItem>
-                      <MenuItem
-                        icon={<FiUsers />}
-                        onClick={() => handleAddTeam(permission.id)}
-                      >
-                        Add Team
-                      </MenuItem>
-                      <MenuItem
-                        icon={<FiGitBranch />}
-                        onClick={() => handleRemoveTeam(permission.id)}
-                      >
-                        Remove Team
-                      </MenuItem>
-                      <MenuItem
-                        icon={<FiTrash2 />}
-                        onClick={() => handleDeletePermission(permission)}
-                        color="red.500"
-                      >
-                        Delete Permission
-                      </MenuItem>
-                    </MenuList>
-                  </Menu>
-                </Td>
-              </Tr>
+                        as={IconButton}
+                        aria-label='More options'
+                        icon={<FiMoreVertical />}
+                        size='sm'
+                      />
+                      <MenuItemGroup>
+                        <MenuItem
+                          icon={<FiShield />}
+                          onClick={() => openAssignModal(permission)}
+                        >
+                          Manage Assignments
+                        </MenuItem>
+                        {hasPermission('permissions.delete') && (
+                          <MenuItem
+                            icon={<FiTrash2 />}
+                            color='red.500'
+                            onClick={() => handleDeletePermission(permission)}
+                          >
+                            Delete Permission
+                          </MenuItem>
+                        )}
+                      </MenuItemGroup>
+                    </Menu>
+                  </Stack>
+                </Table.Cell>
+              </Table.Row>
             ))}
-          </Tbody>
-        </Table>
+          </Table.Body>
+        </Table.Root>
       </Box>
 
       {/* Permission Modal */}
-      <Modal isOpen={isPermissionModalOpen} onClose={onPermissionModalClose}>
-        <ModalOverlay />
-        <ModalContent>
-          <ModalHeader>
+      <Dialog.Root open={isPermissionModalOpen} onClose={onPermissionModalClose}>
+        <Dialog.Backdrop />
+        <Dialog.Content>
+          <Dialog.Header>
             {selectedPermission ? 'Edit Permission' : 'Create Permission'}
-          </ModalHeader>
-          <ModalCloseButton />
-          <ModalBody pb={6}>
-            <FormControl mb={4}>
-              <FormLabel>Name</FormLabel>
+          </Dialog.Header>
+          <Dialog.CloseTrigger />
+          <Dialog.Body pb={6}>
+            <Field.Root mb={4}>
+              <Field.Label>Permission Name</Field.Label>
               <Input
+                name='name'
                 value={formData.name}
                 onChange={(e) =>
                   setFormData({ ...formData, name: e.target.value })
                 }
-                placeholder="Enter permission name"
+                placeholder='Enter permission name'
               />
-            </FormControl>
-            <FormControl mb={4}>
-              <FormLabel>Description</FormLabel>
-              <Input
+            </Field.Root>
+            <Field.Root mb={4}>
+              <Field.Label>Description</Field.Label>
+              <Textarea
+                name='description'
                 value={formData.description}
                 onChange={(e) =>
                   setFormData({ ...formData, description: e.target.value })
                 }
-                placeholder="Enter permission description"
+                placeholder='Enter permission description'
               />
-            </FormControl>
-            <FormControl mb={4}>
-              <FormLabel>Type</FormLabel>
+            </Field.Root>
+            <Field.Root mb={4}>
+              <Field.Label>Resource Type</Field.Label>
               <Select
-                value={formData.type}
+                name='resourceType'
+                value={formData.resourceType}
                 onChange={(e) =>
-                  setFormData({ ...formData, type: e.target.value })
+                  setFormData({ ...formData, resourceType: e.target.value })
                 }
               >
-                <option value="repository">Repository</option>
-                <option value="team">Team</option>
-                <option value="user">User</option>
+                <option value='repository'>Repository</option>
+                <option value='organization'>Organization</option>
+                <option value='team'>Team</option>
               </Select>
-            </FormControl>
-            <FormControl mb={4}>
-              <FormLabel>Level</FormLabel>
+            </Field.Root>
+            <Field.Root mb={4}>
+              <Field.Label>Action</Field.Label>
               <Select
-                value={formData.level}
+                name='action'
+                value={formData.action}
                 onChange={(e) =>
-                  setFormData({ ...formData, level: e.target.value })
+                  setFormData({ ...formData, action: e.target.value })
                 }
               >
-                <option value="read">Read</option>
-                <option value="write">Write</option>
-                <option value="admin">Admin</option>
+                <option value='read'>Read</option>
+                <option value='write'>Write</option>
+                <option value='admin'>Admin</option>
               </Select>
-            </FormControl>
+            </Field.Root>
             <Button
-              colorScheme="blue"
+              colorScheme='blue'
               mr={3}
               onClick={selectedPermission ? handleUpdatePermission : handleCreatePermission}
             >
               {selectedPermission ? 'Update' : 'Create'}
             </Button>
             <Button onClick={onPermissionModalClose}>Cancel</Button>
-          </ModalBody>
-        </ModalContent>
-      </Modal>
+          </Dialog.Body>
+        </Dialog.Content>
+      </Dialog.Root>
 
       {/* Assign Modal */}
-      <Modal isOpen={isAssignModalOpen} onClose={onAssignModalClose} size="xl">
-        <ModalOverlay />
-        <ModalContent>
-          <ModalHeader>Manage Permission Assignments</ModalHeader>
-          <ModalCloseButton />
-          <ModalBody pb={6}>
+      <Dialog.Root open={isAssignModalOpen} onClose={onAssignModalClose} size='xl'>
+        <Dialog.Backdrop />
+        <Dialog.Content>
+          <Dialog.Header>Manage Permission Assignments</Dialog.Header>
+          <Dialog.CloseTrigger />
+          <Dialog.Body pb={6}>
             <Tabs>
-              <TabList>
-                <Tab>Teams</Tab>
-                <Tab>Users</Tab>
-                <Tab>Repositories</Tab>
-              </TabList>
-              <TabPanels>
-                <TabPanel>
-                  {/* Teams management UI */}
-                  <Button
-                    colorScheme="blue"
-                    mr={3}
-                    onClick={() => handleUpdatePermission(selectedPermission.id, formData)}
-                  >
-                    Update Teams
-                  </Button>
-                </TabPanel>
-                <TabPanel>
-                  {/* Users management UI */}
-                  <Button
-                    colorScheme="blue"
-                    mr={3}
-                    onClick={() => handleUpdatePermission(selectedPermission.id, formData)}
-                  >
-                    Update Users
-                  </Button>
-                </TabPanel>
-                <TabPanel>
-                  {/* Repositories management UI */}
-                  <Button
-                    colorScheme="blue"
-                    mr={3}
-                    onClick={() => handleUpdatePermission(selectedPermission.id, formData)}
-                  >
-                    Update Repositories
-                  </Button>
-                </TabPanel>
-              </TabPanels>
+              <Tabs.List>
+                <Tabs.Trigger>Teams</Tabs.Trigger>
+                <Tabs.Trigger>Users</Tabs.Trigger>
+                <Tabs.Trigger>Repositories</Tabs.Trigger>
+              </Tabs.List>
+
+              <Tabs.Content>
+                {/* Teams management UI */}
+                <Button
+                  colorScheme='blue'
+                  mr={3}
+                  onClick={() => handleUpdatePermission(selectedPermission.id, formData)}
+                >
+                  Update Teams
+                </Button>
+              </Tabs.Content>
+              <Tabs.Content>
+                {/* Users management UI */}
+                <Button
+                  colorScheme='blue'
+                  mr={3}
+                  onClick={() => handleUpdatePermission(selectedPermission.id, formData)}
+                >
+                  Update Users
+                </Button>
+              </Tabs.Content>
+              <Tabs.Content>
+                {/* Repositories management UI */}
+                <Button
+                  colorScheme='blue'
+                  mr={3}
+                  onClick={() => handleUpdatePermission(selectedPermission.id, formData)}
+                >
+                  Update Repositories
+                </Button>
+              </Tabs.Content>
+
             </Tabs>
             <Button onClick={onAssignModalClose}>Cancel</Button>
-          </ModalBody>
-        </ModalContent>
-      </Modal>
+          </Dialog.Body>
+        </Dialog.Content>
+      </Dialog.Root>
     </Box>
   );
 };

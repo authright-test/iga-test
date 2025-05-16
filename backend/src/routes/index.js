@@ -3,6 +3,8 @@ import { authenticateGitHubApp, authenticateJWT } from '../middleware/auth.js';
 import logger from '../utils/logger.js';
 import auditRoutes from './audit.js';
 import authRoutes from './auth.js';
+import dashboardRoutes from './dashboard.js';
+import permissionsRoutes from './permissions.js';
 import policiesRoutes from './policies.js';
 import rolesRoutes from './roles.js';
 
@@ -27,6 +29,8 @@ function setupRoutes(app) {
   router.use('/api/roles', rolesRoutes);
   router.use('/api/policies', policiesRoutes);
   router.use('/api/audit', auditRoutes);
+  router.use('/api/dashboard', dashboardRoutes);
+  router.use('/api/permissions', permissionsRoutes);
 
   // Organization routes
   router.get('/api/organizations', async (req, res) => {

@@ -7,8 +7,8 @@ const logger = winston.createLogger({
     winston.format.json()
   ),
   transports: [
-    new winston.transports.File({ filename: 'error.log', level: 'error' }),
-    new winston.transports.File({ filename: 'combined.log' })
+    new winston.transports.File({ filename: process.env.LOGGER_HOME + '/error.log', level: 'error' }),
+    new winston.transports.File({ filename: process.env.LOGGER_HOME + '/combined.log' })
   ]
 });
 
@@ -18,4 +18,4 @@ if (process.env.NODE_ENV !== 'production') {
   }));
 }
 
-export default logger; 
+export default logger;

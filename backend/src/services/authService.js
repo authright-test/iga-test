@@ -19,7 +19,7 @@ const githubApp = new App({
  */
 const exchangeCodeForToken = async (code) => {
 
-  console.log({
+  logger.info('exchangeCodeForToken', {
     client_id: process.env.GITHUB_APP_CLIENT_ID,
     client_secret: process.env.GITHUB_APP_CLIENT_SECRET,
     code
@@ -109,7 +109,7 @@ const getInstallationForUser = async (userOctokit) => {
 const generateRefreshToken = async (user) => {
   // Generate a random token
   const token = crypto.randomBytes(40).toString('hex');
-  
+
   // Set expiration to 7 days from now
   const expiresAt = new Date();
   expiresAt.setDate(expiresAt.getDate() + 7);

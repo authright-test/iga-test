@@ -1,4 +1,4 @@
-import { Badge, Box, Divider, HStack, Icon, Text, useColorModeValue, VStack, } from '@chakra-ui/react';
+import { Badge, Box, Icon, Separator, Stack, Text, } from '@chakra-ui/react';
 import React from 'react';
 import { FiActivity, FiAlertTriangle, FiCheck, FiFileText, FiGitPullRequest, FiInfo, FiUsers, } from 'react-icons/fi';
 
@@ -116,76 +116,110 @@ const formatTimeAgo = (dateString) => {
 // 单个活动项
 const ActivityItem = ({ activity }) => {
   const { icon, color, badgeColor } = getActivityIconAndColor(activity);
-  const bgHover = useColorModeValue('gray.50', 'gray.700');
-
   return (
     <Box
       p={3}
-      borderRadius="md"
-      transition="background-color 0.2s"
+      borderRadius='md'
+      transition='background-color 0.2s'
       _hover={{ bg: bgHover }}
-      width="100%"
+      width='100%'
     >
-      <HStack align="flex-start" spacing={3}>
+      <Stack align='flex-start' spacing={3}>
         <Box
           p={2}
-          borderRadius="full"
-          bg={useColorModeValue(`${color.split('.')[0]}.50`, `${color.split('.')[0]}.900`)}
-        >
+          borderRadius='full'>
           <Icon as={icon} color={color} boxSize={5} />
         </Box>
 
-        <Box flex="1">
-          <HStack justifyContent="space-between" mb={1}>
-            <Text fontWeight="medium">
+        <Box flex='1'>
+          <Stack justifyContent='space-between' mb={1}>
+            <Text fontWeight='medium'>
               {createActivityDescription(activity)}
             </Text>
 
-            <Badge colorScheme={badgeColor} fontSize="xs">
+            <Badge colorScheme={badgeColor} fontSize='xs'>
               {activity.action?.replace(/_/g, ' ')}
             </Badge>
-          </HStack>
+          </Stack>
 
-          <HStack justifyContent="space-between">
-            <HStack>
-              <Text fontSize="sm" color="gray.500">
+          <Stack justifyContent='space-between'>
+            <Stack>
+              <Text fontSize='sm'>
                 {activity.User?.username || 'System'}
               </Text>
-            </HStack>
+            </Stack>
 
-            <Text fontSize="xs" color="gray.500">
+            <Text fontSize='xs'>
               {formatTimeAgo(activity.createdAt)}
             </Text>
-          </HStack>
+          </Stack>
         </Box>
-      </HStack>
+      </Stack>
     </Box>
   );
 };
 
 // 活动提要组件
-const ActivityFeed = ({ activities = [], maxItems = 5, showDividers = true }) => {
-  // 限制显示的活动数量
-  const displayedActivities = activities.slice(0, maxItems);
+const ActivityFeed = ({ activities }) => {
+
+  const getActivityIcon = (type) => {
+    switch (type) {
+      case 'policy':
+        return FiFileText;
+      case 'role':
+        return FiUsers;
+      case 'access':
+        return FiGitPullRequest;
+      case 'system':
+        return FiActivity;
+      default:
+        return FiInfo;
+    }
+  };
+
+  const getActivityColor = (type) => {
+    switch (type) {
+      case 'success':
+        return 'green';
+      case 'warning':
+        return 'yellow';
+      case 'error':
+        return 'red';
+      default:
+        return 'blue';
+    }
+  };
 
   return (
-    <VStack spacing={showDividers ? 0 : 2} align="stretch" width="100%">
-      {displayedActivities.length === 0 ? (
-        <Box p={4} textAlign="center">
-          <Icon as={FiActivity} fontSize="2xl" color="gray.400" mb={2} />
-          <Text color="gray.500">No recent activities</Text>
-        </Box>
-      ) : (
-        displayedActivities.map((activity, index) => (
-          <React.Fragment key={activity.id || index}>
-            <ActivityItem activity={activity} />
-            {showDividers && index < displayedActivities.length - 1 && (
-              <Divider />
-            )}
-          </React.Fragment>
-        ))
-      )}
-    </VStack>
+    <Stack direction='column' gap={4} align='stretch'>
+      {activities?.map((activity, index) => (
+        <React.Fragment key={activity.id}>
+          <Stack gap={4} align='start'>
+            <Icon
+              as={getActivityIcon(activity.type)}
+              boxSize={5}
+              color={getActivityColor(activity.status)}
+            />
+            <Box flex={1}>
+              <Text fontWeight='medium' lineClamp={2}>
+                {activity.description}
+              </Text>
+              <Stack gap={2} mt={1}>
+                <Badge colorScheme={getActivityColor(activity.status)}>
+                  {activity.status}
+                </Badge>
+                <Text fontSize='sm'>
+                  {new Date(activity.timestamp).toLocaleString()}
+                </Text>
+              </Stack>
+            </Box>
+          </Stack>
+          {index < activities.length - 1 && (
+            <Separator />
+          )}
+        </React.Fragment>
+      ))}
+    </Stack>
   );
 };
 

@@ -7,7 +7,7 @@ import { toast } from 'react-toastify';
  */
 
 const api = axios.create({
-  baseURL: process.env.REACT_APP_API_URL || '/api',
+  baseURL: import.meta.env.VITE_REACT_APP_API_URL || '/api',
   timeout: 30000, // 30 seconds timeout
 });
 
@@ -29,27 +29,27 @@ const errorMessages = {
   NETWORK_ERROR: 'Network connection error. Please check your internet connection.',
   TIMEOUT_ERROR: 'Request timeout. Please try again.',
   SERVER_ERROR: 'Server error. Please try again later.',
-  
+
   // Authentication errors
   UNAUTHORIZED: 'Your session has expired. Please log in again.',
   FORBIDDEN: 'You do not have permission to perform this action.',
   INVALID_TOKEN: 'Invalid authentication token. Please log in again.',
-  
+
   // Validation errors
   VALIDATION_ERROR: 'Please check your input and try again.',
   INVALID_INPUT: 'Invalid input provided.',
-  
+
   // Resource errors
   NOT_FOUND: 'The requested resource was not found.',
   CONFLICT: 'This action conflicts with the current state.',
-  
+
   // Rate limiting
   RATE_LIMIT: 'Too many requests. Please try again later.',
-  
+
   // GitHub API specific errors
   GITHUB_API_ERROR: 'Error communicating with GitHub. Please try again.',
   GITHUB_RATE_LIMIT: 'GitHub API rate limit exceeded. Please try again later.',
-  
+
   // Default error
   DEFAULT_ERROR: 'An unexpected error occurred. Please try again.'
 };
@@ -79,25 +79,25 @@ const parseErrorMessage = (error) => {
         return data.details || errorMessages.VALIDATION_ERROR;
       }
       return data.error || errorMessages.INVALID_INPUT;
-    
+
     case 401:
       if (data.error === 'INVALID_TOKEN') {
         return errorMessages.INVALID_TOKEN;
       }
       return errorMessages.UNAUTHORIZED;
-    
+
     case 403:
       return data.error || errorMessages.FORBIDDEN;
-    
+
     case 404:
       return errorMessages.NOT_FOUND;
-    
+
     case 409:
       return errorMessages.CONFLICT;
-    
+
     case 429:
       return errorMessages.RATE_LIMIT;
-    
+
     case 500:
     case 502:
     case 503:
@@ -106,7 +106,7 @@ const parseErrorMessage = (error) => {
         return errorMessages.GITHUB_API_ERROR;
       }
       return errorMessages.SERVER_ERROR;
-    
+
     default:
       return data.error || errorMessages.DEFAULT_ERROR;
   }
@@ -120,10 +120,10 @@ const parseErrorMessage = (error) => {
  */
 const handleError = (error, options = {}) => {
   const errorMessage = parseErrorMessage(error);
-  
+
   // Show error toast
   toast.error(errorMessage, {
-    position: "top-right",
+    position: 'top-right',
     autoClose: 5000,
     hideProgressBar: false,
     closeOnClick: true,
@@ -216,4 +216,4 @@ export const apiRequest = async (requestFn, options = {}) => {
   }
 };
 
-export default api; 
+export default api;

@@ -1,11 +1,13 @@
-import { ChakraProvider, extendTheme } from '@chakra-ui/react';
+import { Provider } from '@/components/ui/provider';
+import { Toaster } from '@/components/ui/toaster';
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { QueryClient, QueryClientProvider } from 'react-query';
-import { BrowserRouter } from 'react-router-dom';
+import { BrowserRouter as Router } from 'react-router-dom';
 import App from './App';
 import { AuthProvider } from './contexts/AuthContext';
 import reportWebVitals from './reportWebVitals';
+import theme from './theme';
 
 // Create a client for react-query
 const queryClient = new QueryClient({
@@ -20,15 +22,16 @@ const queryClient = new QueryClient({
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
   <React.StrictMode>
-    <BrowserRouter>
+    <Router>
       <QueryClientProvider client={queryClient}>
-        <ChakraProvider>
+        <Provider theme={theme}>
+          <Toaster />
           <AuthProvider>
             <App />
           </AuthProvider>
-        </ChakraProvider>
+        </Provider>
       </QueryClientProvider>
-    </BrowserRouter>
+    </Router>
   </React.StrictMode>
 );
 

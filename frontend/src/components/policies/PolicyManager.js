@@ -3,40 +3,19 @@ import {
   Box,
   Button,
   Card,
-  CardBody,
-  CardHeader,
-  FormControl,
-  FormHelperText,
-  FormLabel,
+  Dialog,
+  Field,
   Heading,
-  HStack,
   IconButton,
   Input,
-  Modal,
-  ModalBody,
-  ModalCloseButton,
-  ModalContent,
-  ModalHeader,
-  ModalOverlay,
   Select,
   Stack,
   Switch,
-  Tab,
   Table,
-  TabList,
-  TabPanel,
-  TabPanels,
   Tabs,
-  Tbody,
-  Td,
   Text,
-  Th,
-  Thead,
   Tooltip,
-  Tr,
-  useColorModeValue,
   useDisclosure,
-  VStack,
 } from '@chakra-ui/react';
 import React, { useState } from 'react';
 import { FiCheck, FiEdit2, FiPlus, FiTrash2 } from 'react-icons/fi';
@@ -47,9 +26,6 @@ const PolicyManager = () => {
   const { isOpen, onOpen, onClose } = useDisclosure();
   const [selectedPolicy, setSelectedPolicy] = useState(null);
   const [activeTab, setActiveTab] = useState(0);
-
-  const cardBg = useColorModeValue('white', 'gray.700');
-  const borderColor = useColorModeValue('gray.200', 'gray.600');
 
   const handleCreatePolicy = async (policyData) => {
     try {
@@ -80,15 +56,15 @@ const PolicyManager = () => {
   };
 
   return (
-    <Stack spacing={6}>
+    <Stack gap={6}>
       {/* Policy Overview */}
-      <Card bg={cardBg} borderWidth="1px" borderColor={borderColor}>
-        <CardHeader>
-          <HStack justify="space-between">
-            <Heading size="md">Policy Management</Heading>
+      <Card borderWidth='1px'>
+        <Card.Header>
+          <Stack justify='space-between'>
+            <Heading size='md'>Policy Management</Heading>
             <Button
               leftIcon={<FiPlus />}
-              colorScheme="blue"
+              colorScheme='blue'
               onClick={() => {
                 setSelectedPolicy(null);
                 onOpen();
@@ -96,179 +72,173 @@ const PolicyManager = () => {
             >
               New Policy
             </Button>
-          </HStack>
-        </CardHeader>
-        <CardBody>
-          <Tabs onChange={(index) => setActiveTab(index)}>
-            <TabList>
-              <Tab>Active Policies</Tab>
-              <Tab>Policy Templates</Tab>
-              <Tab>Policy Compliance</Tab>
-            </TabList>
+          </Stack>
+        </Card.Header>
+        <Card.Body>
+          <Tabs.Root onChange={(index) => setActiveTab(index)}>
+            <Tabs.List>
+              <Tabs.Trigger>Active Policies</Tabs.Trigger>
+              <Tabs.Trigger>Policy Templates</Tabs.Trigger>
+              <Tabs.Trigger>Policy Compliance</Tabs.Trigger>
+            </Tabs.List>
 
-            <TabPanels>
-              {/* Active Policies */}
-              <TabPanel>
-                <Table variant="simple">
-                  <Thead>
-                    <Tr>
-                      <Th>Name</Th>
-                      <Th>Type</Th>
-                      <Th>Status</Th>
-                      <Th>Last Modified</Th>
-                      <Th>Actions</Th>
-                    </Tr>
-                  </Thead>
-                  <Tbody>
-                    {policies?.map((policy) => (
-                      <Tr key={policy.id}>
-                        <Td>{policy.name}</Td>
-                        <Td>{policy.type}</Td>
-                        <Td>
-                          <Badge
-                            colorScheme={policy.status === 'active' ? 'green' : 'gray'}
-                          >
-                            {policy.status}
-                          </Badge>
-                        </Td>
-                        <Td>{new Date(policy.lastModified).toLocaleString()}</Td>
-                        <Td>
-                          <HStack spacing={2}>
-                            <Tooltip label="Edit Policy">
-                              <IconButton
-                                icon={<FiEdit2 />}
-                                size="sm"
-                                variant="ghost"
-                                onClick={() => {
-                                  setSelectedPolicy(policy);
-                                  onOpen();
-                                }}
-                              />
-                            </Tooltip>
-                            <Tooltip label="Delete Policy">
-                              <IconButton
-                                icon={<FiTrash2 />}
-                                size="sm"
-                                variant="ghost"
-                                colorScheme="red"
-                                onClick={() => handleDeletePolicy(policy.id)}
-                              />
-                            </Tooltip>
-                          </HStack>
-                        </Td>
-                      </Tr>
-                    ))}
-                  </Tbody>
-                </Table>
-              </TabPanel>
 
-              {/* Policy Templates */}
-              <TabPanel>
-                <Stack spacing={4}>
-                  {policies?.filter(p => p.isTemplate)?.map((template) => (
-                    <PolicyTemplateCard
-                      key={template.id}
-                      template={template}
-                      onApply={() => {
-                        setSelectedPolicy(template);
-                        onOpen();
-                      }}
-                    />
-                  ))}
-                </Stack>
-              </TabPanel>
-
-              {/* Policy Compliance */}
-              <TabPanel>
-                <Stack spacing={4}>
+            {/* Active Policies */}
+            <Tabs.Content>
+              <Table.Root variant='simple'>
+                <Table.Header>
+                  <Table.Row>
+                    <Table.Cell>Name</Table.Cell>
+                    <Table.Cell>Type</Table.Cell>
+                    <Table.Cell>Status</Table.Cell>
+                    <Table.Cell>Last Modified</Table.Cell>
+                    <Table.Cell>Actions</Table.Cell>
+                  </Table.Row>
+                </Table.Header>
+                <Table.Body>
                   {policies?.map((policy) => (
-                    <PolicyComplianceCard
-                      key={policy.id}
-                      policy={policy}
-                    />
+                    <Table.Row key={policy.id}>
+                      <Table.Cell>{policy.name}</Table.Cell>
+                      <Table.Cell>{policy.type}</Table.Cell>
+                      <Table.Cell>
+                        <Badge
+                          colorScheme={policy.status === 'active' ? 'green' : 'gray'}
+                        >
+                          {policy.status}
+                        </Badge>
+                      </Table.Cell>
+                      <Table.Cell>{new Date(policy.lastModified).toLocaleString()}</Table.Cell>
+                      <Table.Cell>
+                        <Stack gap={2}>
+                          <Tooltip label='Edit Policy'>
+                            <IconButton
+                              icon={<FiEdit2 />}
+                              size='sm'
+                              variant='ghost'
+                              onClick={() => {
+                                setSelectedPolicy(policy);
+                                onOpen();
+                              }}
+                            />
+                          </Tooltip>
+                          <Tooltip label='Delete Policy'>
+                            <IconButton
+                              icon={<FiTrash2 />}
+                              size='sm'
+                              variant='ghost'
+                              colorScheme='red'
+                              onClick={() => handleDeletePolicy(policy.id)}
+                            />
+                          </Tooltip>
+                        </Stack>
+                      </Table.Cell>
+                    </Table.Row>
                   ))}
-                </Stack>
-              </TabPanel>
-            </TabPanels>
-          </Tabs>
-        </CardBody>
+                </Table.Body>
+              </Table.Root>
+            </Tabs.Content>
+
+            {/* Policy Templates */}
+            <Tabs.Content>
+              <Stack gap={4}>
+                {policies?.filter(p => p.isTemplate)?.map((template) => (
+                  <PolicyTemplateCard
+                    key={template.id}
+                    template={template}
+                    onApply={() => {
+                      setSelectedPolicy(template);
+                      onOpen();
+                    }}
+                  />
+                ))}
+              </Stack>
+            </Tabs.Content>
+
+            {/* Policy Compliance */}
+            <Tabs.Content>
+              <Stack gap={4}>
+                {policies?.map((policy) => (
+                  <PolicyComplianceCard
+                    key={policy.id}
+                    policy={policy}
+                  />
+                ))}
+              </Stack>
+            </Tabs.Content>
+
+          </Tabs.Root>
+        </Card.Body>
       </Card>
 
       {/* Policy Editor Modal */}
-      <Modal isOpen={isOpen} onClose={onClose} size="xl">
-        <ModalOverlay />
-        <ModalContent>
-          <ModalHeader>
+      <Dialog.Root open={isOpen} onClose={onClose} size='xl'>
+        <Dialog.Backdrop />
+        <Dialog.Content>
+          <Dialog.Header>
             {selectedPolicy ? 'Edit Policy' : 'Create New Policy'}
-          </ModalHeader>
-          <ModalCloseButton />
-          <ModalBody pb={6}>
+          </Dialog.Header>
+          <Dialog.CloseTrigger />
+          <Dialog.Body pb={6}>
             <PolicyEditor
               policy={selectedPolicy}
               onSubmit={selectedPolicy ? handleUpdatePolicy : handleCreatePolicy}
               onCancel={onClose}
             />
-          </ModalBody>
-        </ModalContent>
-      </Modal>
+          </Dialog.Body>
+        </Dialog.Content>
+      </Dialog.Root>
     </Stack>
   );
 };
 
 const PolicyTemplateCard = ({ template, onApply }) => {
-  const cardBg = useColorModeValue('white', 'gray.700');
-  const borderColor = useColorModeValue('gray.200', 'gray.600');
-
   return (
-    <Card bg={cardBg} borderWidth="1px" borderColor={borderColor}>
-      <CardBody>
-        <HStack justify="space-between">
-          <VStack align="start" spacing={1}>
-            <Heading size="sm">{template.name}</Heading>
-            <Text fontSize="sm" color="gray.500">{template.description}</Text>
-          </VStack>
+    <Card borderWidth='1px'>
+      <Card.Body>
+        <Stack justify='space-between'>
+          <Stack direction="column" align='start' spacing={1}>
+            <Heading size='sm'>{template.name}</Heading>
+            <Text fontSize='sm' color='gray.500'>{template.description}</Text>
+          </Stack>
           <Button
             leftIcon={<FiCheck />}
-            size="sm"
+            size='sm'
             onClick={onApply}
           >
             Apply Template
           </Button>
-        </HStack>
-      </CardBody>
+        </Stack>
+      </Card.Body>
     </Card>
   );
 };
 
 const PolicyComplianceCard = ({ policy }) => {
-  const cardBg = useColorModeValue('white', 'gray.700');
-  const borderColor = useColorModeValue('gray.200', 'gray.600');
-
   return (
-    <Card bg={cardBg} borderWidth="1px" borderColor={borderColor}>
-      <CardBody>
-        <VStack align="stretch" spacing={4}>
-          <HStack justify="space-between">
-            <Heading size="sm">{policy.name}</Heading>
+    <Card borderWidth='1px'>
+      <Card.Body>
+        <Stack direction="column" align='stretch' spacing={4}>
+          <Stack justify='space-between'>
+            <Heading size='sm'>{policy.name}</Heading>
             <Badge
               colorScheme={
                 policy.compliance >= 90 ? 'green' :
-                policy.compliance >= 70 ? 'yellow' : 'red'
+                  policy.compliance >= 70 ? 'yellow' : 'red'
               }
             >
               {policy.compliance}% Compliant
             </Badge>
-          </HStack>
+          </Stack>
           <Box>
-            <Text fontSize="sm" color="gray.500">
+            <Text fontSize='sm' color='gray.500'>
               Last Check: {new Date(policy.lastComplianceCheck).toLocaleString()}
             </Text>
-            <Text fontSize="sm" color="gray.500">
+            <Text fontSize='sm' color='gray.500'>
               Violations: {policy.violations}
             </Text>
           </Box>
-        </VStack>
-      </CardBody>
+        </Stack>
+      </Card.Body>
     </Card>
   );
 };
@@ -289,55 +259,59 @@ const PolicyEditor = ({ policy, onSubmit, onCancel }) => {
 
   return (
     <form onSubmit={handleSubmit}>
-      <Stack spacing={4}>
-        <FormControl isRequired>
-          <FormLabel>Policy Name</FormLabel>
+      <Stack gap={4}>
+        <Field.Root required>
+          <Field.Label>Policy Name</Field.Label>
           <Input
             value={formData.name}
             onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
           />
-        </FormControl>
+        </Field.Root>
 
-        <FormControl isRequired>
-          <FormLabel>Policy Type</FormLabel>
+        <Field.Root required>
+          <Field.Label>Policy Type</Field.Label>
           <Select
             value={formData.type}
             onChange={(e) => setFormData(prev => ({ ...prev, type: e.target.value }))}
           >
-            <option value="access">Access Control</option>
-            <option value="security">Security</option>
-            <option value="compliance">Compliance</option>
+            <option value='access'>Access Control</option>
+            <option value='security'>Security</option>
+            <option value='compliance'>Compliance</option>
           </Select>
-        </FormControl>
+        </Field.Root>
 
-        <FormControl>
-          <FormLabel>Description</FormLabel>
+        <Field.Root>
+          <Field.Label>Description</Field.Label>
           <Input
             value={formData.description}
             onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
           />
-        </FormControl>
+        </Field.Root>
 
-        <FormControl>
-          <FormLabel>Status</FormLabel>
-          <Switch
-            isChecked={formData.status === 'active'}
-            onChange={(e) => setFormData(prev => ({
+        <Field.Root>
+          <Field.Label>Status</Field.Label>
+          <Switch.Root
+            checked={formData.status === 'active'}
+            onCheckedChange={(e) => setFormData(prev => ({
               ...prev,
-              status: e.target.checked ? 'active' : 'inactive'
+              status: e.checked ? 'active' : 'inactive'
             }))}
-          />
-          <FormHelperText>
+          >
+            <Switch.HiddenInput />
+            <Switch.Control />
+            <Switch.Label />
+          </Switch.Root>
+          <Field.HelperText>
             {formData.status === 'active' ? 'Policy is active' : 'Policy is inactive'}
-          </FormHelperText>
-        </FormControl>
+          </Field.HelperText>
+        </Field.Root>
 
-        <HStack justify="flex-end" spacing={4}>
+        <Stack justify='flex-end' spacing={4}>
           <Button onClick={onCancel}>Cancel</Button>
-          <Button type="submit" colorScheme="blue">
+          <Button type='submit' colorScheme='blue'>
             {policy ? 'Update Policy' : 'Create Policy'}
           </Button>
-        </HStack>
+        </Stack>
       </Stack>
     </form>
   );

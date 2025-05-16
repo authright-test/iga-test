@@ -1,42 +1,30 @@
-import { Box, Button, Heading, Text, useColorModeValue, VStack } from '@chakra-ui/react';
+import { Button, Container, Heading, Text, } from '@chakra-ui/react';
 import React from 'react';
-import { Link as RouterLink } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 
 const NotFoundPage = () => {
+  const navigate = useNavigate();
+
   return (
-    <Box
-      textAlign="center"
-      py={10}
-      px={6}
-      minH="calc(100vh - 100px)"
-      display="flex"
-      alignItems="center"
-      justifyContent="center"
-    >
-      <VStack spacing={8}>
-        <Heading
-          display="inline-block"
-          as="h1"
-          size="4xl"
-          bgGradient="linear(to-r, brand.400, brand.600)"
-          backgroundClip="text"
-        >
+    <Container maxW='lg' py={{ base: '12', md: '24' }} px={{ base: '0', sm: '8' }}>
+      <Stack direction='column' gap='8' align='center' justify='center' minH='60vh'>
+        <Heading size='2xl'>
           404
         </Heading>
-        <Text fontSize="xl">Page Not Found</Text>
-        <Text color={useColorModeValue('gray.500', 'gray.300')}>
-          The page you're looking for does not seem to exist
+        <Text fontSize='xl'>
+          Page not found
+        </Text>
+        <Text>
+          The page you're looking for doesn't exist or has been moved.
         </Text>
         <Button
-          as={RouterLink}
-          to="/"
-          colorScheme="brand"
-          variant="solid"
+          colorScheme='brand'
+          onClick={() => navigate('/')}
         >
-          Go to Dashboard
+          Go back home
         </Button>
-      </VStack>
-    </Box>
+      </Stack>
+    </Container>
   );
 };
 

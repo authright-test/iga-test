@@ -1,60 +1,33 @@
+import { toaster } from '@/components/ui/toaster';
 import {
   Alert,
-  AlertIcon,
   Badge,
   Box,
   Button,
   Card,
-  CardBody,
-  Divider,
+  Dialog,
+  Field,
   Flex,
-  FormControl,
-  FormLabel,
   Heading,
-  HStack,
   IconButton,
   Input,
   InputGroup,
-  InputLeftElement,
   List,
-  ListIcon,
   ListItem,
   Menu,
-  MenuButton,
   MenuItem,
-  MenuList,
-  Modal,
-  ModalBody,
-  ModalCloseButton,
-  ModalContent,
-  ModalFooter,
-  ModalHeader,
-  ModalOverlay,
+  MenuItemGroup,
   Progress,
   Select,
+  Separator,
   SimpleGrid,
   Spinner,
+  Stack,
   Stat,
-  StatArrow,
-  StatHelpText,
-  StatLabel,
-  StatNumber,
-  Tab,
   Table,
-  TabList,
-  TabPanel,
-  TabPanels,
   Tabs,
-  Tbody,
-  Td,
   Text,
-  Th,
-  Thead,
-  Tr,
-  useColorModeValue,
   useDisclosure,
-  useToast,
-  VStack,
 } from '@chakra-ui/react';
 import React, { useEffect, useState } from 'react';
 import {
@@ -96,10 +69,7 @@ const ComplianceReportsPage = () => {
     onClose: onDetailsModalClose
   } = useDisclosure();
 
-  const toast = useToast();
   const { logAuditEvent, organization } = useAuth();
-  const bgColor = useColorModeValue('white', 'gray.800');
-  const borderColor = useColorModeValue('gray.200', 'gray.700');
 
   const {
     reports,
@@ -126,7 +96,7 @@ const ComplianceReportsPage = () => {
   const handleCreateReport = async () => {
     try {
       if (!formData.name) {
-        toast({
+        toaster.create({
           title: 'Validation Error',
           description: 'Report name is required',
           status: 'error',
@@ -145,7 +115,7 @@ const ComplianceReportsPage = () => {
         { name: formData.name }
       );
 
-      toast({
+      toaster.create({
         title: 'Report created',
         description: `Report "${formData.name}" has been created.`,
         status: 'success',
@@ -155,7 +125,7 @@ const ComplianceReportsPage = () => {
 
       onReportModalClose();
     } catch (err) {
-      toast({
+      toaster.create({
         title: 'Error',
         description: err.response?.data?.error || err.message,
         status: 'error',
@@ -176,7 +146,7 @@ const ComplianceReportsPage = () => {
         { name: report.name }
       );
 
-      toast({
+      toaster.create({
         title: 'Report generated',
         description: `Report "${report.name}" has been generated.`,
         status: 'success',
@@ -184,7 +154,7 @@ const ComplianceReportsPage = () => {
         isClosable: true,
       });
     } catch (err) {
-      toast({
+      toaster.create({
         title: 'Error',
         description: err.response?.data?.error || err.message,
         status: 'error',
@@ -214,7 +184,7 @@ const ComplianceReportsPage = () => {
       link.click();
       link.remove();
 
-      toast({
+      toaster.create({
         title: 'Report downloaded',
         description: `Report "${report.name}" has been downloaded.`,
         status: 'success',
@@ -222,7 +192,7 @@ const ComplianceReportsPage = () => {
         isClosable: true,
       });
     } catch (err) {
-      toast({
+      toaster.create({
         title: 'Error',
         description: err.response?.data?.error || err.message,
         status: 'error',
@@ -243,11 +213,11 @@ const ComplianceReportsPage = () => {
 
   return (
     <Box>
-      <Flex justifyContent="space-between" alignItems="center" mb={6}>
-        <Heading as="h1" size="lg">Compliance Reports</Heading>
+      <Flex justifyContent='space-between' alignItems='center' mb={6}>
+        <Heading as='h1' size='lg'>Compliance Reports</Heading>
         <Button
           leftIcon={<FiPlus />}
-          colorScheme="brand"
+          colorScheme='brand'
           onClick={() => {
             setFormData({
               name: '',
@@ -265,119 +235,120 @@ const ComplianceReportsPage = () => {
 
       <SimpleGrid columns={{ base: 1, md: 2, lg: 4 }} spacing={6} mb={6}>
         <Card>
-          <CardBody>
-            <Stat>
-              <StatLabel>Overall Score</StatLabel>
-              <StatNumber>{riskScores.overall}%</StatNumber>
-              <StatHelpText>
-                <StatArrow type="increase" />
+          <Card.Body>
+            <Stat.Root>
+              <Stat.Label>Overall Score</Stat.Label>
+              <Stat.ValueText>{riskScores.overall}%</Stat.ValueText>
+              <Stat.HelpText>
+                <Stat.UpIndicator />
                 5% from last week
-              </StatHelpText>
-            </Stat>
-          </CardBody>
+              </Stat.HelpText>
+            </Stat.Root>
+          </Card.Body>
         </Card>
 
         <Card>
-          <CardBody>
-            <Stat>
-              <StatLabel>Security Score</StatLabel>
-              <StatNumber>{riskScores.security}%</StatNumber>
-              <StatHelpText>
-                <StatArrow type="increase" />
+          <Card.Body>
+            <Stat.Root>
+              <Stat.Label>Security Score</Stat.Label>
+              <Stat.ValueText>{riskScores.security}%</Stat.ValueText>
+              <Stat.HelpText>
+                <Stat.UpIndicator />
                 3% from last week
-              </StatHelpText>
-            </Stat>
-          </CardBody>
+              </Stat.HelpText>
+            </Stat.Root>
+          </Card.Body>
         </Card>
 
         <Card>
-          <CardBody>
-            <Stat>
-              <StatLabel>Compliance Score</StatLabel>
-              <StatNumber>{riskScores.compliance}%</StatNumber>
-              <StatHelpText>
-                <StatArrow type="decrease" />
+          <Card.Body>
+            <Stat.Root>
+              <Stat.Label>Compliance Score</Stat.Label>
+              <Stat.ValueText>{riskScores.compliance}%</Stat.ValueText>
+              <Stat.HelpText>
+                <Stat.DownIndicator />
                 2% from last week
-              </StatHelpText>
-            </Stat>
-          </CardBody>
+              </Stat.HelpText>
+            </Stat.Root>
+          </Card.Body>
         </Card>
 
         <Card>
-          <CardBody>
-            <Stat>
-              <StatLabel>Access Control Score</StatLabel>
-              <StatNumber>{riskScores.access}%</StatNumber>
-              <StatHelpText>
-                <StatArrow type="increase" />
+          <Card.Body>
+            <Stat.Root>
+              <Stat.Label>Access Control Score</Stat.Label>
+              <Stat.ValueText>{riskScores.access}%</Stat.ValueText>
+              <Stat.HelpText>
+                <Stat.UpIndicator />
                 4% from last week
-              </StatHelpText>
-            </Stat>
-          </CardBody>
+              </Stat.HelpText>
+            </Stat.Root>
+          </Card.Body>
         </Card>
       </SimpleGrid>
 
       <Box mb={6}>
-        <Heading size="md" mb={4}>Compliance Trends</Heading>
-        <Box height="300px">
-          <ResponsiveContainer width="100%" height="100%">
+        <Heading size='md' mb={4}>Compliance Trends</Heading>
+        <Box height='300px'>
+          <ResponsiveContainer width='100%' height='100%'>
             <LineChart data={trendData}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="date" />
+              <CartesianGrid strokeDasharray='3 3' />
+              <XAxis dataKey='date' />
               <YAxis />
               <Tooltip />
               <Legend />
-              <Line type="monotone" dataKey="security" stroke="#3182CE" />
-              <Line type="monotone" dataKey="compliance" stroke="#38A169" />
-              <Line type="monotone" dataKey="access" stroke="#805AD5" />
+              <Line type='monotone' dataKey='security' stroke='#3182CE' />
+              <Line type='monotone' dataKey='compliance' stroke='#38A169' />
+              <Line type='monotone' dataKey='access' stroke='#805AD5' />
             </LineChart>
           </ResponsiveContainer>
         </Box>
       </Box>
 
       <Box mb={6}>
-        <Heading size="md" mb={4}>Recent Violations</Heading>
+        <Heading size='md' mb={4}>Recent Violations</Heading>
         <List spacing={3}>
           {violations.map((violation) => (
             <ListItem key={violation.id}>
               <Card>
-                <CardBody>
-                  <HStack justify="space-between">
-                    <VStack align="start" spacing={1}>
-                      <HStack>
+                <Card.Body>
+                  <Stack justify='space-between'>
+                    <Stack direction="column" align='start' spacing={1}>
+                      <Stack>
                         <Badge
                           colorScheme={
                             violation.severity === 'high' ? 'red' :
-                            violation.severity === 'medium' ? 'yellow' :
-                            'green'
+                              violation.severity === 'medium' ? 'yellow' :
+                                'green'
                           }
                         >
                           {violation.severity}
                         </Badge>
-                        <Badge colorScheme="blue">{violation.type}</Badge>
+                        <Badge colorScheme='blue'>{violation.type}</Badge>
                         {violation.status === 'resolved' && (
-                          <Badge colorScheme="green">Resolved</Badge>
+                          <Badge colorScheme='green'>Resolved</Badge>
                         )}
-                      </HStack>
-                      <Text fontWeight="medium">{violation.description}</Text>
-                      <Text fontSize="sm" color="gray.500">
+                      </Stack>
+                      <Text fontWeight='medium'>{violation.description}</Text>
+                      <Text fontSize='sm' color='gray.500'>
                         Affected: {violation.affected.join(', ')}
                       </Text>
-                      <Text fontSize="sm" color="gray.500">
+                      <Text fontSize='sm' color='gray.500'>
                         {new Date(violation.timestamp).toLocaleString()}
                       </Text>
-                    </VStack>
+                    </Stack>
                     {violation.status === 'open' && (
                       <Button
-                        size="sm"
-                        colorScheme="green"
-                        onClick={() => {/* TODO: Implement resolve */}}
+                        size='sm'
+                        colorScheme='green'
+                        onClick={() => {/* TODO: Implement resolve */
+                        }}
                       >
                         Resolve
                       </Button>
                     )}
-                  </HStack>
-                </CardBody>
+                  </Stack>
+                </Card.Body>
               </Card>
             </ListItem>
           ))}
@@ -386,94 +357,96 @@ const ComplianceReportsPage = () => {
 
       <Flex mb={6}>
         <InputGroup>
-          <InputLeftElement pointerEvents="none">
-            <FiSearch color="gray.300" />
+          <InputLeftElement pointerEvents='none'>
+            <FiSearch color='gray.300' />
           </InputLeftElement>
           <Input
-            placeholder="Search reports..."
+            placeholder='Search reports...'
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            borderRadius="md"
+            borderRadius='md'
           />
         </InputGroup>
       </Flex>
 
       {error && (
-        <Alert status="error" mb={4}>
-          <AlertIcon />
-          {error}
-        </Alert>
+        <Alert.Root status='error' mb={4}>
+          <Alert.Indicator />
+          <Alert.Title>
+            {error}
+          </Alert.Title>
+        </Alert.Root>
       )}
 
       {isLoading ? (
-        <Flex justify="center" align="center" height="200px">
-          <Spinner size="xl" color="brand.500" />
+        <Flex justify='center' align='center' height='200px'>
+          <Spinner size='xl' color='brand.500' />
         </Flex>
       ) : filteredReports.length === 0 ? (
-        <Box p={5} textAlign="center" borderWidth="1px" borderRadius="md">
-          <Text fontSize="lg">No reports found</Text>
+        <Box p={5} textAlign='center' borderWidth='1px' borderRadius='md'>
+          <Text fontSize='lg'>No reports found</Text>
         </Box>
       ) : (
-        <Box borderWidth="1px" borderRadius="lg" overflow="hidden">
-          <Table variant="simple">
-            <Thead bg="gray.50">
-              <Tr>
-                <Th>Report</Th>
-                <Th>Type</Th>
-                <Th>Schedule</Th>
-                <Th>Score</Th>
-                <Th>Last Generated</Th>
-                <Th width="100px">Actions</Th>
-              </Tr>
-            </Thead>
-            <Tbody>
+        <Box borderWidth='1px' borderRadius='lg' overflow='hidden'>
+          <Table.Root variant='simple'>
+            <Table.Header bg='gray.50'>
+              <Table.Row>
+                <Table.Cell>Report</Table.Cell>
+                <Table.Cell>Type</Table.Cell>
+                <Table.Cell>Schedule</Table.Cell>
+                <Table.Cell>Score</Table.Cell>
+                <Table.Cell>Last Generated</Table.Cell>
+                <Table.Cell width='100px'>Actions</Table.Cell>
+              </Table.Row>
+            </Table.Header>
+            <Table.Body>
               {filteredReports.map((report) => (
-                <Tr key={report.id}>
-                  <Td>
-                    <VStack align="start" spacing={1}>
-                      <Text fontWeight="medium">{report.name}</Text>
-                      <Text fontSize="sm" color="gray.500" noOfLines={2}>
+                <Table.Row key={report.id}>
+                  <Table.Cell>
+                    <Stack direction="column" align='start' spacing={1}>
+                      <Text fontWeight='medium'>{report.name}</Text>
+                      <Text fontSize='sm' color='gray.500' lineClamp={2}>
                         {report.description}
                       </Text>
-                    </VStack>
-                  </Td>
-                  <Td>
-                    <Badge colorScheme="blue">{report.type}</Badge>
-                  </Td>
-                  <Td>
-                    <Badge colorScheme="purple">{report.schedule}</Badge>
-                  </Td>
-                  <Td>
-                    <HStack>
+                    </Stack>
+                  </Table.Cell>
+                  <Table.Cell>
+                    <Badge colorScheme='blue'>{report.type}</Badge>
+                  </Table.Cell>
+                  <Table.Cell>
+                    <Badge colorScheme='purple'>{report.schedule}</Badge>
+                  </Table.Cell>
+                  <Table.Cell>
+                    <Stack>
                       <Progress
                         value={report.score}
                         colorScheme={
                           report.score >= 90 ? 'green' :
-                          report.score >= 70 ? 'yellow' :
-                          'red'
+                            report.score >= 70 ? 'yellow' :
+                              'red'
                         }
-                        width="100px"
+                        width='100px'
                       />
                       <Text>{report.score}%</Text>
-                    </HStack>
-                  </Td>
-                  <Td>
+                    </Stack>
+                  </Table.Cell>
+                  <Table.Cell>
                     {report.lastGenerated ? (
                       <Text>{new Date(report.lastGenerated).toLocaleString()}</Text>
                     ) : (
-                      <Text color="gray.500">Never</Text>
+                      <Text color='gray.500'>Never</Text>
                     )}
-                  </Td>
-                  <Td>
+                  </Table.Cell>
+                  <Table.Cell>
                     <Menu>
-                      <MenuButton
+                      <MenuItem
                         as={IconButton}
                         icon={<FiMoreVertical />}
-                        variant="ghost"
-                        size="sm"
-                        aria-label="Options"
+                        variant='ghost'
+                        size='sm'
+                        aria-label='Options'
                       />
-                      <MenuList>
+                      <MenuItemGroup>
                         <MenuItem
                           icon={<FiRefreshCw />}
                           onClick={() => handleGenerateReport(report)}
@@ -495,60 +468,61 @@ const ComplianceReportsPage = () => {
                         >
                           View Details
                         </MenuItem>
-                        <Divider />
+                        <Separator />
                         <MenuItem
                           icon={<FiTrash2 />}
-                          color="red.500"
-                          onClick={() => {/* TODO: Implement delete */}}
+                          color='red.500'
+                          onClick={() => {/* TODO: Implement delete */
+                          }}
                         >
                           Delete
                         </MenuItem>
-                      </MenuList>
+                      </MenuItemGroup>
                     </Menu>
-                  </Td>
-                </Tr>
+                  </Table.Cell>
+                </Table.Row>
               ))}
-            </Tbody>
-          </Table>
+            </Table.Body>
+          </Table.Root>
         </Box>
       )}
 
       {/* Report Modal */}
-      <Modal isOpen={isReportModalOpen} onClose={onReportModalClose} size="xl">
-        <ModalOverlay />
-        <ModalContent>
-          <ModalHeader>
+      <Dialog.Root open={isReportModalOpen} onClose={onReportModalClose} size='xl'>
+        <Dialog.Backdrop />
+        <Dialog.Content>
+          <Dialog.Header>
             Create Compliance Report
-          </ModalHeader>
-          <ModalCloseButton />
-          <ModalBody>
-            <VStack spacing={4}>
-              <FormControl isRequired>
-                <FormLabel>Name</FormLabel>
+          </Dialog.Header>
+          <Dialog.CloseTrigger />
+          <Dialog.Body>
+            <Stack direction="column" gap={4}>
+              <Field.Root required>
+                <Field.Label>Name</Field.Label>
                 <Input
                   value={formData.name}
                   onChange={(e) => setFormData({
                     ...formData,
                     name: e.target.value,
                   })}
-                  placeholder="Enter report name"
+                  placeholder='Enter report name'
                 />
-              </FormControl>
+              </Field.Root>
 
-              <FormControl>
-                <FormLabel>Description</FormLabel>
+              <Field.Root>
+                <Field.Label>Description</Field.Label>
                 <Input
                   value={formData.description}
                   onChange={(e) => setFormData({
                     ...formData,
                     description: e.target.value,
                   })}
-                  placeholder="Enter report description"
+                  placeholder='Enter report description'
                 />
-              </FormControl>
+              </Field.Root>
 
-              <FormControl isRequired>
-                <FormLabel>Type</FormLabel>
+              <Field.Root required>
+                <Field.Label>Type</Field.Label>
                 <Select
                   value={formData.type}
                   onChange={(e) => setFormData({
@@ -556,14 +530,14 @@ const ComplianceReportsPage = () => {
                     type: e.target.value,
                   })}
                 >
-                  <option value="security">Security</option>
-                  <option value="compliance">Compliance</option>
-                  <option value="access">Access Control</option>
+                  <option value='security'>Security</option>
+                  <option value='compliance'>Compliance</option>
+                  <option value='access'>Access Control</option>
                 </Select>
-              </FormControl>
+              </Field.Root>
 
-              <FormControl isRequired>
-                <FormLabel>Schedule</FormLabel>
+              <Field.Root required>
+                <Field.Label>Schedule</Field.Label>
                 <Select
                   value={formData.schedule}
                   onChange={(e) => setFormData({
@@ -571,212 +545,212 @@ const ComplianceReportsPage = () => {
                     schedule: e.target.value,
                   })}
                 >
-                  <option value="daily">Daily</option>
-                  <option value="weekly">Weekly</option>
-                  <option value="monthly">Monthly</option>
+                  <option value='daily'>Daily</option>
+                  <option value='weekly'>Weekly</option>
+                  <option value='monthly'>Monthly</option>
                 </Select>
-              </FormControl>
-            </VStack>
-          </ModalBody>
-          <ModalFooter>
-            <Button variant="outline" mr={3} onClick={onReportModalClose}>
+              </Field.Root>
+            </Stack>
+          </Dialog.Body>
+          <Dialog.Footer>
+            <Button variant='outline' mr={3} onClick={onReportModalClose}>
               Cancel
             </Button>
-            <Button colorScheme="brand" onClick={handleCreateReport}>
+            <Button colorScheme='brand' onClick={handleCreateReport}>
               Create Report
             </Button>
-          </ModalFooter>
-        </ModalContent>
-      </Modal>
+          </Dialog.Footer>
+        </Dialog.Content>
+      </Dialog.Root>
 
       {/* Report Details Modal */}
-      <Modal isOpen={isDetailsModalOpen} onClose={onDetailsModalClose} size="xl">
-        <ModalOverlay />
-        <ModalContent>
-          <ModalHeader>
+      <Dialog.Root open={isDetailsModalOpen} onClose={onDetailsModalClose} size='xl'>
+        <Dialog.Backdrop />
+        <Dialog.Content>
+          <Dialog.Header>
             Report Details: {selectedReport?.name}
-          </ModalHeader>
-          <ModalCloseButton />
-          <ModalBody>
+          </Dialog.Header>
+          <Dialog.CloseTrigger />
+          <Dialog.Body>
             <Tabs>
-              <TabList>
-                <Tab>Overview</Tab>
-                <Tab>Violations</Tab>
-                <Tab>Recommendations</Tab>
-              </TabList>
+              <Tabs.List>
+                <Tabs.Trigger>Overview</Tabs.Trigger>
+                <Tabs.Trigger>Violations</Tabs.Trigger>
+                <Tabs.Trigger>Recommendations</Tabs.Trigger>
+              </Tabs.List>
 
-              <TabPanels>
-                <TabPanel>
-                  <VStack spacing={4} align="stretch">
-                    <Box>
-                      <Text fontWeight="medium" mb={2}>Score Breakdown</Text>
-                      <SimpleGrid columns={2} spacing={4}>
-                        <Box>
-                          <Text fontSize="sm" color="gray.500">Security</Text>
-                          <Progress
-                            value={80}
-                            colorScheme="blue"
-                            mb={2}
-                          />
-                        </Box>
-                        <Box>
-                          <Text fontSize="sm" color="gray.500">Compliance</Text>
-                          <Progress
-                            value={75}
-                            colorScheme="green"
-                            mb={2}
-                          />
-                        </Box>
-                        <Box>
-                          <Text fontSize="sm" color="gray.500">Access Control</Text>
-                          <Progress
-                            value={85}
-                            colorScheme="purple"
-                            mb={2}
-                          />
-                        </Box>
-                        <Box>
-                          <Text fontSize="sm" color="gray.500">Policy Adherence</Text>
-                          <Progress
-                            value={90}
-                            colorScheme="yellow"
-                            mb={2}
-                          />
-                        </Box>
-                      </SimpleGrid>
-                    </Box>
 
-                    <Box>
-                      <Text fontWeight="medium" mb={2}>Key Metrics</Text>
-                      <SimpleGrid columns={2} spacing={4}>
-                        <Box p={4} borderWidth="1px" borderRadius="md">
-                          <Text fontSize="sm" color="gray.500">Total Violations</Text>
-                          <Text fontSize="2xl" fontWeight="bold">12</Text>
-                        </Box>
-                        <Box p={4} borderWidth="1px" borderRadius="md">
-                          <Text fontSize="sm" color="gray.500">Critical Issues</Text>
-                          <Text fontSize="2xl" fontWeight="bold" color="red.500">3</Text>
-                        </Box>
-                        <Box p={4} borderWidth="1px" borderRadius="md">
-                          <Text fontSize="sm" color="gray.500">Resolved Issues</Text>
-                          <Text fontSize="2xl" fontWeight="bold" color="green.500">8</Text>
-                        </Box>
-                        <Box p={4} borderWidth="1px" borderRadius="md">
-                          <Text fontSize="sm" color="gray.500">Pending Actions</Text>
-                          <Text fontSize="2xl" fontWeight="bold" color="yellow.500">4</Text>
-                        </Box>
-                      </SimpleGrid>
-                    </Box>
-                  </VStack>
-                </TabPanel>
+              <Tabs.Content>
+                <Stack direction="column" gap={4} align='stretch'>
+                  <Box>
+                    <Text fontWeight='medium' mb={2}>Score Breakdown</Text>
+                    <SimpleGrid columns={2} spacing={4}>
+                      <Box>
+                        <Text fontSize='sm' color='gray.500'>Security</Text>
+                        <Progress
+                          value={80}
+                          colorScheme='blue'
+                          mb={2}
+                        />
+                      </Box>
+                      <Box>
+                        <Text fontSize='sm' color='gray.500'>Compliance</Text>
+                        <Progress
+                          value={75}
+                          colorScheme='green'
+                          mb={2}
+                        />
+                      </Box>
+                      <Box>
+                        <Text fontSize='sm' color='gray.500'>Access Control</Text>
+                        <Progress
+                          value={85}
+                          colorScheme='purple'
+                          mb={2}
+                        />
+                      </Box>
+                      <Box>
+                        <Text fontSize='sm' color='gray.500'>Policy Adherence</Text>
+                        <Progress
+                          value={90}
+                          colorScheme='yellow'
+                          mb={2}
+                        />
+                      </Box>
+                    </SimpleGrid>
+                  </Box>
 
-                <TabPanel>
-                  <VStack spacing={4} align="stretch">
-                    {violations
-                      .filter(v => v.type === selectedReport?.type)
-                      .map((violation) => (
-                        <Box
-                          key={violation.id}
-                          p={4}
-                          borderWidth="1px"
-                          borderRadius="md"
-                        >
-                          <HStack justify="space-between" mb={2}>
-                            <Badge
-                              colorScheme={
-                                violation.severity === 'high' ? 'red' :
+                  <Box>
+                    <Text fontWeight='medium' mb={2}>Key Metrics</Text>
+                    <SimpleGrid columns={2} spacing={4}>
+                      <Box p={4} borderWidth='1px' borderRadius='md'>
+                        <Text fontSize='sm' color='gray.500'>Total Violations</Text>
+                        <Text fontSize='2xl' fontWeight='bold'>12</Text>
+                      </Box>
+                      <Box p={4} borderWidth='1px' borderRadius='md'>
+                        <Text fontSize='sm' color='gray.500'>Critical Issues</Text>
+                        <Text fontSize='2xl' fontWeight='bold' color='red.500'>3</Text>
+                      </Box>
+                      <Box p={4} borderWidth='1px' borderRadius='md'>
+                        <Text fontSize='sm' color='gray.500'>Resolved Issues</Text>
+                        <Text fontSize='2xl' fontWeight='bold' color='green.500'>8</Text>
+                      </Box>
+                      <Box p={4} borderWidth='1px' borderRadius='md'>
+                        <Text fontSize='sm' color='gray.500'>Pending Actions</Text>
+                        <Text fontSize='2xl' fontWeight='bold' color='yellow.500'>4</Text>
+                      </Box>
+                    </SimpleGrid>
+                  </Box>
+                </Stack>
+              </Tabs.Content>
+
+              <Tabs.Content>
+                <Stack direction="column" gap={4} align='stretch'>
+                  {violations
+                    .filter(v => v.type === selectedReport?.type)
+                    .map((violation) => (
+                      <Box
+                        key={violation.id}
+                        p={4}
+                        borderWidth='1px'
+                        borderRadius='md'
+                      >
+                        <Stack justify='space-between' mb={2}>
+                          <Badge
+                            colorScheme={
+                              violation.severity === 'high' ? 'red' :
                                 violation.severity === 'medium' ? 'yellow' :
-                                'green'
-                              }
-                            >
-                              {violation.severity}
-                            </Badge>
-                            <Text fontSize="sm" color="gray.500">
-                              {new Date(violation.timestamp).toLocaleString()}
-                            </Text>
-                          </HStack>
-                          <Text fontWeight="medium" mb={2}>
-                            {violation.description}
+                                  'green'
+                            }
+                          >
+                            {violation.severity}
+                          </Badge>
+                          <Text fontSize='sm' color='gray.500'>
+                            {new Date(violation.timestamp).toLocaleString()}
                           </Text>
-                          <Text fontSize="sm" color="gray.500">
-                            Affected: {violation.affected.join(', ')}
-                          </Text>
-                        </Box>
-                      ))}
-                  </VStack>
-                </TabPanel>
+                        </Stack>
+                        <Text fontWeight='medium' mb={2}>
+                          {violation.description}
+                        </Text>
+                        <Text fontSize='sm' color='gray.500'>
+                          Affected: {violation.affected.join(', ')}
+                        </Text>
+                      </Box>
+                    ))}
+                </Stack>
+              </Tabs.Content>
 
-                <TabPanel>
-                  <VStack spacing={4} align="stretch">
-                    <Box p={4} borderWidth="1px" borderRadius="md">
-                      <HStack mb={2}>
-                        <FiAlertTriangle color="red" />
-                        <Text fontWeight="medium">High Priority</Text>
-                      </HStack>
-                      <List spacing={2}>
-                        <ListItem>
-                          <ListIcon as={FiCheck} color="green.500" />
-                          Implement MFA for all admin users
-                        </ListItem>
-                        <ListItem>
-                          <ListIcon as={FiCheck} color="green.500" />
-                          Review and update branch protection rules
-                        </ListItem>
-                      </List>
-                    </Box>
+              <Tabs.Content>
+                <Stack direction="column" gap={4} align='stretch'>
+                  <Box p={4} borderWidth='1px' borderRadius='md'>
+                    <Stack mb={2}>
+                      <FiAlertTriangle color='red' />
+                      <Text fontWeight='medium'>High Priority</Text>
+                    </Stack>
+                    <List spacing={2}>
+                      <ListItem>
+                        <ListIcon as={FiCheck} color='green.500' />
+                        Implement MFA for all admin users
+                      </ListItem>
+                      <ListItem>
+                        <ListIcon as={FiCheck} color='green.500' />
+                        Review and update branch protection rules
+                      </ListItem>
+                    </List>
+                  </Box>
 
-                    <Box p={4} borderWidth="1px" borderRadius="md">
-                      <HStack mb={2}>
-                        <FiAlertCircle color="yellow" />
-                        <Text fontWeight="medium">Medium Priority</Text>
-                      </HStack>
-                      <List spacing={2}>
-                        <ListItem>
-                          <ListIcon as={FiCheck} color="green.500" />
-                          Update outdated dependencies
-                        </ListItem>
-                        <ListItem>
-                          <ListIcon as={FiCheck} color="green.500" />
-                          Review team permissions
-                        </ListItem>
-                      </List>
-                    </Box>
+                  <Box p={4} borderWidth='1px' borderRadius='md'>
+                    <Stack mb={2}>
+                      <FiAlertCircle color='yellow' />
+                      <Text fontWeight='medium'>Medium Priority</Text>
+                    </Stack>
+                    <List spacing={2}>
+                      <ListItem>
+                        <ListIcon as={FiCheck} color='green.500' />
+                        Update outdated dependencies
+                      </ListItem>
+                      <ListItem>
+                        <ListIcon as={FiCheck} color='green.500' />
+                        Review team permissions
+                      </ListItem>
+                    </List>
+                  </Box>
 
-                    <Box p={4} borderWidth="1px" borderRadius="md">
-                      <HStack mb={2}>
-                        <FiShield color="blue" />
-                        <Text fontWeight="medium">Low Priority</Text>
-                      </HStack>
-                      <List spacing={2}>
-                        <ListItem>
-                          <ListIcon as={FiCheck} color="green.500" />
-                          Update documentation
-                        </ListItem>
-                        <ListItem>
-                          <ListIcon as={FiCheck} color="green.500" />
-                          Clean up unused repositories
-                        </ListItem>
-                      </List>
-                    </Box>
-                  </VStack>
-                </TabPanel>
-              </TabPanels>
+                  <Box p={4} borderWidth='1px' borderRadius='md'>
+                    <Stack mb={2}>
+                      <FiShield color='blue' />
+                      <Text fontWeight='medium'>Low Priority</Text>
+                    </Stack>
+                    <List spacing={2}>
+                      <ListItem>
+                        <ListIcon as={FiCheck} color='green.500' />
+                        Update documentation
+                      </ListItem>
+                      <ListItem>
+                        <ListIcon as={FiCheck} color='green.500' />
+                        Clean up unused repositories
+                      </ListItem>
+                    </List>
+                  </Box>
+                </Stack>
+              </Tabs.Content>
+
             </Tabs>
-          </ModalBody>
-          <ModalFooter>
-            <Button variant="outline" mr={3} onClick={onDetailsModalClose}>
+          </Dialog.Body>
+          <Dialog.Footer>
+            <Button variant='outline' mr={3} onClick={onDetailsModalClose}>
               Close
             </Button>
             <Button
               leftIcon={<FiDownload />}
-              colorScheme="brand"
+              colorScheme='brand'
               onClick={() => handleDownloadReport(selectedReport)}
             >
               Download Report
             </Button>
-          </ModalFooter>
-        </ModalContent>
-      </Modal>
+          </Dialog.Footer>
+        </Dialog.Content>
+      </Dialog.Root>
     </Box>
   );
 };

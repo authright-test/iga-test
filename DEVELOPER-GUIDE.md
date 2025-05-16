@@ -1,8 +1,13 @@
 # local dev guide
 
+## pre-requisites
+
+* docker
+* node 20+
+
 ## switch hosts
 
-> 127.0.0.1 iga-mvp.local 
+> 127.0.0.1 iga-mvp.local
 
 ## webhook channel
 
@@ -16,15 +21,15 @@ run the cmd below to forward the webhook request to local dev server
 
 > ./restart-dev-env.sh
 
-## start dev server 
+## start dev server
 
 start backend & frontend
 
 > cd backend
-> yarn start
+> yarn dev
 
 > cd frontend
-> yarn start
+> yarn dev
 
 ## visit in browser
 

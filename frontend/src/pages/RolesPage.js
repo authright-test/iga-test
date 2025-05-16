@@ -1,39 +1,26 @@
+import { toaster } from '@/components/ui/toaster';
 import {
-  Alert,
   Badge,
   Box,
   Button,
+  Dialog,
+  Field,
   Flex,
-  FormControl,
-  FormLabel,
   Heading,
   IconButton,
   Input,
   Menu,
-  MenuButton,
   MenuItem,
-  MenuList,
-  Modal,
-  ModalBody,
-  ModalCloseButton,
-  ModalContent,
-  ModalHeader,
-  ModalOverlay,
-  Progress,
+  MenuItemGroup,
+  Stack,
   Table,
-  Tbody,
-  Td,
   Textarea,
-  Th,
-  Thead,
-  Tr,
-  useColorModeValue,
   useDisclosure,
-  useToast,
 } from '@chakra-ui/react';
 import React, { useState } from 'react';
-import { FiEdit2, FiMoreVertical, FiTrash2, FiUserMinus, FiUserPlus } from 'react-icons/fi';
+import { FiEdit2, FiMoreVertical, FiTrash2, FiUserPlus } from 'react-icons/fi';
 import { useAuth } from '../contexts/AuthContext';
+import { usePermissions } from '../hooks/usePermissions';
 import { useRoles } from '../hooks/useRoles';
 
 const RolesPage = () => {
@@ -56,10 +43,8 @@ const RolesPage = () => {
     onClose: onPermissionsModalClose
   } = useDisclosure();
 
-  const toast = useToast();
   const { logAuditEvent } = useAuth();
-  const bgColor = useColorModeValue('white', 'gray.800');
-  const borderColor = useColorModeValue('gray.200', 'gray.700');
+  const { hasPermission } = usePermissions();
 
   const {
     roles,
@@ -76,37 +61,22 @@ const RolesPage = () => {
 
   const handleCreateRole = async () => {
     try {
-      if (!formData.name) {
-        toast({
-          title: 'Validation Error',
-          description: 'Role name is required',
-          status: 'error',
-          duration: 3000,
-          isClosable: true,
-        });
-        return;
-      }
-
       const newRole = await createRole(formData);
-
       logAuditEvent(
         'role_created',
         'role',
         newRole.id.toString(),
         { name: formData.name }
       );
-
-      toast({
+      toaster.create({
         title: 'Role created',
-        description: `Role "${formData.name}" has been created.`,
         status: 'success',
         duration: 3000,
         isClosable: true,
       });
-
       onRoleModalClose();
     } catch (err) {
-      toast({
+      toaster.create({
         title: 'Error',
         description: err.response?.data?.error || err.message,
         status: 'error',
@@ -119,27 +89,22 @@ const RolesPage = () => {
   const handleUpdateRole = async () => {
     try {
       if (!selectedRole) return;
-
       const updatedRole = await updateRole(selectedRole.id, formData);
-
       logAuditEvent(
         'role_updated',
         'role',
         selectedRole.id.toString(),
         { name: formData.name }
       );
-
-      toast({
+      toaster.create({
         title: 'Role updated',
-        description: `Role "${formData.name}" has been updated.`,
         status: 'success',
         duration: 3000,
         isClosable: true,
       });
-
       onRoleModalClose();
     } catch (err) {
-      toast({
+      toaster.create({
         title: 'Error',
         description: err.response?.data?.error || err.message,
         status: 'error',
@@ -150,31 +115,30 @@ const RolesPage = () => {
   };
 
   const handleDeleteRole = async (role) => {
-    try {
-      await deleteRole(role.id);
-
-      logAuditEvent(
-        'role_deleted',
-        'role',
-        role.id.toString(),
-        { name: role.name }
-      );
-
-      toast({
-        title: 'Role deleted',
-        description: `Role "${role.name}" has been deleted.`,
-        status: 'success',
-        duration: 3000,
-        isClosable: true,
-      });
-    } catch (err) {
-      toast({
-        title: 'Error',
-        description: err.response?.data?.error || err.message,
-        status: 'error',
-        duration: 5000,
-        isClosable: true,
-      });
+    if (window.confirm('Are you sure you want to delete this role?')) {
+      try {
+        await deleteRole(role.id);
+        logAuditEvent(
+          'role_deleted',
+          'role',
+          role.id.toString(),
+          { name: role.name }
+        );
+        toaster.create({
+          title: 'Role deleted',
+          status: 'success',
+          duration: 3000,
+          isClosable: true,
+        });
+      } catch (err) {
+        toaster.create({
+          title: 'Error',
+          description: err.response?.data?.error || err.message,
+          status: 'error',
+          duration: 5000,
+          isClosable: true,
+        });
+      }
     }
   };
 
@@ -189,7 +153,7 @@ const RolesPage = () => {
         { userId }
       );
 
-      toast({
+      toaster.create({
         title: 'Role assigned',
         description: 'Role has been assigned to user.',
         status: 'success',
@@ -197,7 +161,7 @@ const RolesPage = () => {
         isClosable: true,
       });
     } catch (err) {
-      toast({
+      toaster.create({
         title: 'Error',
         description: err.response?.data?.error || err.message,
         status: 'error',
@@ -218,7 +182,7 @@ const RolesPage = () => {
         { userId }
       );
 
-      toast({
+      toaster.create({
         title: 'Role revoked',
         description: 'Role has been revoked from user.',
         status: 'success',
@@ -226,7 +190,7 @@ const RolesPage = () => {
         isClosable: true,
       });
     } catch (err) {
-      toast({
+      toaster.create({
         title: 'Error',
         description: err.response?.data?.error || err.message,
         status: 'error',
@@ -247,7 +211,7 @@ const RolesPage = () => {
         { permissions }
       );
 
-      toast({
+      toaster.create({
         title: 'Permissions updated',
         description: 'Role permissions have been updated.',
         status: 'success',
@@ -257,7 +221,7 @@ const RolesPage = () => {
 
       onPermissionsModalClose();
     } catch (err) {
-      toast({
+      toaster.create({
         title: 'Error',
         description: err.response?.data?.error || err.message,
         status: 'error',
@@ -273,7 +237,7 @@ const RolesPage = () => {
       setFormData({
         name: role.name,
         description: role.description,
-        permissions: role.permissions,
+        permissions: role.permissions || [],
       });
     } else {
       setSelectedRole(null);
@@ -296,7 +260,7 @@ const RolesPage = () => {
       }));
       onPermissionsModalOpen();
     } catch (err) {
-      toast({
+      toaster.create({
         title: 'Error',
         description: err.response?.data?.error || err.message,
         status: 'error',
@@ -306,95 +270,114 @@ const RolesPage = () => {
     }
   };
 
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value,
+    }));
+  };
+
+  if (isLoading) {
+    return (
+      <Box p={4}>
+        <Heading size='lg' mb={4}>Loading roles...</Heading>
+      </Box>
+    );
+  }
+
+  if (error) {
+    return (
+      <Box p={4}>
+        <Heading size='lg' mb={4}>Error loading roles</Heading>
+        <Box color='red.500'>{error}</Box>
+      </Box>
+    );
+  }
+
   return (
     <Box p={4}>
-      <Flex justify='space-between' align='center' mb={4}>
+      <Flex justify='space-between' align='center' mb={6}>
         <Heading size='lg'>Roles</Heading>
-        <Button colorScheme='blue' onClick={() => openRoleModal()}>
-          Create Role
-        </Button>
+        {hasPermission('roles.create') && (
+          <Button
+            leftIcon={<FiUserPlus />}
+            colorScheme='blue'
+            onClick={() => openRoleModal()}
+          >
+            Create Role
+          </Button>
+        )}
       </Flex>
 
       <Box
-        bg={bgColor}
-        shadow='sm'
-        rounded='lg'
+
         borderWidth='1px'
-        borderColor={borderColor}
-        overflow='hidden'
+
+        borderRadius='md'
+        overflowX='auto'
       >
-        {isLoading && <Progress isIndeterminate colorScheme='blue' size='xs' />}
-        {error &&
-          <Alert.Root status='error'>
-            <Alert.Indicator />
-            <Alert.Title>{error}</Alert.Title>
-          </Alert.Root>
-        }
-        <Table.Root striped size='small' variant='outline'>
+        <Table.Root>
           <Table.Header>
             <Table.Row>
-              <Table.ColumnHeader>Name</Table.ColumnHeader>
-              <Table.ColumnHeader>Description</Table.ColumnHeader>
-              <Table.ColumnHeader>Users</Table.ColumnHeader>
-              <Table.ColumnHeader>Created</Table.ColumnHeader>
-              <Table.ColumnHeader>Actions</Table.ColumnHeader>
+              <Table.Cell>Name</Table.Cell>
+              <Table.Cell>Description</Table.Cell>
+              <Table.Cell>Permissions</Table.Cell>
+              <Table.Cell>Actions</Table.Cell>
             </Table.Row>
           </Table.Header>
-
           <Table.Body>
-            <Table.Row>
-              <Table.Cell colSpan={5}>
-                <Alert>
-                  <Alert.Indicator />
-                  <Alert.Title>Empty</Alert.Title>
-                </Alert>
-              </Table.Cell>
-            </Table.Row>
-
             {roles.map((role) => (
               <Table.Row key={role.id}>
-                <Table.Cell>{role.name}</Table.Cell>
+                <Table.Cell>
+                  <Text fontWeight='medium'>{role.name}</Text>
+                </Table.Cell>
                 <Table.Cell>{role.description}</Table.Cell>
                 <Table.Cell>
-                  <Badge colorScheme='blue'>{role.userCount || 0} users</Badge>
+                  <Flex wrap='wrap' gap={2}>
+                    {role.permissions?.map((permission) => (
+                      <Badge key={permission.id} colorScheme='purple'>
+                        {permission.name}
+                      </Badge>
+                    ))}
+                  </Flex>
                 </Table.Cell>
-                <Table.Cell>{new Date(role.createdAt).toLocaleDateString()}</Table.Cell>
                 <Table.Cell>
-                  <Menu>
-                    <MenuButton
-                      as={IconButton}
-                      icon={<FiMoreVertical />}
-                      variant='ghost'
-                      size='sm'
-                    />
-                    <MenuList>
-                      <MenuItem
+                  <Stack gap={2}>
+                    {hasPermission('roles.edit') && (
+                      <IconButton
+                        aria-label='Edit role'
                         icon={<FiEdit2 />}
+                        size='sm'
                         onClick={() => openRoleModal(role)}
-                      >
-                        Edit Role
-                      </MenuItem>
+                      />
+                    )}
+                    <Menu>
                       <MenuItem
-                        icon={<FiUserPlus />}
-                        onClick={() => handleAssignRole(role.id)}
-                      >
-                        Assign Users
-                      </MenuItem>
-                      <MenuItem
-                        icon={<FiUserMinus />}
-                        onClick={() => handleRevokeRole(role.id)}
-                      >
-                        Revoke Users
-                      </MenuItem>
-                      <MenuItem
-                        icon={<FiTrash2 />}
-                        onClick={() => handleDeleteRole(role)}
-                        color='red.500'
-                      >
-                        Delete Role
-                      </MenuItem>
-                    </MenuList>
-                  </Menu>
+                        as={IconButton}
+                        aria-label='More options'
+                        icon={<FiMoreVertical />}
+                        size='sm'
+                      />
+                      <MenuItemGroup>
+                        <MenuItem
+                          icon={<FiShield />}
+                          onClick={() => openPermissionsModal(role)}
+                        >
+                          Manage Permissions
+                        </MenuItem>
+                        {hasPermission('roles.delete') && (
+                          <MenuItem
+                            icon={<FiTrash2 />}
+                            color='red.500'
+                            onClick={() => handleDeleteRole(role)}
+                          >
+                            Delete Role
+                          </MenuItem>
+                        )}
+                      </MenuItemGroup>
+                    </Menu>
+                  </Stack>
                 </Table.Cell>
               </Table.Row>
             ))}
@@ -403,34 +386,32 @@ const RolesPage = () => {
       </Box>
 
       {/* Role Modal */}
-      <Modal isOpen={isRoleModalOpen} onClose={onRoleModalClose}>
-        <ModalOverlay />
-        <ModalContent>
-          <ModalHeader>
+      <Dialog.Root open={isRoleModalOpen} onClose={onRoleModalClose}>
+        <Dialog.Backdrop />
+        <Dialog.Content>
+          <Dialog.Header>
             {selectedRole ? 'Edit Role' : 'Create Role'}
-          </ModalHeader>
-          <ModalCloseButton />
-          <ModalBody pb={6}>
-            <FormControl mb={4}>
-              <FormLabel>Name</FormLabel>
+          </Dialog.Header>
+          <Dialog.CloseTrigger />
+          <Dialog.Body pb={6}>
+            <Field.Root mb={4}>
+              <Field.Label>Role Name</Field.Label>
               <Input
+                name='name'
                 value={formData.name}
-                onChange={(e) =>
-                  setFormData({ ...formData, name: e.target.value })
-                }
+                onChange={handleInputChange}
                 placeholder='Enter role name'
               />
-            </FormControl>
-            <FormControl mb={4}>
-              <FormLabel>Description</FormLabel>
+            </Field.Root>
+            <Field.Root mb={4}>
+              <Field.Label>Description</Field.Label>
               <Textarea
+                name='description'
                 value={formData.description}
-                onChange={(e) =>
-                  setFormData({ ...formData, description: e.target.value })
-                }
+                onChange={handleInputChange}
                 placeholder='Enter role description'
               />
-            </FormControl>
+            </Field.Root>
             <Button
               colorScheme='blue'
               mr={3}
@@ -439,17 +420,17 @@ const RolesPage = () => {
               {selectedRole ? 'Update' : 'Create'}
             </Button>
             <Button onClick={onRoleModalClose}>Cancel</Button>
-          </ModalBody>
-        </ModalContent>
-      </Modal>
+          </Dialog.Body>
+        </Dialog.Content>
+      </Dialog.Root>
 
       {/* Permissions Modal */}
-      <Modal isOpen={isPermissionsModalOpen} onClose={onPermissionsModalClose}>
-        <ModalOverlay />
-        <ModalContent>
-          <ModalHeader>Manage Permissions</ModalHeader>
-          <ModalCloseButton />
-          <ModalBody pb={6}>
+      <Dialog.Root open={isPermissionsModalOpen} onClose={onPermissionsModalClose}>
+        <Dialog.Backdrop />
+        <Dialog.Content>
+          <Dialog.Header>Manage Permissions</Dialog.Header>
+          <Dialog.CloseTrigger />
+          <Dialog.Body pb={6}>
             {/* Add your permissions management UI here */}
             <Button
               colorScheme='blue'
@@ -459,9 +440,9 @@ const RolesPage = () => {
               Update Permissions
             </Button>
             <Button onClick={onPermissionsModalClose}>Cancel</Button>
-          </ModalBody>
-        </ModalContent>
-      </Modal>
+          </Dialog.Body>
+        </Dialog.Content>
+      </Dialog.Root>
     </Box>
   );
 };

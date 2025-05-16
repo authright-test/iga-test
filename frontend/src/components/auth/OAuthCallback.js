@@ -1,4 +1,4 @@
-import { Alert, AlertDescription, AlertIcon, AlertTitle, Box, Spinner, Text } from '@chakra-ui/react';
+import { Alert, Box, Spinner, Text } from '@chakra-ui/react';
 import React, { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
@@ -61,7 +61,7 @@ const OAuthCallback = () => {
         minHeight='100vh'
         p={4}
       >
-        <Alert
+        <Alert.Root
           status='error'
           variant='subtle'
           flexDirection='column'
@@ -73,14 +73,14 @@ const OAuthCallback = () => {
           margin='auto'
           mb={4}
         >
-          <AlertIcon boxSize='40px' mr={0} />
-          <AlertTitle mt={4} mb={1} fontSize='lg'>
+          <Alert.Indicator />
+          <Alert.Title mt={4} mb={1} fontSize='lg'>
             Authentication Failed
-          </AlertTitle>
-          <AlertDescription maxWidth='sm'>
+          </Alert.Title>
+          <Alert.Description maxWidth='sm'>
             {error}
-          </AlertDescription>
-        </Alert>
+          </Alert.Description>
+        </Alert.Root>
         <Text>
           Redirecting to login page...
         </Text>
@@ -97,8 +97,8 @@ const OAuthCallback = () => {
       minHeight='100vh'
     >
       <Spinner
-        thickness='4px'
-        speed='0.65s'
+        borderWidth='4px'
+        animationDuration='0.65s'
         emptyColor='gray.200'
         color='blue.500'
         size='xl'

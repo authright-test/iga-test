@@ -44,7 +44,7 @@ services:
       - ./devops/local/local.env
     image: mysql:8.0.30
     volumes:
-      - ./.tmp/mysql:/var/lib/mysql
+      - ./devops/local/.tmp/mysql:/var/lib/mysql
     networks:
       - iga-network
     ports:

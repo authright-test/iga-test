@@ -2,28 +2,16 @@ import {
   Badge,
   Button,
   Card,
-  CardBody,
-  CardHeader,
-  DateRangePicker,
   Heading,
-  HStack,
   Icon,
   IconButton,
   Input,
   Menu,
-  MenuButton,
   MenuItem,
-  MenuList,
   Select,
   Stack,
   Table,
-  Tbody,
-  Td,
-  Th,
-  Thead,
   Tooltip,
-  Tr,
-  useColorModeValue,
 } from '@chakra-ui/react';
 import React, { useState } from 'react';
 import { FiAlertCircle, FiDownload, FiRefreshCw, FiSearch } from 'react-icons/fi';
@@ -43,9 +31,6 @@ const AuditLogViewer = () => {
     limit: 50,
   });
 
-  const cardBg = useColorModeValue('white', 'gray.700');
-  const borderColor = useColorModeValue('gray.200', 'gray.600');
-
   const handleExport = async (format) => {
     try {
       const data = await exportLogs({ ...filters, format });
@@ -63,16 +48,16 @@ const AuditLogViewer = () => {
   };
 
   return (
-    <Stack spacing={6}>
+    <Stack gap={6}>
       {/* Filters */}
-      <Card bg={cardBg} borderWidth="1px" borderColor={borderColor}>
-        <CardHeader>
-          <HStack justify="space-between">
-            <Heading size="md">Audit Logs</Heading>
-            <HStack>
+      <Card borderWidth='1px'>
+        <Card.Header>
+          <Stack justify='space-between'>
+            <Heading size='md'>Audit Logs</Heading>
+            <Stack>
               <Button
                 leftIcon={<FiRefreshCw />}
-                size="sm"
+                size='sm'
                 onClick={() => setFilters({})}
               >
                 Reset
@@ -81,7 +66,7 @@ const AuditLogViewer = () => {
                 <MenuButton
                   as={Button}
                   leftIcon={<FiDownload />}
-                  size="sm"
+                  size='sm'
                 >
                   Export
                 </MenuButton>
@@ -91,104 +76,105 @@ const AuditLogViewer = () => {
                   <MenuItem onClick={() => handleExport('pdf')}>PDF</MenuItem>
                 </MenuList>
               </Menu>
-            </HStack>
-          </HStack>
-        </CardHeader>
-        <CardBody>
-          <Stack spacing={4}>
-            <HStack>
+            </Stack>
+          </Stack>
+        </Card.Header>
+        <Card.Body>
+          <Stack gap={4}>
+            <Stack>
               <Input
-                placeholder="Search logs..."
+                placeholder='Search logs...'
                 value={filters.search}
                 onChange={(e) => setFilters(prev => ({ ...prev, search: e.target.value }))}
-                leftElement={<Icon as={FiSearch} color="gray.400" />}
+                leftElement={<Icon as={FiSearch} color='gray.400' />}
               />
               <Select
-                placeholder="Action Type"
+                placeholder='Action Type'
                 value={filters.actionType}
                 onChange={(e) => setFilters(prev => ({ ...prev, actionType: e.target.value }))}
               >
-                <option value="access">Access</option>
-                <option value="modification">Modification</option>
-                <option value="deletion">Deletion</option>
-                <option value="creation">Creation</option>
+                <option value='access'>Access</option>
+                <option value='modification'>Modification</option>
+                <option value='deletion'>Deletion</option>
+                <option value='creation'>Creation</option>
               </Select>
               <Select
-                placeholder="Severity"
+                placeholder='Severity'
                 value={filters.severity}
                 onChange={(e) => setFilters(prev => ({ ...prev, severity: e.target.value }))}
               >
-                <option value="high">High</option>
-                <option value="medium">Medium</option>
-                <option value="low">Low</option>
+                <option value='high'>High</option>
+                <option value='medium'>Medium</option>
+                <option value='low'>Low</option>
               </Select>
-            </HStack>
+            </Stack>
             <DateRangePicker
               value={filters.dateRange}
               onChange={(range) => setFilters(prev => ({ ...prev, dateRange: range }))}
             />
           </Stack>
-        </CardBody>
+        </Card.Body>
       </Card>
 
       {/* Logs Table */}
-      <Card bg={cardBg} borderWidth="1px" borderColor={borderColor}>
-        <CardBody>
-          <Table variant="simple">
-            <Thead>
-              <Tr>
-                <Th>Timestamp</Th>
-                <Th>User</Th>
-                <Th>Action</Th>
-                <Th>Resource</Th>
-                <Th>Severity</Th>
-                <Th>Details</Th>
-              </Tr>
-            </Thead>
-            <Tbody>
+      <Card borderWidth='1px'>
+        <Card.Body>
+          <Table.Root variant='simple'>
+            <Table.Header>
+              <Table.Row>
+                <Table.Cell>Timestamp</Table.Cell>
+                <Table.Cell>User</Table.Cell>
+                <Table.Cell>Action</Table.Cell>
+                <Table.Cell>Resource</Table.Cell>
+                <Table.Cell>Severity</Table.Cell>
+                <Table.Cell>Details</Table.Cell>
+              </Table.Row>
+            </Table.Header>
+            <Table.Body>
               {logs?.map((log) => (
-                <Tr key={log.id}>
-                  <Td>{new Date(log.timestamp).toLocaleString()}</Td>
-                  <Td>{log.user}</Td>
-                  <Td>{log.action}</Td>
-                  <Td>{log.resource}</Td>
-                  <Td>
+                <Table.Row key={log.id}>
+                  <Table.Cell>{new Date(log.timestamp).toLocaleString()}</Table.Cell>
+                  <Table.Cell>{log.user}</Table.Cell>
+                  <Table.Cell>{log.action}</Table.Cell>
+                  <Table.Cell>{log.resource}</Table.Cell>
+                  <Table.Cell>
                     <Badge
                       colorScheme={
                         log.severity === 'high' ? 'red' :
-                        log.severity === 'medium' ? 'orange' : 'yellow'
+                          log.severity === 'medium' ? 'orange' : 'yellow'
                       }
                     >
                       {log.severity}
                     </Badge>
-                  </Td>
-                  <Td>
-                    <Tooltip label="View Details">
+                  </Table.Cell>
+                  <Table.Cell>
+                    <Tooltip label='View Details'>
                       <IconButton
                         icon={<FiAlertCircle />}
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => {/* Handle view details */}}
+                        size='sm'
+                        variant='ghost'
+                        onClick={() => {/* Handle view details */
+                        }}
                       />
                     </Tooltip>
-                  </Td>
-                </Tr>
+                  </Table.Cell>
+                </Table.Row>
               ))}
-            </Tbody>
-          </Table>
-        </CardBody>
+            </Table.Body>
+          </Table.Root>
+        </Card.Body>
       </Card>
 
       {/* Analysis Section */}
-      <Card bg={cardBg} borderWidth="1px" borderColor={borderColor}>
-        <CardHeader>
-          <Heading size="md">Audit Analysis</Heading>
-        </CardHeader>
-        <CardBody>
-          <Stack spacing={6}>
+      <Card borderWidth='1px'>
+        <Card.Header>
+          <Heading size='md'>Audit Analysis</Heading>
+        </Card.Header>
+        <Card.Body>
+          <Stack gap={6}>
             {/* Add analysis components here */}
           </Stack>
-        </CardBody>
+        </Card.Body>
       </Card>
     </Stack>
   );

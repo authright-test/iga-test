@@ -1,44 +1,31 @@
+import { toaster } from '@/components/ui/toaster';
 import {
   Avatar,
   Badge,
   Box,
   Button,
+  Dialog,
   Flex,
-  FormControl,
-  FormLabel,
   Heading,
-  HStack,
   IconButton,
-  Input,
   Menu,
-  MenuButton,
   MenuItem,
-  MenuList,
-  Modal,
-  ModalBody,
-  ModalCloseButton,
-  ModalContent,
-  ModalHeader,
-  ModalOverlay,
-  Select,
-  Table,
-  Tbody,
-  Td,
+  MenuItemGroup,
+  Stack,
   Text,
-  Th,
-  Thead,
-  Tr,
-  useColorModeValue,
   useDisclosure,
-  useToast,
-  VStack,
 } from '@chakra-ui/react';
-import React, { useState } from 'react';
-import { FiEdit2, FiMoreVertical, FiShield, FiTrash2, FiUserMinus, FiUserPlus, FiUsers } from 'react-icons/fi';
+import React, { useCallback, useState } from 'react';
+import { FiEdit2, FiMoreVertical, FiShield, FiTrash2, FiUserPlus, FiUsers } from 'react-icons/fi';
+import { useNavigate } from 'react-router-dom';
+import { DataTable } from '../components/common/DataTable';
+import { UserForm } from '../components/users/UserForm';
 import { useAuth } from '../contexts/AuthContext';
+import { usePermissions } from '../hooks/usePermissions';
 import { useUsers } from '../hooks/useUsers';
 
 const UsersPage = () => {
+  const navigate = useNavigate();
   const [selectedUser, setSelectedUser] = useState(null);
   const [formData, setFormData] = useState({
     username: '',
@@ -58,10 +45,8 @@ const UsersPage = () => {
     onClose: onTeamsModalClose
   } = useDisclosure();
 
-  const toast = useToast();
   const { logAuditEvent } = useAuth();
-  const bgColor = useColorModeValue('white', 'gray.800');
-  const borderColor = useColorModeValue('gray.200', 'gray.700');
+  const { hasPermission } = usePermissions();
 
   const {
     users,
@@ -80,167 +65,162 @@ const UsersPage = () => {
     updateUserPermissions,
   } = useUsers();
 
-  const handleCreateUser = async () => {
+  const handleCreateUser = useCallback(async (userData) => {
     try {
-      if (!formData.username || !formData.email) {
-        toast({
-          title: 'Validation Error',
-          description: 'Username and email are required',
-          status: 'error',
+      await createUser(userData);
+      toaster.create({
+        title: 'User created',
+        status: 'success',
+        duration: 3000,
+        isClosable: true,
+      });
+      onUserModalClose();
+    } catch (error) {
+      toaster.create({
+        title: 'Error creating user',
+        description: error.message,
+        status: 'error',
+        duration: 5000,
+        isClosable: true,
+      });
+    }
+  }, [createUser, toast, onUserModalClose]);
+
+  const handleUpdateUser = useCallback(async (userData) => {
+    try {
+      await updateUser(userData);
+      toaster.create({
+        title: 'User updated',
+        status: 'success',
+        duration: 3000,
+        isClosable: true,
+      });
+      onUserModalClose();
+    } catch (error) {
+      toaster.create({
+        title: 'Error updating user',
+        description: error.message,
+        status: 'error',
+        duration: 5000,
+        isClosable: true,
+      });
+    }
+  }, [updateUser, toast, onUserModalClose]);
+
+  const handleDeleteUser = useCallback(async (userId) => {
+    if (window.confirm('Are you sure you want to delete this user?')) {
+      try {
+        await deleteUser(userId);
+        toaster.create({
+          title: 'User deleted',
+          status: 'success',
           duration: 3000,
           isClosable: true,
         });
-        return;
+      } catch (error) {
+        toaster.create({
+          title: 'Error deleting user',
+          description: error.message,
+          status: 'error',
+          duration: 5000,
+          isClosable: true,
+        });
       }
-
-      const newUser = await createUser(formData);
-
-      logAuditEvent(
-        'user_created',
-        'user',
-        newUser.id.toString(),
-        { username: formData.username }
-      );
-
-      toast({
-        title: 'User created',
-        description: `User "${formData.username}" has been created.`,
-        status: 'success',
-        duration: 3000,
-        isClosable: true,
-      });
-
-      onUserModalClose();
-    } catch (err) {
-      toast({
-        title: 'Error',
-        description: err.response?.data?.error || err.message,
-        status: 'error',
-        duration: 5000,
-        isClosable: true,
-      });
     }
-  };
+  }, [deleteUser, toast]);
 
-  const handleUpdateUser = async () => {
-    try {
-      if (!selectedUser) return;
+  const handleEditUser = useCallback((user) => {
+    setSelectedUser(user);
+    onUserModalOpen();
+  }, [onUserModalOpen]);
 
-      const updatedUser = await updateUser(selectedUser.id, formData);
+  const handleFormClose = useCallback(() => {
+    setSelectedUser(null);
+    onUserModalClose();
+  }, [onUserModalClose]);
 
-      logAuditEvent(
-        'user_updated',
-        'user',
-        selectedUser.id.toString(),
-        { username: formData.username }
-      );
-
-      toast({
-        title: 'User updated',
-        description: `User "${formData.username}" has been updated.`,
-        status: 'success',
-        duration: 3000,
-        isClosable: true,
-      });
-
-      onUserModalClose();
-    } catch (err) {
-      toast({
-        title: 'Error',
-        description: err.response?.data?.error || err.message,
-        status: 'error',
-        duration: 5000,
-        isClosable: true,
-      });
-    }
-  };
-
-  const handleDeleteUser = async (user) => {
-    try {
-      await deleteUser(user.id);
-
-      logAuditEvent(
-        'user_deleted',
-        'user',
-        user.id.toString(),
-        { username: user.username }
-      );
-
-      toast({
-        title: 'User deleted',
-        description: `User "${user.username}" has been deleted.`,
-        status: 'success',
-        duration: 3000,
-        isClosable: true,
-      });
-    } catch (err) {
-      toast({
-        title: 'Error',
-        description: err.response?.data?.error || err.message,
-        status: 'error',
-        duration: 5000,
-        isClosable: true,
-      });
-    }
-  };
-
-  const handleAddTeam = async (userId, teamId) => {
-    try {
-      await addTeam(userId, teamId);
-
-      logAuditEvent(
-        'team_added',
-        'user',
-        userId.toString(),
-        { teamId }
-      );
-
-      toast({
-        title: 'Team added',
-        description: 'Team has been added to the user.',
-        status: 'success',
-        duration: 3000,
-        isClosable: true,
-      });
-    } catch (err) {
-      toast({
-        title: 'Error',
-        description: err.response?.data?.error || err.message,
-        status: 'error',
-        duration: 5000,
-        isClosable: true,
-      });
-    }
-  };
-
-  const handleRemoveTeam = async (userId, teamId) => {
-    try {
-      await removeTeam(userId, teamId);
-
-      logAuditEvent(
-        'team_removed',
-        'user',
-        userId.toString(),
-        { teamId }
-      );
-
-      toast({
-        title: 'Team removed',
-        description: 'Team has been removed from the user.',
-        status: 'success',
-        duration: 3000,
-        isClosable: true,
-      });
-    } catch (err) {
-      toast({
-        title: 'Error',
-        description: err.response?.data?.error || err.message,
-        status: 'error',
-        duration: 5000,
-        isClosable: true,
-      });
-    }
-  };
+  const columns = [
+    {
+      header: 'User',
+      accessor: 'username',
+      cell: (row) => (
+        <Stack gap={3}>
+          <Avatar size='sm' name={row.username} />
+          <Box>
+            <Text fontWeight='medium'>{row.username}</Text>
+            <Text fontSize='sm'>
+              {row.email}
+            </Text>
+          </Box>
+        </Stack>
+      ),
+    },
+    {
+      header: 'Role',
+      accessor: 'role',
+      cell: (row) => (
+        <Badge colorScheme={row.role === 'admin' ? 'purple' : 'blue'}>
+          {row.role}
+        </Badge>
+      ),
+    },
+    {
+      header: 'Teams',
+      accessor: 'teams',
+      cell: (row) => (
+        <Stack gap={2}>
+          {row.teams?.map((team) => (
+            <Badge key={team.id} colorScheme='green'>
+              {team.name}
+            </Badge>
+          ))}
+        </Stack>
+      ),
+    },
+    {
+      header: 'Actions',
+      accessor: 'actions',
+      cell: (row) => (
+        <Stack gap={2}>
+          {hasPermission('users.edit') && (
+            <IconButton
+              aria-label='Edit user'
+              icon={<FiEdit2 />}
+              size='sm'
+              onClick={(e) => {
+                e.stopPropagation();
+                handleEditUser(row);
+              }}
+            />
+          )}
+          <Menu>
+            <MenuItem
+              as={IconButton}
+              aria-label='More options'
+              icon={<FiMoreVertical />}
+              size='sm'
+            />
+            <MenuItemGroup>
+              <MenuItem icon={<FiShield />} onClick={() => openPermissionsModal(row)}>
+                Manage Permissions
+              </MenuItem>
+              <MenuItem icon={<FiUsers />} onClick={() => openTeamsModal(row)}>
+                Manage Teams
+              </MenuItem>
+              {hasPermission('users.delete') && (
+                <MenuItem icon={<FiTrash2 />} color='red.500' onClick={(e) => {
+                  e.stopPropagation();
+                  handleDeleteUser(row.id);
+                }}>
+                  Delete User
+                </MenuItem>
+              )}
+            </MenuItemGroup>
+          </Menu>
+        </Stack>
+      ),
+    },
+  ];
 
   const openUserModal = (user = null) => {
     if (user) {
@@ -271,7 +251,7 @@ const UsersPage = () => {
       }));
       onTeamsModalOpen();
     } catch (err) {
-      toast({
+      toaster.create({
         title: 'Error',
         description: err.response?.data?.error || err.message,
         status: 'error',
@@ -284,7 +264,7 @@ const UsersPage = () => {
   if (isLoading) {
     return (
       <Box p={4}>
-        <Heading size="lg" mb={4}>Loading users...</Heading>
+        <Heading size='lg' mb={4}>Loading users...</Heading>
       </Box>
     );
   }
@@ -292,204 +272,60 @@ const UsersPage = () => {
   if (error) {
     return (
       <Box p={4}>
-        <Heading size="lg" mb={4}>Error loading users</Heading>
-        <Box color="red.500">{error}</Box>
+        <Heading size='lg' mb={4}>Error loading users</Heading>
+        <Box color='red.500'>{error}</Box>
       </Box>
     );
   }
 
   return (
     <Box p={4}>
-      <Flex justify="space-between" align="center" mb={4}>
-        <Heading size="lg">Users</Heading>
-        <Button colorScheme="blue" onClick={() => openUserModal()}>
-          Create User
-        </Button>
+      <Flex justify='space-between' align='center' mb={6}>
+        <Heading size='lg'>Users</Heading>
+        {hasPermission('users.create') && (
+          <Button
+            leftIcon={<FiUserPlus />}
+            colorScheme='blue'
+            onClick={() => openUserModal()}
+          >
+            Add User
+          </Button>
+        )}
       </Flex>
 
-      <Box
-        bg={bgColor}
-        shadow="sm"
-        rounded="lg"
-        borderWidth="1px"
-        borderColor={borderColor}
-        overflow="hidden"
-      >
-        <Table variant="simple">
-          <Thead>
-            <Tr>
-              <Th>User</Th>
-              <Th>Role</Th>
-              <Th>Teams</Th>
-              <Th>Repositories</Th>
-              <Th>Actions</Th>
-            </Tr>
-          </Thead>
-          <Tbody>
-            {users.map((user) => (
-              <Tr key={user.id}>
-                <Td>
-                  <HStack spacing={3}>
-                    <Avatar size="sm" name={user.username} src={user.avatar} />
-                    <VStack align="start" spacing={0}>
-                      <Text fontWeight="medium">{user.username}</Text>
-                      <Text fontSize="sm" color="gray.500">
-                        {user.email}
-                      </Text>
-                    </VStack>
-                  </HStack>
-                </Td>
-                <Td>
-                  <Badge colorScheme={user.role === 'admin' ? 'red' : 'blue'}>
-                    {user.role}
-                  </Badge>
-                </Td>
-                <Td>
-                  <HStack spacing={1}>
-                    {user.teams?.map((team) => (
-                      <Badge key={team.id} colorScheme="purple">
-                        {team.name}
-                      </Badge>
-                    ))}
-                  </HStack>
-                </Td>
-                <Td>
-                  <HStack spacing={1}>
-                    {user.repositories?.map((repo) => (
-                      <Badge key={repo.id} colorScheme="green">
-                        {repo.name}
-                      </Badge>
-                    ))}
-                  </HStack>
-                </Td>
-                <Td>
-                  <Menu>
-                    <MenuButton
-                      as={IconButton}
-                      icon={<FiMoreVertical />}
-                      variant="ghost"
-                      size="sm"
-                    />
-                    <MenuList>
-                      <MenuItem
-                        icon={<FiEdit2 />}
-                        onClick={() => openUserModal(user)}
-                      >
-                        Edit User
-                      </MenuItem>
-                      <MenuItem
-                        icon={<FiUsers />}
-                        onClick={() => openTeamsModal(user)}
-                      >
-                        Manage Teams
-                      </MenuItem>
-                      <MenuItem
-                        icon={<FiUserPlus />}
-                        onClick={() => handleAddTeam(user.id)}
-                      >
-                        Add Team
-                      </MenuItem>
-                      <MenuItem
-                        icon={<FiUserMinus />}
-                        onClick={() => handleRemoveTeam(user.id)}
-                      >
-                        Remove Team
-                      </MenuItem>
-                      <MenuItem
-                        icon={<FiShield />}
-                        onClick={() => getUserPermissions(user.id)}
-                      >
-                        View Permissions
-                      </MenuItem>
-                      <MenuItem
-                        icon={<FiTrash2 />}
-                        onClick={() => handleDeleteUser(user)}
-                        color="red.500"
-                      >
-                        Delete User
-                      </MenuItem>
-                    </MenuList>
-                  </Menu>
-                </Td>
-              </Tr>
-            ))}
-          </Tbody>
-        </Table>
-      </Box>
+      <DataTable
+        columns={columns}
+        data={users}
+        isLoading={isLoading}
+        onRowClick={(user) => navigate(`/users/${user.id}`)}
+      />
 
-      {/* User Modal */}
-      <Modal isOpen={isUserModalOpen} onClose={onUserModalClose}>
-        <ModalOverlay />
-        <ModalContent>
-          <ModalHeader>
-            {selectedUser ? 'Edit User' : 'Create User'}
-          </ModalHeader>
-          <ModalCloseButton />
-          <ModalBody pb={6}>
-            <FormControl mb={4}>
-              <FormLabel>Username</FormLabel>
-              <Input
-                value={formData.username}
-                onChange={(e) =>
-                  setFormData({ ...formData, username: e.target.value })
-                }
-                placeholder="Enter username"
-              />
-            </FormControl>
-            <FormControl mb={4}>
-              <FormLabel>Email</FormLabel>
-              <Input
-                value={formData.email}
-                onChange={(e) =>
-                  setFormData({ ...formData, email: e.target.value })
-                }
-                placeholder="Enter email"
-                type="email"
-              />
-            </FormControl>
-            <FormControl mb={4}>
-              <FormLabel>Role</FormLabel>
-              <Select
-                value={formData.role}
-                onChange={(e) =>
-                  setFormData({ ...formData, role: e.target.value })
-                }
-              >
-                <option value="user">User</option>
-                <option value="admin">Admin</option>
-              </Select>
-            </FormControl>
-            <Button
-              colorScheme="blue"
-              mr={3}
-              onClick={selectedUser ? handleUpdateUser : handleCreateUser}
-            >
-              {selectedUser ? 'Update' : 'Create'}
-            </Button>
-            <Button onClick={onUserModalClose}>Cancel</Button>
-          </ModalBody>
-        </ModalContent>
-      </Modal>
+      <UserForm
+        open={isUserModalOpen}
+        onClose={handleFormClose}
+        onSubmit={selectedUser ? handleUpdateUser : handleCreateUser}
+        initialData={selectedUser}
+      />
 
       {/* Teams Modal */}
-      <Modal isOpen={isTeamsModalOpen} onClose={onTeamsModalClose}>
-        <ModalOverlay />
-        <ModalContent>
-          <ModalHeader>Manage User Teams</ModalHeader>
-          <ModalCloseButton />
-          <ModalBody pb={6}>
+      <Dialog.Root open={isTeamsModalOpen} onClose={onTeamsModalClose}>
+        <Dialog.Backdrop />
+        <Dialog.Content>
+          <Dialog.Header>Manage User Teams</Dialog.Header>
+          <Dialog.CloseTrigger />
+          <Dialog.Body pb={6}>
             {/* Add your teams management UI here */}
             <Button
-              colorScheme="blue"
+              colorScheme='blue'
               mr={3}
               onClick={() => handleUpdateUser(selectedUser.id, formData)}
             >
               Update Teams
             </Button>
             <Button onClick={onTeamsModalClose}>Cancel</Button>
-          </ModalBody>
-        </ModalContent>
-      </Modal>
+          </Dialog.Body>
+        </Dialog.Content>
+      </Dialog.Root>
     </Box>
   );
 };

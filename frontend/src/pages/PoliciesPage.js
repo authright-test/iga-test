@@ -1,42 +1,29 @@
+import { toaster } from '@/components/ui/toaster';
 import {
   Alert,
-  AlertIcon,
   Badge,
   Box,
   Button,
+  Dialog,
+  Field,
   Flex,
-  FormControl,
-  FormHelperText,
-  FormLabel,
   Heading,
-  HStack,
   IconButton,
   Input,
-  Modal,
-  ModalBody,
-  ModalCloseButton,
-  ModalContent,
-  ModalFooter,
-  ModalHeader,
-  ModalOverlay,
   Select,
   Spinner,
+  Stack,
   Switch,
   Table,
-  Tbody,
-  Td,
   Text,
   Textarea,
-  Th,
-  Thead,
-  Tr,
   useDisclosure,
-  useToast,
 } from '@chakra-ui/react';
 import axios from 'axios';
 import React, { useEffect, useState } from 'react';
 import { FiCheck, FiEdit, FiPlus, FiTrash2, FiX } from 'react-icons/fi';
 import { useAuth } from '../contexts/AuthContext';
+import { usePermissions } from '../hooks/usePermissions';
 
 const PoliciesPage = () => {
   const [policies, setPolicies] = useState([]);
@@ -54,8 +41,10 @@ const PoliciesPage = () => {
     actions: [{ type: 'notify_admin' }],
     organizationId: ''
   });
-  const toast = useToast();
+
   const { token, organization } = useAuth();
+  const { hasPermission } = usePermissions();
+  const [formErrors, setFormErrors] = useState({});
 
   // Fetch policies on component mount
   useEffect(() => {
@@ -77,7 +66,7 @@ const PoliciesPage = () => {
       setPolicies(response.data);
     } catch (err) {
       setError('Failed to fetch policies: ' + (err.response?.data?.error || err.message));
-      toast({
+      toaster.create({
         title: 'Error fetching policies',
         description: err.response?.data?.error || err.message,
         status: 'error',
@@ -197,7 +186,7 @@ const PoliciesPage = () => {
       // Refresh policies
       fetchPolicies(organization.id);
 
-      toast({
+      toaster.create({
         title: policy.isActive ? 'Policy deactivated' : 'Policy activated',
         description: `The policy "${policy.name}" has been ${policy.isActive ? 'deactivated' : 'activated'}.`,
         status: 'success',
@@ -205,7 +194,7 @@ const PoliciesPage = () => {
         isClosable: true,
       });
     } catch (err) {
-      toast({
+      toaster.create({
         title: 'Error',
         description: err.response?.data?.error || err.message,
         status: 'error',
@@ -219,7 +208,7 @@ const PoliciesPage = () => {
   const handleSavePolicy = async () => {
     try {
       if (!formData.name.trim()) {
-        toast({
+        toaster.create({
           title: 'Validation Error',
           description: 'Policy name is required',
           status: 'error',
@@ -232,7 +221,7 @@ const PoliciesPage = () => {
       // Validate conditions
       for (const condition of formData.conditions) {
         if (!condition.field || !condition.value) {
-          toast({
+          toaster.create({
             title: 'Validation Error',
             description: 'All conditions must have field and value',
             status: 'error',
@@ -249,7 +238,7 @@ const PoliciesPage = () => {
           headers: { Authorization: `Bearer ${token}` }
         });
 
-        toast({
+        toaster.create({
           title: 'Policy updated',
           description: `The policy "${formData.name}" has been updated.`,
           status: 'success',
@@ -262,7 +251,7 @@ const PoliciesPage = () => {
           headers: { Authorization: `Bearer ${token}` }
         });
 
-        toast({
+        toaster.create({
           title: 'Policy created',
           description: `The policy "${formData.name}" has been created.`,
           status: 'success',
@@ -275,7 +264,7 @@ const PoliciesPage = () => {
       onPolicyModalClose();
       fetchPolicies(organization.id);
     } catch (err) {
-      toast({
+      toaster.create({
         title: 'Error',
         description: err.response?.data?.error || err.message,
         status: 'error',
@@ -292,7 +281,7 @@ const PoliciesPage = () => {
         headers: { Authorization: `Bearer ${token}` }
       });
 
-      toast({
+      toaster.create({
         title: 'Policy deleted',
         description: `The policy "${selectedPolicy.name}" has been deleted.`,
         status: 'success',
@@ -304,7 +293,7 @@ const PoliciesPage = () => {
       onDeleteModalClose();
       fetchPolicies(organization.id);
     } catch (err) {
-      toast({
+      toaster.create({
         title: 'Error',
         description: err.response?.data?.error || err.message,
         status: 'error',
@@ -330,254 +319,276 @@ const PoliciesPage = () => {
     );
   };
 
+  const validateForm = () => {
+    const errors = {};
+    if (!formData.name.trim()) {
+      errors.name = 'Policy name is required';
+    }
+    for (const condition of formData.conditions) {
+      if (!condition.field || !condition.value) {
+        errors.conditions = 'All conditions must have field and value';
+      }
+    }
+    setFormErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
+  if (!hasPermission('policies.manage')) {
+    return (
+      <Box p={4}>
+        <Heading size='lg' mb={4}>Access Denied</Heading>
+        <Text>You do not have permission to manage policies.</Text>
+      </Box>
+    );
+  }
+
   return (
     <Box>
-      <Flex justifyContent="space-between" alignItems="center" mb={6}>
-        <Heading as="h1" size="lg">Policies</Heading>
-        <Button leftIcon={<FiPlus />} colorScheme="brand" onClick={handleCreatePolicy}>
+      <Flex justifyContent='space-between' alignItems='center' mb={6}>
+        <Heading as='h1' size='lg'>Policies</Heading>
+        <Button leftIcon={<FiPlus />} colorScheme='brand' onClick={handleCreatePolicy}>
           Create Policy
         </Button>
       </Flex>
 
       {error && (
-        <Alert status="error" mb={4}>
-          <AlertIcon />
-          {error}
-        </Alert>
+        <Alert.Root status='error' mb={4}>
+          <Alert.Indicator />
+          <Alert.Title>
+            {error}
+          </Alert.Title>
+        </Alert.Root>
       )}
 
       {isLoading ? (
-        <Flex justify="center" align="center" height="200px">
-          <Spinner size="xl" color="brand.500" />
-        </Flex>
+        <Stack justify='center' align='center' height='200px'>
+          <Spinner size='xl' color='brand.500' />
+        </Stack>
       ) : policies.length === 0 ? (
-        <Box p={5} textAlign="center" borderWidth="1px" borderRadius="md">
-          <Text fontSize="lg" mb={4}>No policies found</Text>
-          <Button leftIcon={<FiPlus />} colorScheme="brand" onClick={handleCreatePolicy}>
+        <Box p={5} textAlign='center' borderWidth='1px' borderRadius='md'>
+          <Text fontSize='lg' mb={4}>No policies found</Text>
+          <Button leftIcon={<FiPlus />} colorScheme='brand' onClick={handleCreatePolicy}>
             Create Policy
           </Button>
         </Box>
       ) : (
-        <Box borderWidth="1px" borderRadius="lg" overflow="hidden">
-          <Table variant="simple">
-            <Thead bg="gray.50">
-              <Tr>
-                <Th>Name</Th>
-                <Th>Description</Th>
-                <Th>Severity</Th>
-                <Th>Status</Th>
-                <Th width="180px">Actions</Th>
-              </Tr>
-            </Thead>
-            <Tbody>
+        <Box
+
+          borderWidth='1px'
+
+          borderRadius='lg'
+          overflow='hidden'
+        >
+          <Table.Root variant='simple'>
+            <Table.Header bg='gray.50'>
+              <Table.Row>
+                <Table.Cell>Name</Table.Cell>
+                <Table.Cell>Description</Table.Cell>
+                <Table.Cell>Severity</Table.Cell>
+                <Table.Cell>Status</Table.Cell>
+                <Table.Cell width='180px'>Actions</Table.Cell>
+              </Table.Row>
+            </Table.Header>
+            <Table.Body>
               {policies.map((policy) => (
-                <Tr key={policy.id}>
-                  <Td fontWeight="medium">{policy.name}</Td>
-                  <Td>{policy.description || 'No description'}</Td>
-                  <Td>{getSeverityBadge(policy.severity)}</Td>
-                  <Td>
+                <Table.Row key={policy.id}>
+                  <Table.Cell fontWeight='medium'>{policy.name}</Table.Cell>
+                  <Table.Cell>{policy.description || 'No description'}</Table.Cell>
+                  <Table.Cell>{getSeverityBadge(policy.severity)}</Table.Cell>
+                  <Table.Cell>
                     <Badge colorScheme={policy.isActive ? 'green' : 'gray'}>
                       {policy.isActive ? 'Active' : 'Inactive'}
                     </Badge>
-                  </Td>
-                  <Td>
-                    <HStack spacing={2}>
+                  </Table.Cell>
+                  <Table.Cell>
+                    <Stack gap={2}>
                       <IconButton
                         icon={<FiEdit />}
-                        aria-label="Edit policy"
-                        size="sm"
-                        colorScheme="blue"
+                        aria-label='Edit policy'
+                        size='sm'
+                        colorScheme='blue'
                         onClick={() => handleEditPolicy(policy)}
                       />
                       <IconButton
                         icon={<FiTrash2 />}
-                        aria-label="Delete policy"
-                        size="sm"
-                        colorScheme="red"
+                        aria-label='Delete policy'
+                        size='sm'
+                        colorScheme='red'
                         onClick={() => handleDeleteClick(policy)}
                       />
                       <IconButton
                         icon={policy.isActive ? <FiX /> : <FiCheck />}
-                        aria-label={policy.isActive ? "Deactivate policy" : "Activate policy"}
-                        size="sm"
-                        colorScheme={policy.isActive ? "orange" : "green"}
+                        aria-label={policy.isActive ? 'Deactivate policy' : 'Activate policy'}
+                        size='sm'
+                        colorScheme={policy.isActive ? 'orange' : 'green'}
                         onClick={() => handleToggleActive(policy)}
                       />
-                    </HStack>
-                  </Td>
-                </Tr>
+                    </Stack>
+                  </Table.Cell>
+                </Table.Row>
               ))}
-            </Tbody>
-          </Table>
+            </Table.Body>
+          </Table.Root>
         </Box>
       )}
 
       {/* Policy Create/Edit Modal */}
-      <Modal isOpen={isPolicyModalOpen} onClose={onPolicyModalClose} size="xl">
-        <ModalOverlay />
-        <ModalContent>
-          <ModalHeader>
-            {selectedPolicy ? `Edit Policy: ${selectedPolicy.name}` : 'Create Policy'}
-          </ModalHeader>
-          <ModalCloseButton />
-          <ModalBody>
-            <FormControl id="name" isRequired mb={4}>
-              <FormLabel>Policy Name</FormLabel>
-              <Input
-                name="name"
-                value={formData.name}
-                onChange={handleInputChange}
-                placeholder="Enter policy name"
-              />
-            </FormControl>
-
-            <FormControl id="description" mb={4}>
-              <FormLabel>Description</FormLabel>
-              <Textarea
-                name="description"
-                value={formData.description}
-                onChange={handleInputChange}
-                placeholder="Enter policy description"
-              />
-            </FormControl>
-
-            <Flex gap={4} mb={4}>
-              <FormControl id="severity">
-                <FormLabel>Severity</FormLabel>
-                <Select
-                  name="severity"
-                  value={formData.severity}
+      <Dialog.Root open={isPolicyModalOpen} onClose={onPolicyModalClose} size='xl'>
+        <Dialog.Backdrop />
+        <Dialog.Positioner>
+          <Dialog.Content>
+            <Dialog.Header>
+              {selectedPolicy ? `Edit Policy: ${selectedPolicy.name}` : 'Create Policy'}
+            </Dialog.Header>
+            <Dialog.CloseTrigger />
+            <Dialog.Body>
+              <Field.Root id='name' required invalid={!!formErrors.name}>
+                <Field.Label>Policy Name</Field.Label>
+                <Input
+                  name='name'
+                  value={formData.name}
                   onChange={handleInputChange}
-                >
-                  <option value="low">Low</option>
-                  <option value="medium">Medium</option>
-                  <option value="high">High</option>
-                  <option value="critical">Critical</option>
-                </Select>
-              </FormControl>
-
-              <FormControl id="isActive" display="flex" alignItems="center">
-                <FormLabel mb="0">Active</FormLabel>
-                <Switch
-                  name="isActive"
-                  isChecked={formData.isActive}
-                  onChange={handleToggleChange}
-                  colorScheme="green"
-                  size="lg"
+                  placeholder='Enter policy name'
                 />
-              </FormControl>
-            </Flex>
+                <Field.ErrorText>{formErrors.name}</Field.ErrorText>
+              </Field.Root>
 
-            <Box mb={4}>
-              <FormLabel>Conditions</FormLabel>
-              <FormHelperText mb={2}>Define when this policy should be triggered.</FormHelperText>
+              <Field.Root id='description' mb={4}>
+                <Field.Label>Description</Field.Label>
+                <Textarea
+                  name='description'
+                  value={formData.description}
+                  onChange={handleInputChange}
+                  placeholder='Enter policy description'
+                />
+              </Field.Root>
 
-              {formData.conditions.map((condition, index) => (
-                <Flex key={index} gap={2} mb={2} align="center">
+              <Flex gap={4} mb={4}>
+                <Field.Root id='severity'>
+                  <Field.Label>Severity</Field.Label>
                   <Select
-                    value={condition.type}
-                    onChange={(e) => handleConditionChange(index, 'type', e.target.value)}
-                    width="150px"
+                    name='severity'
+                    value={formData.severity}
+                    onChange={handleInputChange}
                   >
-                    <option value="equals">Equals</option>
-                    <option value="contains">Contains</option>
-                    <option value="not_equals">Not Equals</option>
-                    <option value="greater_than">Greater Than</option>
-                    <option value="less_than">Less Than</option>
+                    <option value='low'>Low</option>
+                    <option value='medium'>Medium</option>
+                    <option value='high'>High</option>
+                    <option value='critical'>Critical</option>
                   </Select>
+                </Field.Root>
 
-                  <Input
-                    placeholder="Field (e.g., repository.visibility)"
-                    value={condition.field}
-                    onChange={(e) => handleConditionChange(index, 'field', e.target.value)}
-                  />
-
-                  <Input
-                    placeholder="Value"
-                    value={condition.value}
-                    onChange={(e) => handleConditionChange(index, 'value', e.target.value)}
-                  />
-
-                  <IconButton
-                    icon={<FiTrash2 />}
-                    colorScheme="red"
-                    aria-label="Remove condition"
-                    size="sm"
-                    isDisabled={formData.conditions.length === 1}
-                    onClick={() => removeCondition(index)}
-                  />
-                </Flex>
-              ))}
-
-              <Button size="sm" onClick={addCondition} mt={2}>
-                Add Condition
-              </Button>
-            </Box>
-
-            <Box mb={4}>
-              <FormLabel>Actions</FormLabel>
-              <FormHelperText mb={2}>Define what should happen when policy is triggered.</FormHelperText>
-
-              {formData.actions.map((action, index) => (
-                <Flex key={index} gap={2} mb={2} align="center">
-                  <Select
-                    value={action.type}
-                    onChange={(e) => handleActionChange(index, e.target.value)}
+                <Field.Root id='isActive' display='flex' alignItems='center'>
+                  <Field.Label mb={0}>Active</Field.Label>
+                  <Switch.Root
+                    name='isActive'
+                    checked={formData.isActive}
+                    onChange={handleToggleChange}
                   >
-                    <option value="notify_admin">Notify Admin</option>
-                    <option value="revert_change">Revert Change</option>
-                    <option value="log_event">Log Event</option>
-                    <option value="remove_permission">Remove Permission</option>
-                  </Select>
+                    <Switch.HiddenInput />
+                    <Switch.Control />
+                    <Switch.Label />
+                  </Switch.Root>
+                </Field.Root>
+              </Flex>
 
-                  <IconButton
-                    icon={<FiTrash2 />}
-                    colorScheme="red"
-                    aria-label="Remove action"
-                    size="sm"
-                    isDisabled={formData.actions.length === 1}
-                    onClick={() => removeAction(index)}
-                  />
-                </Flex>
-              ))}
+              <Field.Root invalid={!!formErrors.conditions}>
+                <Field.Label>Conditions</Field.Label>
+                {formData.conditions.map((condition, index) => (
+                  <Stack key={index} mb={2}>
+                    <Select
+                      value={condition.type}
+                      onChange={(e) => handleConditionChange(index, 'type', e.target.value)}
+                    >
+                      <option value='equals'>Equals</option>
+                      <option value='contains'>Contains</option>
+                      <option value='starts_with'>Starts With</option>
+                      <option value='ends_with'>Ends With</option>
+                    </Select>
+                    <Input
+                      placeholder='Field'
+                      value={condition.field}
+                      onChange={(e) => handleConditionChange(index, 'field', e.target.value)}
+                    />
+                    <Input
+                      placeholder='Value'
+                      value={condition.value}
+                      onChange={(e) => handleConditionChange(index, 'value', e.target.value)}
+                    />
+                    <IconButton
+                      icon={<FiX />}
+                      onClick={() => removeCondition(index)}
+                      aria-label='Remove condition'
+                    />
+                  </Stack>
+                ))}
+                <Button leftIcon={<FiPlus />} onClick={addCondition} size='sm' mb={4}>
+                  Add Condition
+                </Button>
+                <Field.ErrorText>{formErrors.conditions}</Field.ErrorText>
+              </Field.Root>
 
-              <Button size="sm" onClick={addAction} mt={2}>
-                Add Action
+              <Field.Root invalid={!!formErrors.actions}>
+                <Field.Label>Actions</Field.Label>
+                {formData.actions.map((action, index) => (
+                  <Stack key={index} mb={2}>
+                    <Select
+                      value={action.type}
+                      onChange={(e) => handleActionChange(index, e.target.value)}
+                    >
+                      <option value='notify_admin'>Notify Admin</option>
+                      <option value='revert_change'>Revert Change</option>
+                      <option value='log_event'>Log Event</option>
+                      <option value='remove_permission'>Remove Permission</option>
+                    </Select>
+                    <IconButton
+                      icon={<FiX />}
+                      onClick={() => removeAction(index)}
+                      aria-label='Remove action'
+                    />
+                  </Stack>
+                ))}
+                <Button leftIcon={<FiPlus />} onClick={addAction} size='sm' mb={4}>
+                  Add Action
+                </Button>
+                <Field.ErrorText>{formErrors.actions}</Field.ErrorText>
+              </Field.Root>
+            </Dialog.Body>
+            <Dialog.Footer>
+              <Button variant='outline' mr={3} onClick={onPolicyModalClose}>
+                Cancel
               </Button>
-            </Box>
-          </ModalBody>
-          <ModalFooter>
-            <Button variant="outline" mr={3} onClick={onPolicyModalClose}>
-              Cancel
-            </Button>
-            <Button colorScheme="brand" onClick={handleSavePolicy}>
-              Save
-            </Button>
-          </ModalFooter>
-        </ModalContent>
-      </Modal>
+              <Button colorScheme='brand' onClick={handleSavePolicy}>
+                Save
+              </Button>
+            </Dialog.Footer>
+          </Dialog.Content>
+        </Dialog.Positioner>
+      </Dialog.Root>
 
       {/* Delete Confirmation Modal */}
-      <Modal isOpen={isDeleteModalOpen} onClose={onDeleteModalClose}>
-        <ModalOverlay />
-        <ModalContent>
-          <ModalHeader>Delete Policy</ModalHeader>
-          <ModalCloseButton />
-          <ModalBody>
-            <Text>
-              Are you sure you want to delete the policy "{selectedPolicy?.name}"? This action cannot be undone.
-            </Text>
-          </ModalBody>
-          <ModalFooter>
-            <Button variant="outline" mr={3} onClick={onDeleteModalClose}>
-              Cancel
-            </Button>
-            <Button colorScheme="red" onClick={handleDeletePolicy}>
-              Delete
-            </Button>
-          </ModalFooter>
-        </ModalContent>
-      </Modal>
+      <Dialog.Root open={isDeleteModalOpen} onClose={onDeleteModalClose}>
+        <Dialog.Backdrop />
+        <Dialog.Positioner>
+          <Dialog.Content>
+            <Dialog.Header>Delete Policy</Dialog.Header>
+            <Dialog.CloseTrigger />
+            <Dialog.Body>
+              <Text>
+                Are you sure you want to delete the policy "{selectedPolicy?.name}"? This action cannot be undone.
+              </Text>
+            </Dialog.Body>
+            <Dialog.Footer>
+              <Button variant='outline' mr={3} onClick={onDeleteModalClose}>
+                Cancel
+              </Button>
+              <Button colorScheme='red' onClick={handleDeletePolicy}>
+                Delete
+              </Button>
+            </Dialog.Footer>
+          </Dialog.Content>
+        </Dialog.Positioner>
+      </Dialog.Root>
     </Box>
   );
 };

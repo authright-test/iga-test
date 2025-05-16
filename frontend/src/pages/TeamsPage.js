@@ -1,51 +1,29 @@
+import { toaster } from '@/components/ui/toaster';
 import {
   Avatar,
   Badge,
   Box,
   Button,
+  Dialog,
+  Field,
   Flex,
-  FormControl,
-  FormLabel,
   Heading,
-  HStack,
   IconButton,
   Input,
   Menu,
-  MenuButton,
   MenuItem,
-  MenuList,
-  Modal,
-  ModalBody,
-  ModalCloseButton,
-  ModalContent,
-  ModalHeader,
-  ModalOverlay,
+  MenuItemGroup,
   Select,
+  Stack,
   Table,
-  Tbody,
-  Td,
   Text,
   Textarea,
-  Th,
-  Thead,
-  Tr,
-  useColorModeValue,
   useDisclosure,
-  useToast,
-  VStack,
 } from '@chakra-ui/react';
 import React, { useState } from 'react';
-import {
-  FiEdit,
-  FiGitBranch,
-  FiMoreVertical,
-  FiShield,
-  FiTrash2,
-  FiUserMinus,
-  FiUserPlus,
-  FiUsers,
-} from 'react-icons/fi';
+import { FiEdit, FiGitBranch, FiMoreVertical, FiShield, FiTrash2, FiUsers, } from 'react-icons/fi';
 import { useAuth } from '../contexts/AuthContext';
+import { usePermissions } from '../hooks/usePermissions';
 import { useRepositories } from '../hooks/useRepositories';
 import { useTeams } from '../hooks/useTeams';
 import { useUsers } from '../hooks/useUsers';
@@ -56,6 +34,7 @@ const TeamsPage = () => {
     name: '',
     description: '',
     type: 'regular',
+    parentTeamId: '',
   });
   const [newMember, setNewMember] = useState({
     username: '',
@@ -84,10 +63,8 @@ const TeamsPage = () => {
     onClose: onMembersModalClose
   } = useDisclosure();
 
-  const toast = useToast();
   const { organization, logAuditEvent } = useAuth();
-  const bgColor = useColorModeValue('white', 'gray.800');
-  const borderColor = useColorModeValue('gray.200', 'gray.700');
+  const { hasPermission } = usePermissions();
 
   const {
     teams,
@@ -120,7 +97,7 @@ const TeamsPage = () => {
   const handleCreateTeam = async () => {
     try {
       if (!formData.name) {
-        toast({
+        toaster.create({
           title: 'Validation Error',
           description: 'Team name is required',
           status: 'error',
@@ -139,7 +116,7 @@ const TeamsPage = () => {
         { name: formData.name }
       );
 
-      toast({
+      toaster.create({
         title: 'Team created',
         description: `Team "${formData.name}" has been created.`,
         status: 'success',
@@ -149,7 +126,7 @@ const TeamsPage = () => {
 
       onTeamModalClose();
     } catch (err) {
-      toast({
+      toaster.create({
         title: 'Error',
         description: err.response?.data?.error || err.message,
         status: 'error',
@@ -172,7 +149,7 @@ const TeamsPage = () => {
         { name: formData.name }
       );
 
-      toast({
+      toaster.create({
         title: 'Team updated',
         description: `Team "${formData.name}" has been updated.`,
         status: 'success',
@@ -182,7 +159,7 @@ const TeamsPage = () => {
 
       onTeamModalClose();
     } catch (err) {
-      toast({
+      toaster.create({
         title: 'Error',
         description: err.response?.data?.error || err.message,
         status: 'error',
@@ -193,31 +170,33 @@ const TeamsPage = () => {
   };
 
   const handleDeleteTeam = async (team) => {
-    try {
-      await deleteTeam(team.id);
+    if (window.confirm('Are you sure you want to delete this team?')) {
+      try {
+        await deleteTeam(team.id);
 
-      logAuditEvent(
-        'team_deleted',
-        'team',
-        team.id.toString(),
-        { name: team.name }
-      );
+        logAuditEvent(
+          'team_deleted',
+          'team',
+          team.id.toString(),
+          { name: team.name }
+        );
 
-      toast({
-        title: 'Team deleted',
-        description: `Team "${team.name}" has been deleted.`,
-        status: 'success',
-        duration: 3000,
-        isClosable: true,
-      });
-    } catch (err) {
-      toast({
-        title: 'Error',
-        description: err.response?.data?.error || err.message,
-        status: 'error',
-        duration: 5000,
-        isClosable: true,
-      });
+        toaster.create({
+          title: 'Team deleted',
+          description: `Team "${team.name}" has been deleted.`,
+          status: 'success',
+          duration: 3000,
+          isClosable: true,
+        });
+      } catch (err) {
+        toaster.create({
+          title: 'Error',
+          description: err.response?.data?.error || err.message,
+          status: 'error',
+          duration: 5000,
+          isClosable: true,
+        });
+      }
     }
   };
 
@@ -232,7 +211,7 @@ const TeamsPage = () => {
         { userId }
       );
 
-      toast({
+      toaster.create({
         title: 'Member added',
         description: 'Member has been added to the team.',
         status: 'success',
@@ -240,7 +219,7 @@ const TeamsPage = () => {
         isClosable: true,
       });
     } catch (err) {
-      toast({
+      toaster.create({
         title: 'Error',
         description: err.response?.data?.error || err.message,
         status: 'error',
@@ -261,7 +240,7 @@ const TeamsPage = () => {
         { userId }
       );
 
-      toast({
+      toaster.create({
         title: 'Member removed',
         description: 'Member has been removed from the team.',
         status: 'success',
@@ -269,7 +248,7 @@ const TeamsPage = () => {
         isClosable: true,
       });
     } catch (err) {
-      toast({
+      toaster.create({
         title: 'Error',
         description: err.response?.data?.error || err.message,
         status: 'error',
@@ -283,7 +262,7 @@ const TeamsPage = () => {
     try {
       await searchUsers(query);
     } catch (err) {
-      toast({
+      toaster.create({
         title: 'Error',
         description: err.response?.data?.error || err.message,
         status: 'error',
@@ -299,7 +278,7 @@ const TeamsPage = () => {
       setPermissionRules(permissions);
       setSelectedTeam(team);
     } catch (err) {
-      toast({
+      toaster.create({
         title: 'Error',
         description: err.response?.data?.error || err.message,
         status: 'error',
@@ -315,7 +294,7 @@ const TeamsPage = () => {
       setSelectedRepositories(teamRepos.map(repo => repo.id));
       setSelectedTeam(team);
     } catch (err) {
-      toast({
+      toaster.create({
         title: 'Error',
         description: err.response?.data?.error || err.message,
         status: 'error',
@@ -338,7 +317,7 @@ const TeamsPage = () => {
         { name: selectedTeam.name }
       );
 
-      toast({
+      toaster.create({
         title: 'Permissions updated',
         description: 'Team permissions have been updated.',
         status: 'success',
@@ -346,7 +325,7 @@ const TeamsPage = () => {
         isClosable: true,
       });
     } catch (err) {
-      toast({
+      toaster.create({
         title: 'Error',
         description: err.response?.data?.error || err.message,
         status: 'error',
@@ -384,7 +363,7 @@ const TeamsPage = () => {
         { name: selectedTeam.name }
       );
 
-      toast({
+      toaster.create({
         title: 'Repository access updated',
         description: 'Team repository access has been updated.',
         status: 'success',
@@ -392,7 +371,7 @@ const TeamsPage = () => {
         isClosable: true,
       });
     } catch (err) {
-      toast({
+      toaster.create({
         title: 'Error',
         description: err.response?.data?.error || err.message,
         status: 'error',
@@ -414,7 +393,7 @@ const TeamsPage = () => {
         { organization: organization.name }
       );
 
-      toast({
+      toaster.create({
         title: 'Teams synced',
         description: 'Teams have been synchronized with GitHub.',
         status: 'success',
@@ -422,7 +401,7 @@ const TeamsPage = () => {
         isClosable: true,
       });
     } catch (err) {
-      toast({
+      toaster.create({
         title: 'Error',
         description: err.response?.data?.error || err.message,
         status: 'error',
@@ -441,6 +420,7 @@ const TeamsPage = () => {
         name: team.name,
         description: team.description,
         type: team.type,
+        parentTeamId: team.parentTeamId,
       });
     } else {
       setSelectedTeam(null);
@@ -448,6 +428,7 @@ const TeamsPage = () => {
         name: '',
         description: '',
         type: 'regular',
+        parentTeamId: '',
       });
     }
     onTeamModalOpen();
@@ -463,7 +444,7 @@ const TeamsPage = () => {
       }));
       onMembersModalOpen();
     } catch (err) {
-      toast({
+      toaster.create({
         title: 'Error',
         description: err.response?.data?.error || err.message,
         status: 'error',
@@ -473,10 +454,18 @@ const TeamsPage = () => {
     }
   };
 
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value,
+    }));
+  };
+
   if (isLoading) {
     return (
       <Box p={4}>
-        <Heading size="lg" mb={4}>Loading teams...</Heading>
+        <Heading size='lg' mb={4}>Loading teams...</Heading>
       </Box>
     );
   }
@@ -484,208 +473,209 @@ const TeamsPage = () => {
   if (error) {
     return (
       <Box p={4}>
-        <Heading size="lg" mb={4}>Error loading teams</Heading>
-        <Box color="red.500">{error}</Box>
+        <Heading size='lg' mb={4}>Error loading teams</Heading>
+        <Box color='red.500'>{error}</Box>
       </Box>
     );
   }
 
   return (
     <Box p={4}>
-      <Flex justify="space-between" align="center" mb={4}>
-        <Heading size="lg">Teams</Heading>
-        <Button colorScheme="blue" onClick={() => openTeamModal()}>
-          Create Team
-        </Button>
+      <Flex justify='space-between' align='center' mb={6}>
+        <Heading size='lg'>Teams</Heading>
+        {hasPermission('teams.create') && (
+          <Button
+            leftIcon={<FiUsers />}
+            colorScheme='blue'
+            onClick={() => openTeamModal()}
+          >
+            Create Team
+          </Button>
+        )}
       </Flex>
 
       <Box
-        bg={bgColor}
-        shadow="sm"
-        rounded="lg"
-        borderWidth="1px"
-        borderColor={borderColor}
-        overflow="hidden"
+
+        borderWidth='1px'
+
+        borderRadius='md'
+        overflowX='auto'
       >
-        <Table variant="simple">
-          <Thead>
-            <Tr>
-              <Th>Team</Th>
-              <Th>Type</Th>
-              <Th>Members</Th>
-              <Th>Repositories</Th>
-              <Th>Actions</Th>
-            </Tr>
-          </Thead>
-          <Tbody>
+        <Table.Root>
+          <Table.Header>
+            <Table.Row>
+              <Table.Cell>Name</Table.Cell>
+              <Table.Cell>Description</Table.Cell>
+              <Table.Cell>Type</Table.Cell>
+              <Table.Cell>Members</Table.Cell>
+              <Table.Cell>Actions</Table.Cell>
+            </Table.Row>
+          </Table.Header>
+          <Table.Body>
             {teams.map((team) => (
-              <Tr key={team.id}>
-                <Td>
-                  <VStack align="start" spacing={0}>
-                    <Text fontWeight="medium">{team.name}</Text>
-                    <Text fontSize="sm" color="gray.500">
-                      {team.description}
-                    </Text>
-                  </VStack>
-                </Td>
-                <Td>
-                  <Badge colorScheme="blue">{team.type}</Badge>
-                </Td>
-                <Td>
-                  <HStack spacing={1}>
+              <Table.Row key={team.id}>
+                <Table.Cell>
+                  <Stack gap={3}>
+                    <Avatar size='sm' name={team.name} />
+                    <Text fontWeight='medium'>{team.name}</Text>
+                  </Stack>
+                </Table.Cell>
+                <Table.Cell>{team.description}</Table.Cell>
+                <Table.Cell>
+                  <Badge colorScheme={team.type === 'admin' ? 'purple' : 'blue'}>
+                    {team.type}
+                  </Badge>
+                </Table.Cell>
+                <Table.Cell>
+                  <Stack gap={2}>
                     {team.members?.map((member) => (
                       <Avatar
                         key={member.id}
-                        size="xs"
-                        name={member.name}
-                        src={member.avatar}
+                        size='xs'
+                        name={member.username}
+                        src={member.avatarUrl}
                       />
                     ))}
-                  </HStack>
-                </Td>
-                <Td>
-                  <HStack spacing={1}>
-                    {team.repositories?.map((repo) => (
-                      <Badge key={repo.id} colorScheme="purple">
-                        {repo.name}
-                      </Badge>
-                    ))}
-                  </HStack>
-                </Td>
-                <Td>
-                  <Menu>
-                    <MenuButton
-                      as={IconButton}
-                      icon={<FiMoreVertical />}
-                      variant="ghost"
-                      size="sm"
-                    />
-                    <MenuList>
-                      <MenuItem
+                  </Stack>
+                </Table.Cell>
+                <Table.Cell>
+                  <Stack gap={2}>
+                    {hasPermission('teams.edit') && (
+                      <IconButton
+                        aria-label='Edit team'
                         icon={<FiEdit />}
+                        size='sm'
                         onClick={() => openTeamModal(team)}
-                      >
-                        Edit Team
-                      </MenuItem>
+                      />
+                    )}
+                    <Menu>
                       <MenuItem
-                        icon={<FiUsers />}
-                        onClick={() => openMembersModal(team)}
-                      >
-                        Manage Members
-                      </MenuItem>
-                      <MenuItem
-                        icon={<FiUserPlus />}
-                        onClick={() => handleAddMember(team.id)}
-                      >
-                        Add Member
-                      </MenuItem>
-                      <MenuItem
-                        icon={<FiUserMinus />}
-                        onClick={() => handleRemoveMember(team.id)}
-                      >
-                        Remove Member
-                      </MenuItem>
-                      <MenuItem
-                        icon={<FiShield />}
-                        onClick={() => handleManagePermissions(team)}
-                      >
-                        Update Permissions
-                      </MenuItem>
-                      <MenuItem
-                        icon={<FiGitBranch />}
-                        onClick={() => handleManageRepoAccess(team)}
-                      >
-                        Repository Access
-                      </MenuItem>
-                      <MenuItem
-                        icon={<FiTrash2 />}
-                        onClick={() => handleDeleteTeam(team)}
-                        color="red.500"
-                      >
-                        Delete Team
-                      </MenuItem>
-                    </MenuList>
-                  </Menu>
-                </Td>
-              </Tr>
+                        as={IconButton}
+                        aria-label='More options'
+                        icon={<FiMoreVertical />}
+                        size='sm'
+                      />
+                      <MenuItemGroup>
+                        <MenuItem
+                          icon={<FiUsers />}
+                          onClick={() => openMembersModal(team)}
+                        >
+                          Manage Members
+                        </MenuItem>
+                        <MenuItem
+                          icon={<FiGitBranch />}
+                          onClick={() => openRepositoriesModal(team)}
+                        >
+                          Manage Repositories
+                        </MenuItem>
+                        <MenuItem
+                          icon={<FiShield />}
+                          onClick={() => openPermissionsModal(team)}
+                        >
+                          Manage Permissions
+                        </MenuItem>
+                        {hasPermission('teams.delete') && (
+                          <MenuItem
+                            icon={<FiTrash2 />}
+                            color='red.500'
+                            onClick={() => handleDeleteTeam(team)}
+                          >
+                            Delete Team
+                          </MenuItem>
+                        )}
+                      </MenuItemGroup>
+                    </Menu>
+                  </Stack>
+                </Table.Cell>
+              </Table.Row>
             ))}
-          </Tbody>
-        </Table>
+          </Table.Body>
+        </Table.Root>
       </Box>
 
       {/* Team Modal */}
-      <Modal isOpen={isTeamModalOpen} onClose={onTeamModalClose}>
-        <ModalOverlay />
-        <ModalContent>
-          <ModalHeader>
+      <Dialog.Root open={isTeamModalOpen} onClose={onTeamModalClose}>
+        <Dialog.Backdrop />
+        <Dialog.Content>
+          <Dialog.Header>
             {selectedTeam ? 'Edit Team' : 'Create Team'}
-          </ModalHeader>
-          <ModalCloseButton />
-          <ModalBody pb={6}>
-            <FormControl mb={4}>
-              <FormLabel>Name</FormLabel>
+          </Dialog.Header>
+          <Dialog.CloseTrigger />
+          <Dialog.Body pb={6}>
+            <Field.Root mb={4}>
+              <Field.Label>Team Name</Field.Label>
               <Input
+                name='name'
                 value={formData.name}
-                onChange={(e) =>
-                  setFormData({ ...formData, name: e.target.value })
-                }
-                placeholder="Enter team name"
+                onChange={handleInputChange}
+                placeholder='Enter team name'
               />
-            </FormControl>
-            <FormControl mb={4}>
-              <FormLabel>Description</FormLabel>
+            </Field.Root>
+            <Field.Root mb={4}>
+              <Field.Label>Description</Field.Label>
               <Textarea
+                name='description'
                 value={formData.description}
-                onChange={(e) =>
-                  setFormData({ ...formData, description: e.target.value })
-                }
-                placeholder="Enter team description"
+                onChange={handleInputChange}
+                placeholder='Enter team description'
               />
-            </FormControl>
-            <FormControl mb={4}>
-              <FormLabel>Type</FormLabel>
+            </Field.Root>
+            <Field.Root mb={4}>
+              <Field.Label>Type</Field.Label>
               <Select
+                name='type'
                 value={formData.type}
-                onChange={(e) =>
-                  setFormData({ ...formData, type: e.target.value })
-                }
+                onChange={handleInputChange}
               >
-                <option value="regular">Regular</option>
-                <option value="admin">Admin</option>
-                <option value="maintainer">Maintainer</option>
+                <option value='regular'>Regular</option>
+                <option value='admin'>Admin</option>
+                <option value='maintainer'>Maintainer</option>
               </Select>
-            </FormControl>
+            </Field.Root>
+            <Field.Root mb={4}>
+              <Field.Label>Parent Team</Field.Label>
+              <Select
+                name='parentTeamId'
+                value={formData.parentTeamId}
+                onChange={handleInputChange}
+              >
+                <option value=''>None</option>
+                {teams.map(team => (
+                  <option key={team.id} value={team.id}>{team.name}</option>
+                ))}
+              </Select>
+            </Field.Root>
             <Button
-              colorScheme="blue"
+              colorScheme='blue'
               mr={3}
               onClick={selectedTeam ? handleUpdateTeam : handleCreateTeam}
             >
               {selectedTeam ? 'Update' : 'Create'}
             </Button>
             <Button onClick={onTeamModalClose}>Cancel</Button>
-          </ModalBody>
-        </ModalContent>
-      </Modal>
+          </Dialog.Body>
+        </Dialog.Content>
+      </Dialog.Root>
 
       {/* Members Modal */}
-      <Modal isOpen={isMembersModalOpen} onClose={onMembersModalClose}>
-        <ModalOverlay />
-        <ModalContent>
-          <ModalHeader>Manage Team Members</ModalHeader>
-          <ModalCloseButton />
-          <ModalBody pb={6}>
+      <Dialog.Root open={isMembersModalOpen} onClose={onMembersModalClose}>
+        <Dialog.Backdrop />
+        <Dialog.Content>
+          <Dialog.Header>Manage Team Members</Dialog.Header>
+          <Dialog.CloseTrigger />
+          <Dialog.Body pb={6}>
             {/* Add your members management UI here */}
             <Button
-              colorScheme="blue"
+              colorScheme='blue'
               mr={3}
-              onClick={() => handleUpdateTeam(selectedTeam.id, formData)}
+              onClick={() => handleUpdateMembers(selectedTeam.id, formData.members)}
             >
               Update Members
             </Button>
             <Button onClick={onMembersModalClose}>Cancel</Button>
-          </ModalBody>
-        </ModalContent>
-      </Modal>
+          </Dialog.Body>
+        </Dialog.Content>
+      </Dialog.Root>
     </Box>
   );
 };
