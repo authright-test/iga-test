@@ -324,30 +324,42 @@ const RolesPage = () => {
         overflow='hidden'
       >
         {isLoading && <Progress isIndeterminate colorScheme='blue' size='xs' />}
-        {error && (<Alert.Root status='error'>
-          <Alert.Indicator />
-          <Alert.Title>{error}</Alert.Title>
-        </Alert.Root>)}
-        <Table variant='simple' interactive minHeight='calc(100vh - 280px)'>
-          <Thead>
-            <Tr>
-              <Th>Name</Th>
-              <Th>Description</Th>
-              <Th>Users</Th>
-              <Th>Created</Th>
-              <Th>Actions</Th>
-            </Tr>
-          </Thead>
-          <Tbody>
+        {error &&
+          <Alert.Root status='error'>
+            <Alert.Indicator />
+            <Alert.Title>{error}</Alert.Title>
+          </Alert.Root>
+        }
+        <Table.Root striped size='small' variant='outline'>
+          <Table.Header>
+            <Table.Row>
+              <Table.ColumnHeader>Name</Table.ColumnHeader>
+              <Table.ColumnHeader>Description</Table.ColumnHeader>
+              <Table.ColumnHeader>Users</Table.ColumnHeader>
+              <Table.ColumnHeader>Created</Table.ColumnHeader>
+              <Table.ColumnHeader>Actions</Table.ColumnHeader>
+            </Table.Row>
+          </Table.Header>
+
+          <Table.Body>
+            <Table.Row>
+              <Table.Cell colSpan={5}>
+                <Alert>
+                  <Alert.Indicator />
+                  <Alert.Title>Empty</Alert.Title>
+                </Alert>
+              </Table.Cell>
+            </Table.Row>
+
             {roles.map((role) => (
-              <Tr key={role.id}>
-                <Td>{role.name}</Td>
-                <Td>{role.description}</Td>
-                <Td>
+              <Table.Row key={role.id}>
+                <Table.Cell>{role.name}</Table.Cell>
+                <Table.Cell>{role.description}</Table.Cell>
+                <Table.Cell>
                   <Badge colorScheme='blue'>{role.userCount || 0} users</Badge>
-                </Td>
-                <Td>{new Date(role.createdAt).toLocaleDateString()}</Td>
-                <Td>
+                </Table.Cell>
+                <Table.Cell>{new Date(role.createdAt).toLocaleDateString()}</Table.Cell>
+                <Table.Cell>
                   <Menu>
                     <MenuButton
                       as={IconButton}
@@ -383,11 +395,11 @@ const RolesPage = () => {
                       </MenuItem>
                     </MenuList>
                   </Menu>
-                </Td>
-              </Tr>
+                </Table.Cell>
+              </Table.Row>
             ))}
-          </Tbody>
-        </Table>
+          </Table.Body>
+        </Table.Root>
       </Box>
 
       {/* Role Modal */}

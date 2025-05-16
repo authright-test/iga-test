@@ -29,11 +29,11 @@ const GitHubLogin = () => {
   const borderColor = useColorModeValue('gray.200', 'gray.700');
 
   return (
-    <Container maxW="lg" py={{ base: '12', md: '24' }} px={{ base: '0', sm: '8' }}>
-      <Stack spacing="8">
-        <Stack spacing="6">
-          <Stack spacing={{ base: '2', md: '3' }} textAlign="center">
-            <Heading size={{ base: 'xl', md: '2xl' }}>GitHub Access Control</Heading>
+    <Container maxW='lg' py={{ base: '12', md: '24' }} px={{ base: '0', sm: '8' }}>
+      <Stack spacing='8'>
+        <Stack spacing='6'>
+          <Stack spacing={{ base: '2', md: '3' }} textAlign='center'>
+            <Heading size={{ base: 'xl', md: '2xl' }}>IGA</Heading>
             <Text color={textColor}>
               Manage and control access to your GitHub organizations and repositories
             </Text>
@@ -46,27 +46,27 @@ const GitHubLogin = () => {
           bg={bgColor}
           boxShadow={{ base: 'none', sm: 'md' }}
           borderRadius={{ base: 'none', sm: 'xl' }}
-          borderWidth="1px"
+          borderWidth='1px'
           borderColor={borderColor}
         >
-          <VStack spacing="6">
+          <VStack spacing='6'>
             <Button
-              leftIcon={<Icon as={FaGithub} boxSize="5" />}
+              leftIcon={<Icon as={FaGithub} boxSize='5' />}
               onClick={handleLogin}
               isLoading={loading}
-              spinnerPlacement="start"
+              spinnerPlacement='start'
               loadingText={'Sign in with GitHub'}
-              colorScheme="gray"
-              bg="gray.100"
+              colorScheme='gray'
+              bg='gray.100'
               _hover={{ bg: 'gray.400' }}
-              size="lg"
-              width="full"
-              maxW="300px"
-              fontWeight="medium"
+              size='lg'
+              width='full'
+              maxW='300px'
+              fontWeight='medium'
             >
               Sign in with GitHub
             </Button>
-            <Text fontSize="sm" color={textColor} textAlign="center">
+            <Text fontSize='sm' color={textColor} textAlign='center'>
               By signing in, you agree to our Terms of Service and Privacy Policy
             </Text>
           </VStack>
