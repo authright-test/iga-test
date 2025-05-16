@@ -1,4 +1,5 @@
 import {
+  Alert,
   Badge,
   Box,
   Button,
@@ -18,6 +19,7 @@ import {
   ModalContent,
   ModalHeader,
   ModalOverlay,
+  Progress,
   Table,
   Tbody,
   Td,
@@ -304,41 +306,29 @@ const RolesPage = () => {
     }
   };
 
-  if (isLoading) {
-    return (
-      <Box p={4}>
-        <Heading size="lg" mb={4}>Loading roles...</Heading>
-      </Box>
-    );
-  }
-
-  if (error) {
-    return (
-      <Box p={4}>
-        <Heading size="lg" mb={4}>Error loading roles</Heading>
-        <Box color="red.500">{error}</Box>
-      </Box>
-    );
-  }
-
   return (
     <Box p={4}>
-      <Flex justify="space-between" align="center" mb={4}>
-        <Heading size="lg">Roles</Heading>
-        <Button colorScheme="blue" onClick={() => openRoleModal()}>
+      <Flex justify='space-between' align='center' mb={4}>
+        <Heading size='lg'>Roles</Heading>
+        <Button colorScheme='blue' onClick={() => openRoleModal()}>
           Create Role
         </Button>
       </Flex>
 
       <Box
         bg={bgColor}
-        shadow="sm"
-        rounded="lg"
-        borderWidth="1px"
+        shadow='sm'
+        rounded='lg'
+        borderWidth='1px'
         borderColor={borderColor}
-        overflow="hidden"
+        overflow='hidden'
       >
-        <Table variant="simple">
+        {isLoading && <Progress isIndeterminate colorScheme='blue' size='xs' />}
+        {error && (<Alert.Root status='error'>
+          <Alert.Indicator />
+          <Alert.Title>{error}</Alert.Title>
+        </Alert.Root>)}
+        <Table variant='simple' interactive minHeight='calc(100vh - 280px)'>
           <Thead>
             <Tr>
               <Th>Name</Th>
@@ -354,7 +344,7 @@ const RolesPage = () => {
                 <Td>{role.name}</Td>
                 <Td>{role.description}</Td>
                 <Td>
-                  <Badge colorScheme="blue">{role.userCount || 0} users</Badge>
+                  <Badge colorScheme='blue'>{role.userCount || 0} users</Badge>
                 </Td>
                 <Td>{new Date(role.createdAt).toLocaleDateString()}</Td>
                 <Td>
@@ -362,8 +352,8 @@ const RolesPage = () => {
                     <MenuButton
                       as={IconButton}
                       icon={<FiMoreVertical />}
-                      variant="ghost"
-                      size="sm"
+                      variant='ghost'
+                      size='sm'
                     />
                     <MenuList>
                       <MenuItem
@@ -387,7 +377,7 @@ const RolesPage = () => {
                       <MenuItem
                         icon={<FiTrash2 />}
                         onClick={() => handleDeleteRole(role)}
-                        color="red.500"
+                        color='red.500'
                       >
                         Delete Role
                       </MenuItem>
@@ -416,7 +406,7 @@ const RolesPage = () => {
                 onChange={(e) =>
                   setFormData({ ...formData, name: e.target.value })
                 }
-                placeholder="Enter role name"
+                placeholder='Enter role name'
               />
             </FormControl>
             <FormControl mb={4}>
@@ -426,11 +416,11 @@ const RolesPage = () => {
                 onChange={(e) =>
                   setFormData({ ...formData, description: e.target.value })
                 }
-                placeholder="Enter role description"
+                placeholder='Enter role description'
               />
             </FormControl>
             <Button
-              colorScheme="blue"
+              colorScheme='blue'
               mr={3}
               onClick={selectedRole ? handleUpdateRole : handleCreateRole}
             >
@@ -450,7 +440,7 @@ const RolesPage = () => {
           <ModalBody pb={6}>
             {/* Add your permissions management UI here */}
             <Button
-              colorScheme="blue"
+              colorScheme='blue'
               mr={3}
               onClick={() => handleUpdatePermissions(selectedRole.id, formData.permissions)}
             >
