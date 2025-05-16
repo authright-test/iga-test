@@ -131,12 +131,6 @@ const handleError = (error, options = {}) => {
     draggable: true,
   });
 
-  // Handle authentication errors
-  if (error.response?.status === 401) {
-    localStorage.removeItem('token');
-    window.location.href = '/login';
-  }
-
   // Log error for debugging
   console.error('API Error:', {
     message: errorMessage,
@@ -147,10 +141,47 @@ const handleError = (error, options = {}) => {
   return Promise.reject(error);
 };
 
-// Response interceptor for handling errors
+// Response interceptor for handling errors and token refresh
 api.interceptors.response.use(
   (response) => response,
-  (error) => handleError(error)
+  async (error) => {
+    const originalRequest = error.config;
+
+    // Handle token refresh
+    if (error.response?.status === 401 && !originalRequest._retry) {
+      originalRequest._retry = true;
+
+      try {
+        // Try to refresh token
+        const refreshToken = localStorage.getItem('refreshToken');
+        if (!refreshToken) {
+          throw new Error('No refresh token available');
+        }
+
+        const response = await axios.post('/auth/refresh', { refreshToken });
+        const { token, refreshToken: newRefreshToken } = response.data;
+
+        // Update tokens in localStorage
+        localStorage.setItem('token', token);
+        localStorage.setItem('refreshToken', newRefreshToken);
+
+        // Update request header
+        originalRequest.headers.Authorization = `Bearer ${token}`;
+
+        // Retry original request
+        return api(originalRequest);
+      } catch (refreshError) {
+        // Clear auth state and redirect to login
+        localStorage.removeItem('token');
+        localStorage.removeItem('refreshToken');
+        window.location.href = '/login';
+        return handleError(refreshError);
+      }
+    }
+
+    // Handle other errors
+    return handleError(error);
+  }
 );
 
 /**

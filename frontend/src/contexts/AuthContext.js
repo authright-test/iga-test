@@ -1,5 +1,5 @@
 import { useToast } from '@chakra-ui/react';
-import axios from 'axios';
+import api from '../services/api.js';
 import jwt_decode from 'jwt-decode';
 import React, { createContext, useContext, useEffect, useState } from 'react';
 
@@ -11,6 +11,7 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [organization, setOrganization] = useState(null);
   const [token, setToken] = useState(localStorage.getItem('token'));
+  const [refreshToken, setRefreshToken] = useState(localStorage.getItem('refreshToken'));
   const [isLoading, setIsLoading] = useState(true);
   const toast = useToast();
 
@@ -29,10 +30,8 @@ export const AuthProvider = ({ children }) => {
   // Set auth token in axios headers
   const setAuthToken = (token) => {
     if (token) {
-      axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
       localStorage.setItem('token', token);
     } else {
-      delete axios.defaults.headers.common['Authorization'];
       localStorage.removeItem('token');
     }
   };
@@ -40,21 +39,101 @@ export const AuthProvider = ({ children }) => {
   // Check if user is authenticated
   const isAuthenticated = token && !isTokenExpired(token);
 
+  // Refresh token function
+  const refreshAccessToken = async () => {
+    try {
+      const res = await api.post('/auth/refresh', {
+        refreshToken: refreshToken
+      });
+      const { token: newToken, refreshToken: newRefreshToken } = res.data;
+      setToken(newToken);
+      setRefreshToken(newRefreshToken);
+      setAuthToken(newToken);
+      localStorage.setItem('token', newToken);
+      localStorage.setItem('refreshToken', newRefreshToken);
+      return true;
+    } catch (error) {
+      console.error('Failed to refresh token:', error);
+      return false;
+    }
+  };
+
+  const verifyToken = async (token) => {
+    if (!token) {
+      return;
+    }
+    setIsLoading(true);
+    if (!isTokenExpired(token)) {
+      setAuthToken(token);
+      try {
+        const res = await api.get('/auth/verify');
+        setUser(res.data.user);
+        setOrganization(res.data.organization);
+      } catch (error) {
+        // If verification fails, try to refresh the token
+        const refreshSuccess = await refreshAccessToken();
+        if (!refreshSuccess) {
+          // Only clear everything if refresh fails
+          setToken(null);
+          setRefreshToken(null);
+          setUser(null);
+          setOrganization(null);
+          setAuthToken(null);
+          localStorage.removeItem('token');
+          localStorage.removeItem('refreshToken');
+          
+          toast({
+            title: 'Session Expired',
+            description: 'Please log in again',
+            status: 'error',
+            duration: 5000,
+            isClosable: true,
+          });
+        }
+      }
+    } else {
+      // Token expired, try to refresh
+      const refreshSuccess = await refreshAccessToken();
+      if (!refreshSuccess) {
+        // Only clear everything if refresh fails
+        setToken(null);
+        setRefreshToken(null);
+        setUser(null);
+        setOrganization(null);
+        setAuthToken(null);
+        localStorage.removeItem('token');
+        localStorage.removeItem('refreshToken');
+        
+        toast({
+          title: 'Session Expired',
+          description: 'Please log in again',
+          status: 'error',
+          duration: 5000,
+          isClosable: true,
+        });
+      }
+    }
+    setIsLoading(false);
+  };
+
   // Login user
   const login = async (code) => {
     try {
       setIsLoading(true);
-      const res = await axios.post('/auth/login', { code });
-      const { token, user, organization } = res.data;
+      const res = await api.post('/auth/login', { code });
+      const { token, refreshToken, user, organization } = res.data;
       setToken(token);
+      setRefreshToken(refreshToken);
       setUser(user);
       setOrganization(organization);
       setAuthToken(token);
+      localStorage.setItem('token', token);
+      localStorage.setItem('refreshToken', refreshToken);
 
       // 记录登录审计日志
       if (user && organization) {
         try {
-          await axios.post(`/api/audit/organization/${organization.id}/logs`, {
+          await api.post(`/api/audit/organization/${organization.id}/logs`, {
             action: 'user_login',
             resourceType: 'user',
             resourceId: user.id.toString(),
@@ -86,27 +165,52 @@ export const AuthProvider = ({ children }) => {
 
   // Logout user
   const logout = async () => {
-    // 记录登出审计日志
-    if (user && organization) {
-      try {
-        await axios.post(`/api/audit/organization/${organization.id}/logs`, {
-          action: 'user_logout',
-          resourceType: 'user',
-          resourceId: user.id.toString(),
-          details: {
-            username: user.username,
-            email: user.email
-          }
-        });
-      } catch (error) {
-        console.error('Failed to log audit event:', error);
+    try {
+      // 记录登出审计日志
+      if (user && organization) {
+        try {
+          await api.post(`/api/audit/organization/${organization.id}/logs`, {
+            action: 'user_logout',
+            resourceType: 'user',
+            resourceId: user.id.toString(),
+            details: {
+              username: user.username,
+              email: user.email
+            }
+          });
+        } catch (error) {
+          console.error('Failed to log audit event:', error);
+        }
       }
-    }
 
-    setToken(null);
-    setUser(null);
-    setOrganization(null);
-    setAuthToken(null);
+      // 调用后端logout API
+      if (token) {
+        try {
+          await api.post('/auth/logout');
+        } catch (error) {
+          console.error('Failed to logout from server:', error);
+        }
+      }
+
+      // 清除本地状态
+      setToken(null);
+      setRefreshToken(null);
+      setUser(null);
+      setOrganization(null);
+      setAuthToken(null);
+      localStorage.removeItem('token');
+      localStorage.removeItem('refreshToken');
+    } catch (error) {
+      console.error('Logout error:', error);
+      // 即使出错也清除本地状态
+      setToken(null);
+      setRefreshToken(null);
+      setUser(null);
+      setOrganization(null);
+      setAuthToken(null);
+      localStorage.removeItem('token');
+      localStorage.removeItem('refreshToken');
+    }
   };
 
   // 记录审计日志
@@ -114,13 +218,11 @@ export const AuthProvider = ({ children }) => {
     if (!organization) return false;
 
     try {
-      await axios.post(`/api/audit/organization/${organization.id}/logs`, {
+      await api.post(`/api/audit/organization/${organization.id}/logs`, {
         action,
         resourceType,
         resourceId,
         details
-      }, {
-        headers: { Authorization: `Bearer ${token}` }
       });
       return true;
     } catch (error) {
@@ -131,31 +233,7 @@ export const AuthProvider = ({ children }) => {
 
   // Verify token on app load
   useEffect(() => {
-    const verifyToken = async () => {
-      setIsLoading(true);
-      if (token && !isTokenExpired(token)) {
-        setAuthToken(token);
-        try {
-          const res = await axios.get('/auth/verify');
-          setUser(res.data.user);
-          setOrganization(res.data.organization);
-        } catch (error) {
-          setToken(null);
-          setUser(null);
-          setOrganization(null);
-          setAuthToken(null);
-        }
-      } else if (token) {
-        // Token expired
-        setToken(null);
-        setUser(null);
-        setOrganization(null);
-        setAuthToken(null);
-      }
-      setIsLoading(false);
-    };
-
-    verifyToken();
+    verifyToken(token);
   }, [token]);
 
   // Value to provide to consumers
@@ -165,6 +243,7 @@ export const AuthProvider = ({ children }) => {
     organization,
     isAuthenticated,
     isLoading,
+    verifyToken,
     login,
     logout,
     logAuditEvent
@@ -172,3 +251,4 @@ export const AuthProvider = ({ children }) => {
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
+  

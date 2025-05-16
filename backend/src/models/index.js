@@ -6,6 +6,7 @@ import Repository from './Repository.js';
 import Role from './Role.js';
 import Team from './Team.js';
 import User from './User.js';
+import RefreshToken from './RefreshToken.js';
 
 // Define associations
 // User <-> Role (Many-to-Many)
@@ -52,5 +53,6 @@ export {
   Repository,
   Team,
   Policy,
-  AuditLog
+  AuditLog,
+  RefreshToken
 };

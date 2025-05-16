@@ -2,7 +2,8 @@ import { App } from '@octokit/app';
 import { Octokit } from '@octokit/rest';
 import axios from 'axios';
 import jwt from 'jsonwebtoken';
-import { Organization, User } from '../models/index.js';
+import crypto from 'crypto';
+import { Organization, User, RefreshToken } from '../models/index.js';
 import logger from '../utils/logger.js';
 
 // GitHub App instance
@@ -17,6 +18,13 @@ const githubApp = new App({
  * @returns {Promise<string>} User access token
  */
 const exchangeCodeForToken = async (code) => {
+
+  console.log({
+    client_id: process.env.GITHUB_APP_CLIENT_ID,
+    client_secret: process.env.GITHUB_APP_CLIENT_SECRET,
+    code
+  })
+
   try {
     const response = await axios.post('https://github.com/login/oauth/access_token', {
       client_id: process.env.GITHUB_APP_CLIENT_ID,
@@ -91,6 +99,116 @@ const getInstallationForUser = async (userOctokit) => {
     logger.error('Error getting installation:', error);
     return null;
   }
+};
+
+/**
+ * Generate a refresh token
+ * @param {Object} user - User object from database
+ * @returns {Promise<string>} Refresh token
+ */
+const generateRefreshToken = async (user) => {
+  // Generate a random token
+  const token = crypto.randomBytes(40).toString('hex');
+  
+  // Set expiration to 7 days from now
+  const expiresAt = new Date();
+  expiresAt.setDate(expiresAt.getDate() + 7);
+
+  // Create refresh token in database
+  await RefreshToken.create({
+    token,
+    userId: user.id,
+    expiresAt
+  });
+
+  return token;
+};
+
+/**
+ * Generate access and refresh tokens for a user
+ * @param {Object} user - User object from database
+ * @param {number|null} installationId - GitHub App installation ID
+ * @returns {Promise<Object>} Object containing access token and refresh token
+ */
+const generateTokens = async (user, installationId = null) => {
+  const accessToken = jwt.sign(
+    {
+      userId: user.id,
+      githubId: user.githubId,
+      username: user.username,
+      installationId: installationId
+    },
+    process.env.JWT_SECRET,
+    { expiresIn: process.env.JWT_EXPIRATION || '15m' } // Short-lived access token
+  );
+
+  const refreshToken = await generateRefreshToken(user);
+
+  return {
+    accessToken,
+    refreshToken
+  };
+};
+
+/**
+ * Verify and refresh access token
+ * @param {string} refreshToken - Refresh token
+ * @returns {Promise<Object>} New access token and refresh token
+ */
+const refreshAccessToken = async (refreshToken) => {
+  try {
+    // Find refresh token in database
+    const tokenRecord = await RefreshToken.findOne({
+      where: {
+        token: refreshToken,
+        isRevoked: false
+      },
+      include: [User]
+    });
+
+    if (!tokenRecord) {
+      throw new Error('Invalid refresh token');
+    }
+
+    // Check if token is expired
+    if (new Date() > tokenRecord.expiresAt) {
+      throw new Error('Refresh token expired');
+    }
+
+    // Get user
+    const user = tokenRecord.User;
+
+    // Revoke the used refresh token
+    tokenRecord.isRevoked = true;
+    await tokenRecord.save();
+
+    // Generate new tokens
+    const tokens = await generateTokens(user, user.installationId);
+
+    return {
+      ...tokens,
+      user: {
+        id: user.id,
+        username: user.username,
+        email: user.email,
+        avatarUrl: user.avatarUrl
+      }
+    };
+  } catch (error) {
+    logger.error('Token refresh error:', error);
+    throw error;
+  }
+};
+
+/**
+ * Revoke all refresh tokens for a user
+ * @param {number} userId - User ID
+ */
+const revokeAllRefreshTokens = async (userId) => {
+  await RefreshToken.update(
+    { isRevoked: true },
+    { where: { userId, isRevoked: false } }
+  );
 };
 
 /**
@@ -174,12 +292,13 @@ const authenticateUser = async (code) => {
       logger.info('User does not have GitHub App installed');
     }
 
-    // Step 10: Generate JWT token for our application
-    const jwtToken = generateToken(user, installationId);
+    // Generate tokens
+    const tokens = await generateTokens(user, installationId);
 
     return {
       user,
-      token: jwtToken,
+      token: tokens.accessToken,
+      refreshToken: tokens.refreshToken,
       organization,
       hasAppInstalled: !!installationInfo
     };
@@ -203,9 +322,15 @@ const verifyToken = (token) => {
   }
 };
 
+// Update logout to revoke refresh tokens
+const logout = async (userId) => {
+  await revokeAllRefreshTokens(userId);
+};
+
 export {
   authenticateUser,
-  generateToken,
   verifyToken,
+  refreshAccessToken,
+  logout,
   githubApp
 };

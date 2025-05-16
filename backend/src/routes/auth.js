@@ -1,5 +1,5 @@
 import express from 'express';
-import { authenticateUser, verifyToken } from '../services/authService.js';
+import { authenticateUser, verifyToken, refreshAccessToken, logout } from '../services/authService.js';
 import logger from '../utils/logger.js';
 
 const router = express.Router();
@@ -66,7 +66,8 @@ router.post('/login', async (req, res) => {
         login: authResult.organization.login,
         avatarUrl: authResult.organization.avatarUrl
       },
-      token: authResult.token
+      token: authResult.token,
+      refreshToken: authResult.refreshToken
     });
   } catch (error) {
     logger.error('Login error:', error);
@@ -104,12 +105,51 @@ router.get('/verify', async (req, res) => {
 });
 
 /**
- * @route   POST /auth/logout
- * @desc    Logout user
+ * @route   POST /auth/refresh
+ * @desc    Refresh access token using refresh token
  * @access  Public
  */
-router.post('/logout', (req, res) => {
-  res.json({ success: true, message: 'Logout successful' });
+router.post('/refresh', async (req, res) => {
+  try {
+    const { refreshToken } = req.body;
+
+    if (!refreshToken) {
+      return res.status(400).json({ error: 'Refresh token is required' });
+    }
+
+    const result = await refreshAccessToken(refreshToken);
+
+    res.json({
+      token: result.accessToken,
+      refreshToken: result.refreshToken,
+      user: result.user
+    });
+  } catch (error) {
+    logger.error('Token refresh error:', error);
+    res.status(401).json({ error: error.message || 'Token refresh failed' });
+  }
+});
+
+/**
+ * @route   POST /auth/logout
+ * @desc    Logout user and revoke refresh tokens
+ * @access  Private
+ */
+router.post('/logout', async (req, res) => {
+  try {
+    const token = req.headers.authorization?.split(' ')[1];
+    if (!token) {
+      return res.status(401).json({ error: 'No token provided' });
+    }
+
+    const decoded = verifyToken(token);
+    await logout(decoded.userId);
+
+    res.json({ success: true, message: 'Logout successful' });
+  } catch (error) {
+    logger.error('Logout error:', error);
+    res.status(401).json({ error: 'Logout failed' });
+  }
 });
 
 export default router;

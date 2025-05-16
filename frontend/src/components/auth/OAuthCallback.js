@@ -10,7 +10,7 @@ import { useAuth } from '../../contexts/AuthContext';
 const OAuthCallback = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { login } = useAuth();
+  const { verifyToken } = useAuth();
   const [error, setError] = useState(null);
 
   useEffect(() => {
@@ -30,7 +30,7 @@ const OAuthCallback = () => {
         }
 
         // Store token and update auth state
-        await login(token);
+        await verifyToken(token);
 
         // Redirect to dashboard or home page
         navigate('/dashboard', { replace: true });
@@ -38,18 +38,18 @@ const OAuthCallback = () => {
         console.error('OAuth callback error:', error);
         setError(error.message || 'Authentication failed');
 
-        // Redirect to login page after 3 seconds
+        // Redirect to login page after 10 seconds
         setTimeout(() => {
           navigate('/login', {
             replace: true,
             state: { error: error.message || 'Authentication failed' }
           });
-        }, 3000);
+        }, 10000);
       }
     };
 
     handleCallback();
-  }, [location, navigate, login]);
+  }, [location, navigate, verifyToken]);
 
   if (error) {
     return (
@@ -69,6 +69,8 @@ const OAuthCallback = () => {
           justifyContent='center'
           textAlign='center'
           height='200px'
+          width='300px'
+          margin='auto'
           mb={4}
         >
           <AlertIcon boxSize='40px' mr={0} />
