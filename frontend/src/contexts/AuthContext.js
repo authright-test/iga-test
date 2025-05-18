@@ -1,4 +1,4 @@
-import { toaster } from '@/components/ui/toaster';
+import { toast } from 'react-toastify';
 import jwt_decode from 'jwt-decode';
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import api from '../services/api.js';
@@ -81,12 +81,13 @@ export const AuthProvider = ({ children }) => {
           localStorage.removeItem('token');
           localStorage.removeItem('refreshToken');
 
-          toaster.create({
-            title: 'Session Expired',
-            description: 'Please log in again',
-            status: 'error',
-            duration: 5000,
-            isClosable: true,
+          toast.error('Session Expired. Please log in again.', {
+            position: "top-right",
+            autoClose: 5000,
+            hideProgressBar: false,
+            closeOnClick: true,
+            pauseOnHover: true,
+            draggable: true,
           });
         }
       }
@@ -103,12 +104,13 @@ export const AuthProvider = ({ children }) => {
         localStorage.removeItem('token');
         localStorage.removeItem('refreshToken');
 
-        toaster.create({
-          title: 'Session Expired',
-          description: 'Please log in again',
-          status: 'error',
-          duration: 5000,
-          isClosable: true,
+        toast.error('Session Expired. Please log in again.', {
+          position: "top-right",
+          autoClose: 5000,
+          hideProgressBar: false,
+          closeOnClick: true,
+          pauseOnHover: true,
+          draggable: true,
         });
       }
     }
@@ -147,14 +149,24 @@ export const AuthProvider = ({ children }) => {
         }
       }
 
+      toast.success('Successfully logged in!', {
+        position: "top-right",
+        autoClose: 5000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+      });
+
       return true;
     } catch (error) {
-      toaster.create({
-        title: 'Authentication Error',
-        description: error.response?.data?.error || 'Failed to authenticate with GitHub',
-        status: 'error',
-        duration: 5000,
-        isClosable: true,
+      toast.error('Failed to log in. Please try again.', {
+        position: "top-right",
+        autoClose: 5000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
       });
       return false;
     } finally {

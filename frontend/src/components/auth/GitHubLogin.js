@@ -1,64 +1,58 @@
-import { Box, Button, Container, Heading, Stack, Text, } from '@chakra-ui/react';
 import React from 'react';
-import { FaGithub } from 'react-icons/fa';
+import {
+  Box,
+  Button,
+  Card,
+  CardContent,
+  Stack,
+  Typography,
+} from '@mui/material';
+import { GitHub as GitHubIcon } from '@mui/icons-material';
+import { useAuth } from '../../contexts/AuthContext';
 
-/**
- * GitHub Login Page Component
- * A professional login page that matches GitHub Apps style
- */
 const GitHubLogin = () => {
-  console.log(import.meta.env.VITE_REACT_APP_API_URL)
-  const [loading, setLoading] = React.useState(false);
-  const handleLogin = () => {
+  const { loginWithGitHub } = useAuth();
 
-    setLoading(true);
-    window.location.href = `${import.meta.env.VITE_REACT_APP_API_URL}/auth/github`;
+  const handleGitHubLogin = async () => {
+    try {
+      await loginWithGitHub();
+    } catch (err) {
+      console.error('Error logging in with GitHub:', err);
+    }
   };
 
   return (
-    <Container maxW='lg' py={{ base: '12', md: '24' }} px={{ base: '0', sm: '8' }}>
-      <Stack gap='8'>
-        <Stack gap='6'>
-          <Stack gap={{ base: '2', md: '3' }} textAlign='center'>
-            <Heading size={{ base: 'xl', md: '2xl' }}>GitHub Access Control</Heading>
-            <Text color='gray.800'>
-              Manage and control access to your GitHub organizations and repositories
-            </Text>
-          </Stack>
-        </Stack>
-
-        <Box
-          py={{ base: '0', sm: '8' }}
-          px={{ base: '4', sm: '10' }}
-          boxShadow={{ base: 'none', sm: 'md' }}
-          borderRadius={{ base: 'none', sm: 'xl' }}
-          borderWidth='1px'
-          borderColor='gray.100'
-        >
-          <Stack direction="column" gap='6'>
+    <Box
+      sx={{
+        minHeight: '100vh',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        bgcolor: 'background.default',
+      }}
+    >
+      <Card sx={{ maxWidth: 400, width: '100%', mx: 2 }}>
+        <CardContent>
+          <Stack spacing={4} alignItems='center' textAlign='center'>
+            <Typography variant='h4' gutterBottom>
+              Welcome to GitHub Access Control
+            </Typography>
+            <Typography variant='body1' color='text.secondary'>
+              Please sign in with your GitHub account to continue
+            </Typography>
             <Button
-              onClick={handleLogin}
-              loading={loading}
-              spinnerPlacement='start'
-              loadingText={'Sign in with GitHub'}
-              colorScheme='gray'
-              bg='gray.100'
-              color='gray.600'
-              _hover={{ bg: 'gray.200' }}
-              size='lg'
-              width='full'
-              maxW='300px'
-              fontWeight='medium'
+              variant='contained'
+              size='large'
+              startIcon={<GitHubIcon />}
+              onClick={handleGitHubLogin}
+              fullWidth
             >
-              <FaGithub /> Sign in with GitHub
+              Sign in with GitHub
             </Button>
-            <Text fontSize='sm' color='gray.600' textAlign='center'>
-              By signing in, you agree to our Terms of Service and Privacy Policy
-            </Text>
           </Stack>
-        </Box>
-      </Stack>
-    </Container>
+        </CardContent>
+      </Card>
+    </Box>
   );
 };
 

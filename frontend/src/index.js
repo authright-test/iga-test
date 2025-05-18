@@ -1,13 +1,15 @@
-import { Provider } from '@/components/ui/provider';
-import { Toaster } from '@/components/ui/toaster';
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { QueryClient, QueryClientProvider } from 'react-query';
 import { BrowserRouter as Router } from 'react-router-dom';
+import { ThemeProvider } from '@mui/material/styles';
+import CssBaseline from '@mui/material/CssBaseline';
 import App from './App';
 import { AuthProvider } from './contexts/AuthContext';
 import reportWebVitals from './reportWebVitals';
 import theme from './theme';
+import { ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 // Create a client for react-query
 const queryClient = new QueryClient({
@@ -24,12 +26,23 @@ root.render(
   <React.StrictMode>
     <Router>
       <QueryClientProvider client={queryClient}>
-        <Provider theme={theme}>
-          <Toaster />
+        <ThemeProvider theme={theme}>
+          <CssBaseline />
           <AuthProvider>
             <App />
           </AuthProvider>
-        </Provider>
+          <ToastContainer
+            position="top-right"
+            autoClose={5000}
+            hideProgressBar={false}
+            newestOnTop
+            closeOnClick
+            rtl={false}
+            pauseOnFocusLoss
+            draggable
+            pauseOnHover
+          />
+        </ThemeProvider>
       </QueryClientProvider>
     </Router>
   </React.StrictMode>

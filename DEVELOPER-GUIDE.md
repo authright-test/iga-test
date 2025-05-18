@@ -34,3 +34,9 @@ start backend & frontend
 ## visit in browser
 
 > http://iga-mvp.local:8080
+
+## More
+
+Chakra UI 3.19 migration guide
+
+https://chakra-ui.com/docs/get-started/migration

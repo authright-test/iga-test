@@ -2,6 +2,49 @@ import { Octokit } from '@octokit/rest';
 import { DataTypes, Op } from 'sequelize';
 import { AuditLog, Organization, Repository, Team, User } from '../models/index.js';
 import logger from '../utils/logger.js';
+import { getAccessHistoryByRepository } from './auditService.js';
+
+/**
+ * Get a single repository by ID
+ * @param {number} organizationId - Organization ID
+ * @param {number} repoId - Repository ID
+ * @returns {Object} Repository details
+ */
+const getRepository = async (organizationId, repoId) => {
+  try {
+    const repository = await Repository.findOne({
+      where: {
+        id: repoId,
+        organizationId
+      },
+      include: [
+        {
+          model: Organization,
+          attributes: ['id', 'name', 'githubLogin']
+        },
+        {
+          model: Team,
+          attributes: ['id', 'name', 'slug'],
+          through: { attributes: ['permission'] }
+        },
+        {
+          model: User,
+          attributes: ['id', 'username', 'email', 'githubLogin'],
+          through: { attributes: ['permission'] }
+        }
+      ]
+    });
+
+    if (!repository) {
+      throw new Error('Repository not found');
+    }
+
+    return repository;
+  } catch (error) {
+    logger.error('Error getting repository:', error);
+    throw error;
+  }
+};
 
 /**
  * Get all repositories for an organization
@@ -13,7 +56,7 @@ const getRepositories = async (organizationId, filters = {}) => {
   try {
     const where = {
       organizationId
-    };
+    };er
 
     if (filters.name) {
       where.name = {
@@ -828,23 +871,8 @@ const getRepositoryAccessLogs = async (organizationId, repoId) => {
       throw new Error('Repository not found');
     }
 
-    // Get access logs from database
-    const logs = await AuditLog.findAll({
-      where: {
-        resourceType: 'repository',
-        resourceId: repoId
-      },
-      include: [
-        {
-          model: User,
-          attributes: ['id', 'username', 'email']
-        }
-      ],
-      order: [['createdAt', 'DESC']],
-      limit: 100
-    });
-
-    return logs;
+    // Use auditService to get access logs
+    return await getAccessHistoryByRepository(organizationId, repoId);
   } catch (error) {
     logger.error('Error getting repository access logs:', error);
     throw error;
@@ -2040,13 +2068,82 @@ const markRepositoryNotificationsAsRead = async (organizationId, repoId, lastRea
 };
 
 export {
+  // Basic repository operations
   createRepository,
   updateRepository,
   deleteRepository,
   getRepository,
   getRepositories,
-  getRepositoriesByOrganization,
-  getRepositoriesByTeam,
+  
+  // Team and user management
+  getRepositoryTeams,
   addTeamToRepository,
-  removeTeamFromRepository
+  removeTeamFromRepository,
+  getRepositoryUsers,
+  addUserToRepository,
+  removeUserFromRepository,
+  
+  // Permission management
+  getRepositoryPermissions,
+  updateRepositoryPermissions,
+  
+  // Branch and commit management
+  getRepositoryBranches,
+  getRepositoryCommits,
+  syncRepository,
+  
+  // Statistics and activity
+  getRepositoryStats,
+  getRepositoryActivity,
+  getRepositoryAccessLogs,
+  
+  // Batch operations
+  batchCreateRepositories,
+  batchUpdateRepositories,
+  batchDeleteRepositories,
+  
+  // Advanced search and export
+  advancedSearchRepositories,
+  exportRepositories,
+  getRepositoriesStatistics,
+  
+  // Protected branches
+  getRepositoryProtectedBranches,
+  updateRepositoryProtectedBranch,
+  
+  // Webhook management
+  getRepositoryWebhooks,
+  createRepositoryWebhook,
+  
+  // Deploy key management
+  getRepositoryDeployKeys,
+  addRepositoryDeployKey,
+  
+  // Environment management
+  getRepositoryEnvironments,
+  createRepositoryEnvironment,
+  
+  // Label management
+  getRepositoryLabels,
+  createRepositoryLabel,
+  
+  // Milestone management
+  getRepositoryMilestones,
+  createRepositoryMilestone,
+  
+  // Issue management
+  getRepositoryIssues,
+  createRepositoryIssue,
+  
+  // Pull request management
+  getRepositoryPullRequests,
+  createRepositoryPullRequest,
+  
+  // Comment management
+  getRepositoryComments,
+  createRepositoryComment,
+  
+  // Notification management
+  getRepositoryNotifications,
+  markRepositoryNotificationsAsRead
 };

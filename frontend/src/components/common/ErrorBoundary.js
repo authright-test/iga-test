@@ -1,7 +1,12 @@
-import { Alert, Box, Button, } from '@chakra-ui/react';
 import React from 'react';
+import {
+  Box,
+  Button,
+  Typography,
+} from '@mui/material';
+import { Error as ErrorIcon } from '@mui/icons-material';
 
-export class ErrorBoundary extends React.Component {
+class ErrorBoundary extends React.Component {
   constructor(props) {
     super(props);
     this.state = { hasError: false, error: null, errorInfo: null };
@@ -13,8 +18,8 @@ export class ErrorBoundary extends React.Component {
 
   componentDidCatch(error, errorInfo) {
     this.setState({
-      error: error,
-      errorInfo: errorInfo,
+      error,
+      errorInfo,
     });
     // You can also log the error to an error reporting service
     console.error('Error caught by boundary:', error, errorInfo);
@@ -22,46 +27,55 @@ export class ErrorBoundary extends React.Component {
 
   render() {
     if (this.state.hasError) {
-      return <ErrorFallback error={this.state.error} errorInfo={this.state.errorInfo} />;
+      return (
+        <Box
+          sx={{
+            minHeight: '100vh',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            flexDirection: 'column',
+            gap: 2,
+            p: 4,
+            textAlign: 'center',
+          }}
+        >
+          <ErrorIcon color="error" sx={{ fontSize: 64 }} />
+          <Typography variant="h4" color="error" gutterBottom>
+            Something went wrong
+          </Typography>
+          <Typography variant="body1" color="text.secondary" gutterBottom>
+            {this.state.error?.message || 'An unexpected error occurred'}
+          </Typography>
+          {process.env.NODE_ENV === 'development' && this.state.errorInfo && (
+            <Box
+              component="pre"
+              sx={{
+                mt: 2,
+                p: 2,
+                bgcolor: 'grey.100',
+                borderRadius: 1,
+                overflow: 'auto',
+                maxWidth: '100%',
+                fontSize: '0.875rem',
+              }}
+            >
+              {this.state.errorInfo.componentStack}
+            </Box>
+          )}
+          <Button
+            variant="contained"
+            onClick={() => window.location.reload()}
+            sx={{ mt: 2 }}
+          >
+            Reload Page
+          </Button>
+        </Box>
+      );
     }
 
     return this.props.children;
   }
 }
 
-const ErrorFallback = ({ error, errorInfo }) => {
-
-  return (
-    <Box p={4}>
-      <Alert.Root
-        status='error'
-        variant='subtle'
-        flexDirection='column'
-        alignItems='center'
-        justifyContent='center'
-        textAlign='center'
-        height='200px'
-      >
-        <Alert.Indicator />
-        <Alert.Content>
-          <Alert.Title mt={4} mb={1} fontSize='lg'>
-            Something went wrong
-          </Alert.Title>
-          <Alert.Description maxWidth='sm'>
-            {error?.message || 'An unexpected error occurred'}
-          </Alert.Description>
-        </Alert.Content>
-        <Button
-          colorScheme='red'
-          variant='outline'
-          mt={4}
-          onClick={() => window.location.reload()}
-        >
-          Reload Page
-        </Button>
-      </Alert.Root>
-    </Box>
-  );
-};
-
-export default ErrorBoundary;
+export default ErrorBoundary; 

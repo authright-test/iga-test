@@ -1,83 +1,104 @@
-import { Box, Table, } from '@chakra-ui/react';
 import React from 'react';
+import {
+  Box,
+  Paper,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  TablePagination,
+  TableSortLabel,
+  Typography,
+} from '@mui/material';
 
-export const DataTable = ({
-                            columns,
-                            data,
-                            isLoading,
-                            emptyState,
-                            onRowClick,
-                            ...props
-                          }) => {
-  if (isLoading) {
-    return (
-      <Box
-        p={4}
-        borderWidth='1px'
-        borderRadius='md'
-        {...props}
-      >
-        Loading...
-      </Box>
-    );
-  }
+const DataTable = ({
+  columns,
+  data,
+  page,
+  rowsPerPage,
+  totalCount,
+  onPageChange,
+  onRowsPerPageChange,
+  sortBy,
+  sortDirection,
+  onSort,
+}) => {
+  const handleChangePage = (event, newPage) => {
+    onPageChange(newPage);
+  };
 
-  if (!data || data.length === 0) {
-    return emptyState || (
-      <Box
-        p={4}
-        borderWidth='1px'
-        borderRadius='md'
-        textAlign='center'
-        {...props}
-      >
-        No data available
-      </Box>
-    );
-  }
+  const handleChangeRowsPerPage = (event) => {
+    onRowsPerPageChange(parseInt(event.target.value, 10));
+  };
+
+  const handleSort = (column) => {
+    const isAsc = sortBy === column && sortDirection === 'asc';
+    onSort(column, isAsc ? 'desc' : 'asc');
+  };
 
   return (
-    <Box
-      borderWidth='1px'
-      borderRadius='md'
-      overflowX='auto'
-      {...props}
-    >
-      <Table.Root variant='simple'>
-        <Table.Header>
-          <Table.Row>
-            {columns.map((column, index) => (
-              <Table.ColumnHeader
-                key={index}
-                fontWeight='semibold'
-                textTransform='none'
-                fontSize='sm'
-                py={4}
-              >
-                {column.header}
-              </Table.ColumnHeader>
-            ))}
-          </Table.Row>
-        </Table.Header>
-        <Table.Body>
-          {data.map((row, rowIndex) => (
-            <Table.Row
-              key={rowIndex}
-              onClick={() => onRowClick?.(row)}
-              cursor={onRowClick ? 'pointer' : 'default'}
-            >
-              {columns.map((column, colIndex) => (
-                <Table.Cell
-                  key={colIndex}
-                  py={4}
+    <Box>
+      <TableContainer component={Paper}>
+        <Table>
+          <TableHead>
+            <TableRow>
+              {columns.map((column) => (
+                <TableCell
+                  key={column.id}
+                  align={column.align || 'left'}
+                  sortDirection={sortBy === column.id ? sortDirection : false}
                 >
-                  {column.cell ? column.cell(row) : row[column.accessor]}
-                </Table.Cell>
+                  {column.sortable ? (
+                    <TableSortLabel
+                      active={sortBy === column.id}
+                      direction={sortBy === column.id ? sortDirection : 'asc'}
+                      onClick={() => handleSort(column.id)}
+                    >
+                      {column.label}
+                    </TableSortLabel>
+                  ) : (
+                    column.label
+                  )}
+                </TableCell>
               ))}
-            </Table.Row>
-          ))}
-        </Table.Body>
-      </Table.Root>
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {data.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={columns.length} align="center">
+                  <Typography variant="body2" color="text.secondary">
+                    No data available
+                  </Typography>
+                </TableCell>
+              </TableRow>
+            ) : (
+              data.map((row, index) => (
+                <TableRow key={row.id || index}>
+                  {columns.map((column) => (
+                    <TableCell key={column.id} align={column.align || 'left'}>
+                      {column.render ? column.render(row) : row[column.id]}
+                    </TableCell>
+                  ))}
+                </TableRow>
+              ))
+            )}
+          </TableBody>
+        </Table>
+      </TableContainer>
+      <TablePagination
+        component="div"
+        count={totalCount}
+        page={page}
+        onPageChange={handleChangePage}
+        rowsPerPage={rowsPerPage}
+        onRowsPerPageChange={handleChangeRowsPerPage}
+        rowsPerPageOptions={[5, 10, 25, 50]}
+      />
     </Box>
   );
 };
+
+export default DataTable; 

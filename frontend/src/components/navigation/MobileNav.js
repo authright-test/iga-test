@@ -1,41 +1,84 @@
-import { Box, Dialog, IconButton, useDisclosure, } from '@chakra-ui/react';
-import React from 'react';
+import {
+  AppBar,
+  Box,
+  IconButton,
+  Toolbar,
+  Typography,
+  Drawer,
+  useTheme,
+  useMediaQuery,
+} from '@mui/material';
+import React, { useState } from 'react';
 import { FiMenu } from 'react-icons/fi';
 import SidebarContent from './SidebarContent';
 
 const MobileNav = () => {
-  const { isOpen, onOpen, onClose } = useDisclosure();
+  const [isOpen, setIsOpen] = useState(false);
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+
+  const handleDrawerToggle = () => {
+    setIsOpen(!isOpen);
+  };
 
   return (
-    <Box
-      ml={{ base: 0, md: 60 }}
-      px='4'
-      position='sticky'
-      top='0'
-      height='20'
-      zIndex='1'
-      borderBottomWidth='1px'
+    <>
+      <AppBar
+        position="fixed"
+        sx={{
+          display: { xs: 'flex', md: 'none' },
+          bgcolor: 'background.paper',
+          borderBottom: 1,
+          borderColor: 'divider',
+          boxShadow: 'none',
+        }}
+      >
+        <Toolbar>
+          <IconButton
+            color="inherit"
+            aria-label="open drawer"
+            edge="start"
+            onClick={handleDrawerToggle}
+            sx={{ mr: 2, color: 'text.primary' }}
+          >
+            <FiMenu />
+          </IconButton>
+          <Typography
+            variant="h6"
+            noWrap
+            component="div"
+            sx={{
+              color: 'primary.main',
+              fontWeight: 'bold',
+            }}
+          >
+            GitHub Access Control
+          </Typography>
+        </Toolbar>
+      </AppBar>
 
-      display={{ base: 'flex', md: 'none' }}
-      alignItems='center'
-    >
-      <IconButton
-        variant='outline'
-        onClick={onOpen}
-        aria-label='open menu'
-        icon={<FiMenu />}
-      />
-
-      <Dialog.Root open={isOpen} onOpenChange={onClose}>
-        <Dialog.Backdrop />
-        <Dialog.Positioner>
-          <Dialog.Content>
-            <Dialog.CloseTrigger />
-            <SidebarContent onClose={onClose} />
-          </Dialog.Content>
-        </Dialog.Positioner>
-      </Dialog.Root>
-    </Box>
+      <Drawer
+        variant="temporary"
+        anchor="left"
+        open={isOpen}
+        onClose={handleDrawerToggle}
+        ModalProps={{
+          keepMounted: true, // Better open performance on mobile
+        }}
+        sx={{
+          display: { xs: 'block', md: 'none' },
+          '& .MuiDrawer-paper': {
+            boxSizing: 'border-box',
+            width: 280,
+            bgcolor: 'background.paper',
+            borderRight: 1,
+            borderColor: 'divider',
+          },
+        }}
+      >
+        <SidebarContent onClose={handleDrawerToggle} />
+      </Drawer>
+    </>
   );
 };
 

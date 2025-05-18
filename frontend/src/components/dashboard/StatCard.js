@@ -1,34 +1,61 @@
-import { Box, Heading, Stack, Text, } from '@chakra-ui/react';
 import React from 'react';
+import {
+  Box,
+  Card,
+  CardContent,
+  Stack,
+  Typography,
+} from '@mui/material';
 
-const StatCard = ({ title, value, change }) => {
-
-  const isPositive = change.startsWith('+');
-  const changeColor = isPositive ? 'green.500' : 'red.500';
-
+const StatCard = ({
+  title,
+  value,
+  icon,
+  color = 'primary',
+  trend,
+  trendValue,
+  trendLabel,
+}) => {
   return (
-    <Box
-      p={6}
-      borderRadius='lg'
-      borderWidth='1px'
-
-      boxShadow='sm'
-    >
-      <Stack direction='column' align='start' gap={2}>
-        <Text fontSize='sm' opacity={0.8}>
-          {title}
-        </Text>
-        <Stack align='baseline' gap={2}>
-          <Heading size='lg'>
+    <Card>
+      <CardContent>
+        <Stack spacing={2}>
+          <Stack direction="row" justifyContent="space-between" alignItems="center">
+            <Typography variant="h6" color="text.secondary">
+              {title}
+            </Typography>
+            {icon && (
+              <Box
+                sx={{
+                  color: `${color}.main`,
+                  display: 'flex',
+                  alignItems: 'center',
+                }}
+              >
+                {icon}
+              </Box>
+            )}
+          </Stack>
+          <Typography variant="h4" component="div">
             {value}
-          </Heading>
-          <Text fontSize='sm' color={changeColor}>
-            {change}
-          </Text>
+          </Typography>
+          {trend && (
+            <Stack direction="row" spacing={1} alignItems="center">
+              <Typography
+                variant="body2"
+                color={trend === 'up' ? 'success.main' : 'error.main'}
+              >
+                {trend === 'up' ? '↑' : '↓'} {trendValue}
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                {trendLabel}
+              </Typography>
+            </Stack>
+          )}
         </Stack>
-      </Stack>
-    </Box>
+      </CardContent>
+    </Card>
   );
 };
 
-export default StatCard;
+export default StatCard; 

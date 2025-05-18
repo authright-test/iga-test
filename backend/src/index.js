@@ -32,12 +32,10 @@ app.use((err, req, res, next) => {
 async function startServer() {
   try {
     // Initialize database
-    await setupDatabase();
+    // await setupDatabase();
 
     // Initialize Redis
     await setupRedis();
-
-
 
     app.listen(port, () => {
       logger.info(`Server is running on port ${port}`);

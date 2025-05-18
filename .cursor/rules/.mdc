@@ -44,8 +44,8 @@ Designing and implementing a GitHub App for an Enterprise Identity Governance an
 
 ## 前端技术栈
 
-- React 18+
-- Chakra UI 3
+- React 19+
+- MUI 6+
 - nextThemes
 - @octokit
 - react-hook-form

@@ -1,182 +1,197 @@
+import React, { useState } from 'react';
 import {
-  Badge,
-  Button,
+  Box,
   Card,
-  Heading,
-  Icon,
-  IconButton,
-  Input,
-  Menu,
+  CardContent,
+  Chip,
+  FormControl,
+  Grid,
+  InputLabel,
   MenuItem,
+  Paper,
   Select,
   Stack,
   Table,
-  Tooltip,
-} from '@chakra-ui/react';
-import React, { useState } from 'react';
-import { FiAlertCircle, FiDownload, FiRefreshCw, FiSearch } from 'react-icons/fi';
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  TextField,
+  Typography,
+} from '@mui/material';
+import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { useAuditLogs } from '../../hooks/useAuditLogs';
 
 const AuditLogViewer = () => {
   const [filters, setFilters] = useState({
-    search: '',
-    actionType: '',
-    user: '',
-    dateRange: null,
-    severity: '',
+    startDate: null,
+    endDate: null,
+    eventType: '',
+    userId: '',
+    resourceType: '',
   });
 
-  const { logs, isLoading, error, exportLogs, getLogStats, getLogTrends } = useAuditLogs({
-    filters,
-    limit: 50,
-  });
+  const {
+    logs,
+    isLoading,
+    error,
+    getAuditLogs,
+  } = useAuditLogs();
 
-  const handleExport = async (format) => {
+  const handleFilterChange = (e) => {
+    const { name, value } = e.target;
+    setFilters(prev => ({
+      ...prev,
+      [name]: value,
+    }));
+  };
+
+  const handleDateChange = (name) => (date) => {
+    setFilters(prev => ({
+      ...prev,
+      [name]: date,
+    }));
+  };
+
+  const handleSearch = async () => {
     try {
-      const data = await exportLogs({ ...filters, format });
-      // Handle file download
-      const url = window.URL.createObjectURL(new Blob([data]));
-      const link = document.createElement('a');
-      link.href = url;
-      link.setAttribute('download', `audit-logs-${new Date().toISOString()}.${format}`);
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
+      await getAuditLogs(filters);
     } catch (err) {
-      console.error('Export failed:', err);
+      console.error('Error fetching audit logs:', err);
     }
   };
 
+  if (isLoading) {
+    return (
+      <Box p={4}>
+        <Typography variant='h4' gutterBottom>Loading audit logs...</Typography>
+      </Box>
+    );
+  }
+
+  if (error) {
+    return (
+      <Box p={4}>
+        <Typography variant='h4' gutterBottom>Error loading audit logs</Typography>
+        <Typography color='error'>{error}</Typography>
+      </Box>
+    );
+  }
+
   return (
-    <Stack gap={6}>
-      {/* Filters */}
-      <Card borderWidth='1px'>
-        <Card.Header>
-          <Stack justify='space-between'>
-            <Heading size='md'>Audit Logs</Heading>
-            <Stack>
-              <Button
-                leftIcon={<FiRefreshCw />}
-                size='sm'
-                onClick={() => setFilters({})}
-              >
-                Reset
-              </Button>
-              <Menu>
-                <MenuButton
-                  as={Button}
-                  leftIcon={<FiDownload />}
-                  size='sm'
-                >
-                  Export
-                </MenuButton>
-                <MenuList>
-                  <MenuItem onClick={() => handleExport('csv')}>CSV</MenuItem>
-                  <MenuItem onClick={() => handleExport('json')}>JSON</MenuItem>
-                  <MenuItem onClick={() => handleExport('pdf')}>PDF</MenuItem>
-                </MenuList>
-              </Menu>
-            </Stack>
-          </Stack>
-        </Card.Header>
-        <Card.Body>
-          <Stack gap={4}>
-            <Stack>
-              <Input
-                placeholder='Search logs...'
-                value={filters.search}
-                onChange={(e) => setFilters(prev => ({ ...prev, search: e.target.value }))}
-                leftElement={<Icon as={FiSearch} color='gray.400' />}
+    <Box p={4}>
+      <Typography variant='h4' gutterBottom>Audit Logs</Typography>
+
+      <Card sx={{ mb: 4 }}>
+        <CardContent>
+          <Grid container spacing={3}>
+            <Grid item xs={12} md={6}>
+              <DatePicker
+                label='Start Date'
+                value={filters.startDate}
+                onChange={handleDateChange('startDate')}
+                renderInput={(params) => <TextField {...params} fullWidth />}
               />
-              <Select
-                placeholder='Action Type'
-                value={filters.actionType}
-                onChange={(e) => setFilters(prev => ({ ...prev, actionType: e.target.value }))}
-              >
-                <option value='access'>Access</option>
-                <option value='modification'>Modification</option>
-                <option value='deletion'>Deletion</option>
-                <option value='creation'>Creation</option>
-              </Select>
-              <Select
-                placeholder='Severity'
-                value={filters.severity}
-                onChange={(e) => setFilters(prev => ({ ...prev, severity: e.target.value }))}
-              >
-                <option value='high'>High</option>
-                <option value='medium'>Medium</option>
-                <option value='low'>Low</option>
-              </Select>
-            </Stack>
-            <DateRangePicker
-              value={filters.dateRange}
-              onChange={(range) => setFilters(prev => ({ ...prev, dateRange: range }))}
-            />
-          </Stack>
-        </Card.Body>
+            </Grid>
+            <Grid item xs={12} md={6}>
+              <DatePicker
+                label='End Date'
+                value={filters.endDate}
+                onChange={handleDateChange('endDate')}
+                renderInput={(params) => <TextField {...params} fullWidth />}
+              />
+            </Grid>
+            <Grid item xs={12} md={4}>
+              <FormControl fullWidth>
+                <InputLabel>Event Type</InputLabel>
+                <Select
+                  name='eventType'
+                  value={filters.eventType}
+                  onChange={handleFilterChange}
+                  label='Event Type'
+                >
+                  <MenuItem value=''>All</MenuItem>
+                  <MenuItem value='create'>Create</MenuItem>
+                  <MenuItem value='update'>Update</MenuItem>
+                  <MenuItem value='delete'>Delete</MenuItem>
+                  <MenuItem value='login'>Login</MenuItem>
+                  <MenuItem value='logout'>Logout</MenuItem>
+                </Select>
+              </FormControl>
+            </Grid>
+            <Grid item xs={12} md={4}>
+              <TextField
+                label='User ID'
+                name='userId'
+                value={filters.userId}
+                onChange={handleFilterChange}
+                fullWidth
+              />
+            </Grid>
+            <Grid item xs={12} md={4}>
+              <FormControl fullWidth>
+                <InputLabel>Resource Type</InputLabel>
+                <Select
+                  name='resourceType'
+                  value={filters.resourceType}
+                  onChange={handleFilterChange}
+                  label='Resource Type'
+                >
+                  <MenuItem value=''>All</MenuItem>
+                  <MenuItem value='user'>User</MenuItem>
+                  <MenuItem value='team'>Team</MenuItem>
+                  <MenuItem value='role'>Role</MenuItem>
+                  <MenuItem value='repository'>Repository</MenuItem>
+                </Select>
+              </FormControl>
+            </Grid>
+          </Grid>
+        </CardContent>
       </Card>
 
-      {/* Logs Table */}
-      <Card borderWidth='1px'>
-        <Card.Body>
-          <Table.Root variant='simple'>
-            <Table.Header>
-              <Table.Row>
-                <Table.Cell>Timestamp</Table.Cell>
-                <Table.Cell>User</Table.Cell>
-                <Table.Cell>Action</Table.Cell>
-                <Table.Cell>Resource</Table.Cell>
-                <Table.Cell>Severity</Table.Cell>
-                <Table.Cell>Details</Table.Cell>
-              </Table.Row>
-            </Table.Header>
-            <Table.Body>
-              {logs?.map((log) => (
-                <Table.Row key={log.id}>
-                  <Table.Cell>{new Date(log.timestamp).toLocaleString()}</Table.Cell>
-                  <Table.Cell>{log.user}</Table.Cell>
-                  <Table.Cell>{log.action}</Table.Cell>
-                  <Table.Cell>{log.resource}</Table.Cell>
-                  <Table.Cell>
-                    <Badge
-                      colorScheme={
-                        log.severity === 'high' ? 'red' :
-                          log.severity === 'medium' ? 'orange' : 'yellow'
-                      }
-                    >
-                      {log.severity}
-                    </Badge>
-                  </Table.Cell>
-                  <Table.Cell>
-                    <Tooltip label='View Details'>
-                      <IconButton
-                        icon={<FiAlertCircle />}
-                        size='sm'
-                        variant='ghost'
-                        onClick={() => {/* Handle view details */
-                        }}
-                      />
-                    </Tooltip>
-                  </Table.Cell>
-                </Table.Row>
-              ))}
-            </Table.Body>
-          </Table.Root>
-        </Card.Body>
-      </Card>
-
-      {/* Analysis Section */}
-      <Card borderWidth='1px'>
-        <Card.Header>
-          <Heading size='md'>Audit Analysis</Heading>
-        </Card.Header>
-        <Card.Body>
-          <Stack gap={6}>
-            {/* Add analysis components here */}
-          </Stack>
-        </Card.Body>
-      </Card>
-    </Stack>
+      <TableContainer component={Paper}>
+        <Table>
+          <TableHead>
+            <TableRow>
+              <TableCell>Timestamp</TableCell>
+              <TableCell>Event Type</TableCell>
+              <TableCell>User</TableCell>
+              <TableCell>Resource Type</TableCell>
+              <TableCell>Resource ID</TableCell>
+              <TableCell>Details</TableCell>
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {logs.map((log) => (
+              <TableRow key={log.id}>
+                <TableCell>{new Date(log.timestamp).toLocaleString()}</TableCell>
+                <TableCell>
+                  <Chip
+                    label={log.eventType}
+                    color={
+                      log.eventType === 'create' ? 'success' :
+                        log.eventType === 'update' ? 'primary' :
+                          log.eventType === 'delete' ? 'error' :
+                            'default'
+                    }
+                    size='small'
+                  />
+                </TableCell>
+                <TableCell>{log.user.username}</TableCell>
+                <TableCell>{log.resourceType}</TableCell>
+                <TableCell>{log.resourceId}</TableCell>
+                <TableCell>
+                  <Typography variant='body2' color='text.secondary'>
+                    {JSON.stringify(log.details, null, 2)}
+                  </Typography>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </TableContainer>
+    </Box>
   );
 };
 

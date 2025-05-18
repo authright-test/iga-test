@@ -6,7 +6,7 @@ export const usePermissions = () => {
 
   const hasPermission = useCallback(async (permissionName, resource = null) => {
     try {
-      const response = await api.post('/permissions/check', {
+      const response = await api.post('/api/permissions/check', {
         permissionName,
         resource
       });
@@ -19,7 +19,7 @@ export const usePermissions = () => {
 
   const checkMultiplePermissions = useCallback(async (permissions) => {
     try {
-      const response = await api.post('/permissions/check-multiple', {
+      const response = await api.post('/api/permissions/check-multiple', {
         permissions
       });
       return response.data.permissions;
