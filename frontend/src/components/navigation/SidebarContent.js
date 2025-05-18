@@ -28,11 +28,13 @@ import {
   FiUser,
   FiSettings,
   FiX,
+  FiChevronLeft,
+  FiChevronRight,
 } from 'react-icons/fi';
 import { Link as RouterLink, useLocation } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 
-const SidebarContent = ({ onClose, isCollapsed = false }) => {
+const SidebarContent = ({ onClose, isCollapsed = false, onToggle }) => {
   const location = useLocation();
   const theme = useTheme();
   const { user, logout } = useAuth();
@@ -66,39 +68,58 @@ const SidebarContent = ({ onClose, isCollapsed = false }) => {
         display: 'flex',
         flexDirection: 'column',
         bgcolor: 'background.paper',
-        borderRight: 1,
-        borderColor: 'divider',
-        overflow: 'hidden',
       }}
     >
       <Box
         sx={{
-          height: '80px',
+          height: '64px',
           display: 'flex',
           alignItems: 'center',
+          justifyContent: 'space-between',
           px: isCollapsed ? 2 : 3,
-          borderBottom: 1,
+          borderBottom: '1px solid',
           borderColor: 'divider',
         }}
       >
         {!isCollapsed && (
           <Typography
-            variant='h6'
-            component='div'
+            variant="h6"
+            component="div"
             sx={{
               color: 'primary.main',
-              fontWeight: 'bold',
+              fontWeight: 500,
             }}
           >
             GitHub Access Control
           </Typography>
         )}
-        <IconButton
-          sx={{ display: { xs: 'flex', md: 'none' }, ml: 'auto' }}
-          onClick={onClose}
-        >
-          <FiX />
-        </IconButton>
+        <Box sx={{ display: 'flex', alignItems: 'center' }}>
+          <IconButton
+            onClick={onToggle}
+            sx={{
+              color: 'text.secondary',
+              '&:hover': {
+                color: 'primary.main',
+                bgcolor: 'rgba(33, 150, 243, 0.04)',
+              },
+            }}
+          >
+            {isCollapsed ? <FiChevronRight /> : <FiChevronLeft />}
+          </IconButton>
+          <IconButton
+            sx={{
+              display: { xs: 'flex', md: 'none' },
+              color: 'text.secondary',
+              '&:hover': {
+                color: 'primary.main',
+                bgcolor: 'rgba(33, 150, 243, 0.04)',
+              },
+            }}
+            onClick={onClose}
+          >
+            <FiX />
+          </IconButton>
+        </Box>
       </Box>
 
       <List sx={{ flex: 1, overflow: 'auto', px: isCollapsed ? 1 : 2, py: 1 }}>
@@ -106,7 +127,7 @@ const SidebarContent = ({ onClose, isCollapsed = false }) => {
           <ListItem key={link.name} disablePadding>
             <Tooltip
               title={isCollapsed ? link.name : ''}
-              placement='right'
+              placement="right"
               arrow
             >
               <ListItemButton
@@ -116,7 +137,7 @@ const SidebarContent = ({ onClose, isCollapsed = false }) => {
                 sx={{
                   borderRadius: 1,
                   mb: 0.5,
-                  minHeight: 48,
+                  minHeight: 44,
                   justifyContent: isCollapsed ? 'center' : 'flex-start',
                   px: isCollapsed ? 2.5 : 2,
                   '&.Mui-selected': {
@@ -125,6 +146,9 @@ const SidebarContent = ({ onClose, isCollapsed = false }) => {
                     '&:hover': {
                       bgcolor: 'primary.dark',
                     },
+                  },
+                  '&:hover': {
+                    bgcolor: 'rgba(33, 150, 243, 0.04)',
                   },
                 }}
               >
@@ -138,7 +162,14 @@ const SidebarContent = ({ onClose, isCollapsed = false }) => {
                 >
                   <link.icon size={20} />
                 </ListItemIcon>
-                {!isCollapsed && <ListItemText primary={link.name} />}
+                {!isCollapsed && (
+                  <ListItemText
+                    primary={link.name}
+                    primaryTypographyProps={{
+                      fontWeight: location.pathname === link.path ? 500 : 400,
+                    }}
+                  />
+                )}
               </ListItemButton>
             </Tooltip>
           </ListItem>
@@ -150,7 +181,7 @@ const SidebarContent = ({ onClose, isCollapsed = false }) => {
       <Box sx={{ p: isCollapsed ? 1 : 2 }}>
         <Tooltip
           title={isCollapsed ? `${user?.username}\n${user?.email}` : ''}
-          placement='right'
+          placement="right"
           arrow
         >
           <Box
@@ -163,7 +194,7 @@ const SidebarContent = ({ onClose, isCollapsed = false }) => {
               cursor: 'pointer',
               justifyContent: isCollapsed ? 'center' : 'flex-start',
               '&:hover': {
-                bgcolor: 'action.hover',
+                bgcolor: 'rgba(33, 150, 243, 0.04)',
               },
             }}
           >
@@ -172,6 +203,7 @@ const SidebarContent = ({ onClose, isCollapsed = false }) => {
                 width: 32,
                 height: 32,
                 mr: isCollapsed ? 0 : 2,
+                bgcolor: 'primary.main',
               }}
               src={user?.avatar}
             >
@@ -179,10 +211,18 @@ const SidebarContent = ({ onClose, isCollapsed = false }) => {
             </Avatar>
             {!isCollapsed && (
               <Box sx={{ flex: 1, minWidth: 0 }}>
-                <Typography variant='subtitle2' noWrap>
+                <Typography
+                  variant="subtitle2"
+                  noWrap
+                  sx={{ fontWeight: 500 }}
+                >
                   {user?.username}
                 </Typography>
-                <Typography variant='caption' color='text.secondary' noWrap>
+                <Typography
+                  variant="caption"
+                  color="text.secondary"
+                  noWrap
+                >
                   {user?.email}
                 </Typography>
               </Box>
@@ -197,6 +237,8 @@ const SidebarContent = ({ onClose, isCollapsed = false }) => {
           PaperProps={{
             sx: {
               minWidth: 180,
+              borderRadius: 1,
+              boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
             },
           }}
         >

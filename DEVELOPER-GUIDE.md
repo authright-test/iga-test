@@ -37,6 +37,4 @@ start backend & frontend
 
 ## More
 
-Chakra UI 3.19 migration guide
-
-https://chakra-ui.com/docs/get-started/migration
+> https://github.com/codedthemes/mantis-free-react-admin-template/
