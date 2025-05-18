@@ -1,10 +1,5 @@
 // assets
-import { DashboardOutlined } from '@ant-design/icons';
-
-// icons
-const icons = {
-  DashboardOutlined
-};
+import { AiOutlineDashboard } from 'react-icons/ai';
 
 // ==============================|| MENU ITEMS - DASHBOARD ||============================== //
 
@@ -18,7 +13,7 @@ const dashboard = {
       title: 'Dashboard',
       type: 'item',
       url: '/dashboard/default',
-      icon: icons.DashboardOutlined,
+      icon: AiOutlineDashboard,
       breadcrumbs: false
     }
   ]
