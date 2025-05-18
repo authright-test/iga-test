@@ -1,24 +1,12 @@
-import React from 'react';
-import {
-  Box,
-  Button,
-  Card,
-  CardContent,
-  Stack,
-  Typography,
-} from '@mui/material';
 import { GitHub as GitHubIcon } from '@mui/icons-material';
-import { useAuth } from '../../contexts/AuthContext';
+import { Box, Button, Card, CardContent, Stack, Typography, } from '@mui/material';
+import React from 'react';
 
 const GitHubLogin = () => {
-  const { loginWithGitHub } = useAuth();
-
-  const handleGitHubLogin = async () => {
-    try {
-      await loginWithGitHub();
-    } catch (err) {
-      console.error('Error logging in with GitHub:', err);
-    }
+  const [loading, setLoading] = React.useState(false);
+  const handleGitHubLogin = () => {
+    setLoading(true);
+    window.location.href = `${import.meta.env.VITE_REACT_APP_API_URL}/auth/github`;
   };
 
   return (
@@ -43,6 +31,8 @@ const GitHubLogin = () => {
             <Button
               variant='contained'
               size='large'
+              loading={loading}
+              loadingPosition='start'
               startIcon={<GitHubIcon />}
               onClick={handleGitHubLogin}
               fullWidth
