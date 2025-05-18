@@ -1,7 +1,7 @@
 import { useState, useCallback } from 'react';
 import { useQuery, useQueryClient } from 'react-query';
 import api from '../services/api';
-import { useAuth } from '../contexts/AuthContext';
+import { useAuth } from '../contexts/AuthContext.jsx';
 
 /**
  * Custom hook for managing dashboard data and state
@@ -84,4 +84,4 @@ export const useDashboard = () => {
   };
 };
 
-export default useDashboard; 
+export default useDashboard;

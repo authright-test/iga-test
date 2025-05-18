@@ -5,9 +5,11 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "lint": "eslint src/",
+    "build-stage": "env-cmd -f .env.qa vite build",
+    "lint": "eslint \"src/**/*.{js,jsx,ts,tsx}\"",
     "preview": "vite preview",
-    "lint:fix": "run-s \"lint --fix\""
+    "lint:fix": "eslint --fix \"src/**/*.{js,jsx,ts,tsx}\"",
+    "prettier": "prettier --write \"src/**/*.{js,jsx,ts,tsx}\""
   },
   "dependencies": {
     "@emotion/react": "^11.11.4",
@@ -20,41 +22,57 @@
     "axios": "^1.3.4",
     "chart.js": "^4.2.1",
     "date-fns": "^2.30.0",
+    "framer-motion": "12.8.2",
     "jwt-decode": "^3.1.2",
+    "lodash-es": "4.17.21",
     "react": "19.1.0",
     "react-chartjs-2": "^5.2.0",
+    "react-device-detect": "2.2.3",
     "react-dom": "19.1.0",
     "react-icons": "^5.5.0",
+    "react-number-format": "5.4.4",
     "react-query": "^3.39.3",
-    "react-router": "^7.6.0",
-    "react-router-dom": "^7.6.0",
+    "react-router": "7.5.1",
+    "react-router-dom": "7.5.1",
     "react-scripts": "5.0.1",
     "react-toastify": "^11.0.5",
-    "web-vitals": "^5.0.1",
-    "yup": "^1.0.2"
+    "vite": "6.3.1",
+    "vite-jsconfig-paths": "2.0.1",
+    "web-vitals": "4.2.4",
+    "yup": "1.6.1"
+  },
+  "eslintConfig": {
+    "extends": [
+      "react-app",
+      "react-app/jest"
+    ]
+  },
+  "browserslist": {
+    "production": [
+      ">0.2%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
   },
   "devDependencies": {
-    "@eslint/js": "^9.26.0",
-    "@testing-library/jest-dom": "^5.16.5",
-    "@testing-library/react": "^14.0.0",
-    "@testing-library/user-event": "^14.4.3",
-    "@types/react": "19.1.0",
-    "@types/react-dom": "19.1.0",
+    "@eslint/compat": "1.2.8",
+    "@eslint/eslintrc": "3.3.1",
+    "@eslint/js": "9.25.1",
     "@vitejs/plugin-react": "^4.4.1",
-    "eslint": "^9.26.0",
-    "eslint-config-prettier": "^10.1.5",
-    "eslint-import-resolver-typescript": "^4.3.4",
-    "eslint-plugin-import": "^2.31.0",
-    "eslint-plugin-import-alias": "^1.2.0",
-    "eslint-plugin-node": "^11.1.0",
-    "eslint-plugin-prettier": "^5.4.0",
-    "eslint-plugin-react": "^7.37.5",
-    "eslint-plugin-react-hooks": "^5.2.0",
-    "eslint-plugin-react-refresh": "^0.4.20",
-    "globals": "^16.1.0",
-    "snippet": "^0.1.0",
-    "vite": "^6.3.4",
-    "vite-plugin-eslint": "^1.8.1",
-    "vite-tsconfig-paths": "^5.1.4"
+    "eslint": "9.25.1",
+    "eslint-config-prettier": "10.1.2",
+    "eslint-plugin-jsx-a11y": "6.10.2",
+    "eslint-plugin-prettier": "5.2.6",
+    "eslint-plugin-react": "7.37.4",
+    "eslint-plugin-react-hooks": "5.2.0",
+    "immutable": "4.3.7",
+    "knip": "5.45.0",
+    "prettier": "3.5.3",
+    "prettier-eslint-cli": "8.0.1"
   }
 }

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useAuth } from '../contexts/AuthContext';
+import { useAuth } from '../contexts/AuthContext.jsx';
 import api from '../services/api';
 
 /**
@@ -12,7 +12,7 @@ export const useRepositories = () => {
   const [error, setError] = useState(null);
   const { organization } = useAuth();
 
-  const fetchRepositories = async (filters = {}) => {
+  const getRepositories = async (filters = {}) => {
     try {
       setIsLoading(true);
       setError(null);
@@ -232,7 +232,7 @@ export const useRepositories = () => {
 
   useEffect(() => {
     if (organization?.id) {
-      fetchRepositories();
+      getRepositories();
     }
   }, [organization?.id]);
 
@@ -240,6 +240,7 @@ export const useRepositories = () => {
     repositories,
     isLoading,
     error,
+    getRepositories,
     createRepository,
     updateRepository,
     deleteRepository,
@@ -257,6 +258,5 @@ export const useRepositories = () => {
     getRepositoryStats,
     getRepositoryActivity,
     getRepositoryAccessLogs,
-    refreshRepositories: fetchRepositories,
   };
 };
