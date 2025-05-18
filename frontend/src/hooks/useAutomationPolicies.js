@@ -8,7 +8,7 @@ export const useAutomationPolicies = () => {
   const [error, setError] = useState(null);
   const { organization } = useAuth();
 
-  const fetchPolicies = async (filters = {}) => {
+  const getPolicies = async (filters = {}) => {
     try {
       setIsLoading(true);
       setError(null);
@@ -117,7 +117,7 @@ export const useAutomationPolicies = () => {
 
   useEffect(() => {
     if (organization?.id) {
-      fetchPolicies();
+      getPolicies();
     }
   }, [organization?.id]);
 
@@ -125,6 +125,7 @@ export const useAutomationPolicies = () => {
     policies,
     isLoading,
     error,
+    getPolicies,
     createPolicy,
     updatePolicy,
     deletePolicy,
@@ -132,6 +133,5 @@ export const useAutomationPolicies = () => {
     disablePolicy,
     getPolicyViolations,
     getPolicyHistory,
-    refreshPolicies: fetchPolicies,
   };
 };

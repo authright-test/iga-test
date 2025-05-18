@@ -4,13 +4,13 @@ const theme = createTheme({
   palette: {
     mode: 'light',
     primary: {
-      main: '#2196f3', // Mantis blue
+      main: '#2196f3', // IGA blue
       light: '#64b5f6',
       dark: '#1976d2',
       contrastText: '#ffffff',
     },
     secondary: {
-      main: '#f50057', // Mantis pink
+      main: '#f50057', // IGA pink
       light: '#ff4081',
       dark: '#c51162',
       contrastText: '#ffffff',

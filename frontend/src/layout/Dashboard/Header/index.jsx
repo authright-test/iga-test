@@ -4,6 +4,14 @@ import { useMemo } from 'react';
 import useMediaQuery from '@mui/material/useMediaQuery';
 import AppBar from '@mui/material/AppBar';
 import Toolbar from '@mui/material/Toolbar';
+import {
+  FiChevronLeft,
+  FiChevronRight,
+  FiArrowLeft,
+  FiArrowRight,
+  FiArrowLeftCircle,
+  FiArrowRightCircle
+} from 'react-icons/fi'
 
 // project imports
 import AppBarStyled from './AppBarStyled';
@@ -32,19 +40,19 @@ export default function Header() {
   const mainHeader = (
     <Toolbar>
       <IconButton
-        aria-label="open drawer"
+        aria-label='open drawer'
         onClick={() => handlerDrawerOpen(!drawerOpen)}
-        edge="start"
-        color="secondary"
-        variant="light"
+        edge='start'
+        color='secondary'
+        variant='light'
         sx={(theme) => ({
           color: 'text.primary',
-          bgcolor: drawerOpen ? 'transparent' : 'grey.100',
+          bgcolor: drawerOpen ? 'grey.50' : 'grey.100',
           ...theme.applyStyles('dark', { bgcolor: drawerOpen ? 'transparent' : 'background.default' }),
           ml: { xs: 0, lg: -2 }
         })}
       >
-        {!drawerOpen ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
+        {!drawerOpen ? <FiChevronRight /> : <FiChevronLeft />}
       </IconButton>
       {headerContent}
     </Toolbar>

@@ -1,3 +1,4 @@
+import { Typography } from '@mui/material';
 import PropTypes from 'prop-types';
 import { Link } from 'react-router-dom';
 
@@ -14,7 +15,11 @@ import { APP_DEFAULT_PATH } from 'config';
 export default function LogoSection({ reverse, isIcon, sx, to }) {
   return (
     <ButtonBase disableRipple component={Link} to={to || APP_DEFAULT_PATH} sx={sx}>
-      {isIcon ? <LogoIcon /> : <Logo reverse={reverse} />}
+      {/*{isIcon ? <LogoIcon /> : <Logo reverse={reverse} />}*/}
+      {isIcon ? <Typography sx={{ fontSize: 18, fontWeight: 800, color: '#1f7cd0' }}>IGA</Typography> :
+        <Typography sx={{ fontSize: 20, fontWeight: 800, color: '#1f7cd0' }}>Github Access Control</Typography>
+      }
+
     </ButtonBase>
   );
 }

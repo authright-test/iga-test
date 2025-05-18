@@ -23,6 +23,7 @@ export const useRepositories = () => {
       );
 
       setRepositories(response.data);
+      return response.data;
     } catch (err) {
       setError(err.response?.data?.error || err.message);
     } finally {

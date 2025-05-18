@@ -1,10 +1,10 @@
 import {
-  Add as AddIcon,
-  Delete as DeleteIcon,
-  Edit as EditIcon,
-  Group as GroupIcon,
-  Person as PersonIcon,
-} from '@mui/icons-material';
+  FiPlus as AddIcon,
+  FiDelete as DeleteIcon,
+  FiEdit as EditIcon,
+  FiUsers as GroupIcon,
+  FiUser as PersonIcon,
+} from 'react-icons/fi';
 import {
   Alert,
   Avatar,
@@ -42,7 +42,6 @@ import { useRepositories } from '../../hooks/useRepositories';
 
 const RepositoriesPage = () => {
   const [repositories, setRepositories] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const [selectedRepository, setSelectedRepository] = useState(null);
   const [isRepositoryModalOpen, setIsRepositoryModalOpen] = useState(false);
@@ -61,6 +60,7 @@ const RepositoriesPage = () => {
   const { logAuditEvent } = useAuth();
   const { hasPermission } = usePermissions();
   const {
+    isLoading,
     getRepositories,
     createRepository,
     updateRepository,
@@ -79,15 +79,12 @@ const RepositoriesPage = () => {
 
   const fetchRepositories = async () => {
     try {
-      setIsLoading(true);
       const data = await getRepositories();
       setRepositories(data);
       setError(null);
     } catch (err) {
       setError('Failed to load repositories');
       console.error('Error loading repositories:', err);
-    } finally {
-      setIsLoading(false);
     }
   };
 
@@ -229,6 +226,9 @@ const RepositoriesPage = () => {
         </Alert>
       )}
 
+      {isLoading && (
+        <LinearProgress />
+      )}
       <TableContainer component={Paper}>
         <Table>
           <TableHead>

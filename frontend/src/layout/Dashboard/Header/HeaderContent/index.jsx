@@ -3,6 +3,7 @@ import useMediaQuery from '@mui/material/useMediaQuery';
 import IconButton from '@mui/material/IconButton';
 import Link from '@mui/material/Link';
 import Box from '@mui/material/Box';
+import { FiGithub } from 'react-icons/fi';
 
 // project imports
 import Search from './Search';
@@ -24,17 +25,17 @@ export default function HeaderContent() {
       {downLG && <Box sx={{ width: '100%', ml: 1 }} />}
       <IconButton
         component={Link}
-        href="https://github.com/codedthemes/mantis-free-react-admin-template"
-        target="_blank"
+        href='#'
+        target='_blank'
         disableRipple
-        color="secondary"
-        title="Download Free Version"
+        color='secondary'
+        title='Github'
         sx={{ color: 'text.primary', bgcolor: 'grey.100' }}
       >
-        <GithubOutlined />
+        <FiGithub />
       </IconButton>
 
-      <Notification />
+      {/*<Notification />*/}
       {!downLG && <Profile />}
       {downLG && <MobileSection />}
     </>
