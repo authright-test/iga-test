@@ -1,6 +1,6 @@
-import { Add as AddIcon, Delete as DeleteIcon, Edit as EditIcon, } from '@mui/icons-material';
+import { Add as AddIcon, Delete as DeleteIcon, Edit as EditIcon, MoreVert as MoreVertIcon, } from '@mui/icons-material';
 import {
-  Alert,
+  Alert, Avatar,
   Box,
   Button,
   Chip,
@@ -12,8 +12,8 @@ import {
   FormControl,
   FormControlLabel,
   IconButton,
-  InputLabel,
-  MenuItem,
+  InputLabel, LinearProgress,
+  MenuItem, Pagination,
   Paper,
   Select,
   Stack,
@@ -28,11 +28,23 @@ import {
   Typography,
 } from '@mui/material';
 import React, { useEffect, useState } from 'react';
+import PerfectScrollbar from 'react-perfect-scrollbar';
+import { QuickSearchBar } from '../../components/common/quick-search-bar';
+import { SearchCriteriaBar, SearchCriteriaItem } from '../../components/common/search-criteria-bar';
+import { usePagingQueryRequest } from '../../components/common/usePagingQueryRequest';
 import { useAuth } from '../../contexts/AuthContext.jsx';
 import { useAutomationPolicies } from '../../hooks/useAutomationPolicies';
 import { usePermissions } from '../../hooks/usePermissions';
 
 const PoliciesPage = () => {
+
+  const { queryRequest, handleQuickSearch, setQueryRequest, resetQueryRequest, handlePageChange } =
+    usePagingQueryRequest({
+      page: 0,
+      size: 20,
+    });
+  const [data, setData] = useState({});
+
   const [policies, setPolicies] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -141,93 +153,132 @@ const PoliciesPage = () => {
     setIsPolicyModalOpen(true);
   };
 
-  if (isLoading) {
-    return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '60vh' }}>
-        <CircularProgress />
-      </Box>
-    );
-  }
-
   return (
-    <Box>
-      <Stack direction='row' justifyContent='space-between' alignItems='center' mb={3}>
-        <Typography variant='h4' component='h1'>
-          Policies
-        </Typography>
-        {hasPermission('policies.create') && (
-          <Button
-            variant='contained'
-            startIcon={<AddIcon />}
-            onClick={() => openPolicyModal()}
-          >
-            Create Policy
-          </Button>
-        )}
+    <Stack direction='column' gap={2}>
+
+      {!hasPermission('policies.view') && (
+        <Alert severity='error'>
+          <Typography variant='h4' gutterBottom>Access Denied</Typography>
+          <Typography>You do not have permission to view policies details.</Typography>
+        </Alert>
+      )}
+
+      <Stack direction='row' justifyContent='space-between' alignItems='center'>
+        <Stack direction='row' spacing={2}>
+          {hasPermission('policies.create') && (
+            <Button
+              variant='contained'
+              startIcon={<AddIcon />}
+              onClick={() => openPolicyModal()}
+            >
+              Create Policy
+            </Button>
+          )}
+        </Stack>
+
+        <QuickSearchBar
+          width='250'
+          onSearch={handleQuickSearch}
+          placeholder={'Search User, Email ...'}
+        />
       </Stack>
 
       {error && (
-        <Alert severity='error' sx={{ mb: 2 }}>
+        <Alert severity='error'>
           {error}
         </Alert>
       )}
 
-      <TableContainer component={Paper}>
-        <Table>
-          <TableHead>
-            <TableRow>
-              <TableCell>Name</TableCell>
-              <TableCell>Description</TableCell>
-              <TableCell>Type</TableCell>
-              <TableCell>Status</TableCell>
-              <TableCell align='right'>Actions</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {policies?.map((policy) => (
-              <TableRow key={policy.id}>
-                <TableCell>{policy.name}</TableCell>
-                <TableCell>{policy.description}</TableCell>
-                <TableCell>
-                  <Chip
-                    label={policy.type}
-                    color={policy.type === 'repository' ? 'primary' : 'secondary'}
-                    size='small'
-                  />
-                </TableCell>
-                <TableCell>
-                  <Chip
-                    label={policy.enabled ? 'Enabled' : 'Disabled'}
-                    color={policy.enabled ? 'success' : 'error'}
-                    size='small'
-                  />
-                </TableCell>
-                <TableCell align='right'>
-                  <Stack direction='row' spacing={1} justifyContent='flex-end'>
-                    {hasPermission('policies.edit') && (
-                      <IconButton
+      <Stack direction='column'>
+        <SearchCriteriaBar
+          sx={{
+            borderRadius: 0,
+          }}
+          disabled={isLoading}
+
+          onRefresh={getPolicies}>
+          <SearchCriteriaItem label={'Total Records'} value={data?.totalElements ?? 0} />
+          <SearchCriteriaItem
+            label={'Account'}
+            value={queryRequest.account}
+          />
+          <SearchCriteriaItem label={'Email'} value={queryRequest.email} />
+        </SearchCriteriaBar>
+
+        {(isLoading) && <LinearProgress />}
+        <PerfectScrollbar>
+          <Box sx={{ minWidth: 1050, minHeight: 500 }}>
+            <Table>
+              {data?.content?.length === 0 && <caption>Empty</caption>}
+              <TableHead>
+                <TableRow>
+                  <TableCell>Name</TableCell>
+                  <TableCell>Description</TableCell>
+                  <TableCell>Type</TableCell>
+                  <TableCell>Status</TableCell>
+                  <TableCell align='right'>Actions</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {data?.content?.map((item) => (
+                  <TableRow key={item.id}>
+                    <TableCell>{item.name}</TableCell>
+                    <TableCell>{item.description}</TableCell>
+                    <TableCell>
+                      <Chip
+                        label={item.type}
+                        color={item.type === 'repository' ? 'primary' : 'secondary'}
                         size='small'
-                        onClick={() => openPolicyModal(policy)}
-                      >
-                        <EditIcon />
-                      </IconButton>
-                    )}
-                    {hasPermission('policies.delete') && (
-                      <IconButton
+                      />
+                    </TableCell>
+                    <TableCell>
+                      <Chip
+                        label={item.enabled ? 'Enabled' : 'Disabled'}
+                        color={item.enabled ? 'success' : 'error'}
                         size='small'
-                        color='error'
-                        onClick={() => handleDeletePolicy(policy)}
-                      >
-                        <DeleteIcon />
-                      </IconButton>
-                    )}
-                  </Stack>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </TableContainer>
+                      />
+                    </TableCell>
+                    <TableCell align='right'>
+                      <Stack direction='row' spacing={1} justifyContent='flex-end'>
+                        {hasPermission('policies.edit') && (
+                          <IconButton
+                            size='small'
+                            onClick={() => openPolicyModal(item)}
+                          >
+                            <EditIcon />
+                          </IconButton>
+                        )}
+                        {hasPermission('policies.delete') && (
+                          <IconButton
+                            size='small'
+                            color='error'
+                            onClick={() => handleDeletePolicy(item)}
+                          >
+                            <DeleteIcon />
+                          </IconButton>
+                        )}
+                      </Stack>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+
+          </Box>
+        </PerfectScrollbar>
+      </Stack>
+
+      {data?.totalPages > 1 && (
+        <Stack direction={'row'} justifyContent={'center'} pt={2}>
+          <Pagination
+            color={'primary'}
+            shape={'circular'}
+            onChange={(event, value) => handlePageChange(value - 1)}
+            count={data.totalPages ?? 0}
+            page={data.page + 1}
+          />
+        </Stack>
+      )}
 
       {/* Policy Modal */}
       <Dialog
@@ -289,7 +340,7 @@ const PoliciesPage = () => {
           </Button>
         </DialogActions>
       </Dialog>
-    </Box>
+    </Stack>
   );
 };
 

@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import {
+  Alert,
+  Avatar,
   Box,
   Button,
   Card,
@@ -13,12 +15,12 @@ import {
   FormControl,
   Grid,
   IconButton,
-  InputLabel,
+  InputLabel, LinearProgress,
   Menu,
-  MenuItem,
+  MenuItem, Pagination,
   Paper,
   Select,
-  Stack,
+  Stack, Table, TableBody, TableCell, TableHead, TableRow,
   TextField,
   Typography,
 } from '@mui/material';
@@ -29,11 +31,22 @@ import {
   MoreVert as MoreVertIcon,
   Shield as ShieldIcon,
 } from '@mui/icons-material';
+import PerfectScrollbar from 'react-perfect-scrollbar';
+import { QuickSearchBar } from '../../components/common/quick-search-bar';
+import { SearchCriteriaBar, SearchCriteriaItem } from '../../components/common/search-criteria-bar';
+import { usePagingQueryRequest } from '../../components/common/usePagingQueryRequest';
 import { useAuth } from '../../contexts/AuthContext.jsx';
 import { usePermissions } from '../../hooks/usePermissions';
 import { useRoles } from '../../hooks/useRoles';
 
 const RolesPage = () => {
+  const { queryRequest, handleQuickSearch, setQueryRequest, resetQueryRequest, handlePageChange } =
+    usePagingQueryRequest({
+      page: 0,
+      size: 20,
+    });
+  const [data, setData] = useState({});
+
   const [selectedRole, setSelectedRole] = useState(null);
   const [isRoleModalOpen, setIsRoleModalOpen] = useState(false);
   const [isPermissionsModalOpen, setIsPermissionsModalOpen] = useState(false);
@@ -50,6 +63,7 @@ const RolesPage = () => {
     roles,
     isLoading,
     error,
+    getRoles,
     createRole,
     updateRole,
     deleteRole,
@@ -162,99 +176,144 @@ const RolesPage = () => {
     }));
   };
 
-  if (isLoading) {
-    return (
-      <Box p={4}>
-        <Typography variant='h4' gutterBottom>Loading roles...</Typography>
-      </Box>
-    );
-  }
-
-  if (error) {
-    return (
-      <Box p={4}>
-        <Typography variant='h4' gutterBottom>Error loading roles</Typography>
-        <Typography color='error'>{error}</Typography>
-      </Box>
-    );
-  }
-
   return (
-    <Box p={4}>
-      <Stack direction='row' justifyContent='space-between' alignItems='center' mb={4}>
-        <Typography variant='h4'>Roles</Typography>
-        {hasPermission('roles.create') && (
-          <Button
-            variant='contained'
-            startIcon={<AddIcon />}
-            onClick={() => openRoleModal()}
-          >
-            Create Role
-          </Button>
-        )}
+    <Stack direction='column' gap={2}>
+
+      {!hasPermission('roles.view') && (
+        <Alert severity='error'>
+          <Typography variant='h4' gutterBottom>Access Denied</Typography>
+          <Typography>You do not have permission to view roles details.</Typography>
+        </Alert>
+      )}
+
+      <Stack direction='row' justifyContent='space-between' alignItems='center'>
+        <Stack direction='row' spacing={2}>
+          {hasPermission('roles.create') && (
+            <Button
+              variant='contained'
+              startIcon={<AddIcon />}
+              onClick={() => openRoleModal()}
+            >
+              Create Role
+            </Button>
+          )}
+        </Stack>
+
+        <QuickSearchBar
+          width='250'
+          onSearch={handleQuickSearch}
+          placeholder={'Search Name ...'}
+        />
       </Stack>
 
-      <Grid container spacing={3}>
-        {roles?.map((role) => (
-          <Grid item xs={12} md={6} lg={4} key={role.id}>
-            <Card>
-              <CardContent>
-                <Stack spacing={2}>
-                  <Stack direction='row' justifyContent='space-between' alignItems='center'>
-                    <Typography variant='h6'>{role.name}</Typography>
-                    <Stack direction='row' spacing={1}>
-                      {hasPermission('roles.edit') && (
-                        <IconButton
-                          size='small'
-                          onClick={() => openRoleModal(role)}
-                        >
-                          <EditIcon />
-                        </IconButton>
-                      )}
-                      <IconButton
-                        size='small'
-                        onClick={() => openPermissionsModal(role)}
-                      >
-                        <ShieldIcon />
-                      </IconButton>
-                      {hasPermission('roles.delete') && (
-                        <IconButton
-                          size='small'
-                          color='error'
-                          onClick={() => handleDeleteRole(role)}
-                        >
-                          <DeleteIcon />
-                        </IconButton>
-                      )}
-                    </Stack>
-                  </Stack>
+      {error && (
+        <Alert severity='error'>
+          {error}
+        </Alert>
+      )}
 
-                  <Typography variant='body2' color='text.secondary'>
-                    {role.description}
-                  </Typography>
+      <Stack direction='column'>
+        <SearchCriteriaBar
+          sx={{
+            borderRadius: 0,
+          }}
+          disabled={isLoading}
+          onRefresh={getRoles}>
+          <SearchCriteriaItem label={'Total Records'} value={data?.totalElements ?? 0} />
+          <SearchCriteriaItem
+            label={'Account'}
+            value={queryRequest.account}
+          />
+          <SearchCriteriaItem label={'Name'} value={queryRequest.name} />
+        </SearchCriteriaBar>
 
-                  <Box>
-                    <Typography variant='subtitle2' color='text.secondary' gutterBottom>
-                      Permissions
-                    </Typography>
-                    <Stack direction='row' spacing={1} flexWrap='wrap' useFlexGap>
-                      {role?.permissions?.map((permission) => (
+        {(isLoading) && <LinearProgress />}
+        <PerfectScrollbar>
+          <Box sx={{ minWidth: 1050, minHeight: 500 }}>
+            <Table>
+              {data?.content?.length === 0 && <caption>Empty</caption>}
+              <TableHead>
+                <TableRow>
+                  <TableCell>Name</TableCell>
+                  <TableCell>Description</TableCell>
+                  <TableCell>Permissions</TableCell>
+                  <TableCell>
+
+                  </TableCell>
+                  <TableCell align='right'>Actions</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {data?.content?.map((item) => (
+                  <TableRow key={item.id}>
+                    <TableCell>
+                      <Stack direction='row' spacing={1} alignItems='center'>
+                        <Avatar>{item.name[0]}</Avatar>
+                        <Typography>{item.name}</Typography>
+                      </Stack>
+                    </TableCell>
+                    <TableCell>{item.description}</TableCell>
+                    <TableCell>
+                      {item?.members?.map((member) => (
                         <Chip
-                          key={permission.id}
-                          label={permission.name}
+                          key={member.id}
+                          avatar={<Avatar src={member.avatarUrl}>{member.username[0]}</Avatar>}
+                          label={member.username}
                           size='small'
-                          color='primary'
-                          variant='outlined'
                         />
                       ))}
-                    </Stack>
-                  </Box>
-                </Stack>
-              </CardContent>
-            </Card>
-          </Grid>
-        ))}
-      </Grid>
+                    </TableCell>
+                    <TableCell>
+
+                    </TableCell>
+                    <TableCell></TableCell>
+                    <TableCell align='right'>
+                      <Stack direction='row' spacing={1}>
+                        {hasPermission('roles.edit') && (
+                          <IconButton
+                            size='small'
+                            onClick={() => openRoleModal(item)}
+                          >
+                            <EditIcon />
+                          </IconButton>
+                        )}
+                        <IconButton
+                          size='small'
+                          onClick={() => openPermissionsModal(item)}
+                        >
+                          <ShieldIcon />
+                        </IconButton>
+                        {hasPermission('roles.delete') && (
+                          <IconButton
+                            size='small'
+                            color='error'
+                            onClick={() => handleDeleteRole(item)}
+                          >
+                            <DeleteIcon />
+                          </IconButton>
+                        )}
+                      </Stack>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </Box>
+        </PerfectScrollbar>
+      </Stack>
+
+      {data?.totalPages > 1 && (
+        <Stack direction={'row'} justifyContent={'center'} pt={2}>
+          <Pagination
+            color={'primary'}
+            shape={'circular'}
+            onChange={(event, value) => handlePageChange(value - 1)}
+            count={data.totalPages ?? 0}
+            page={data.page + 1}
+          />
+        </Stack>
+      )}
+
 
       {/* Role Modal */}
       <Dialog
@@ -320,7 +379,7 @@ const RolesPage = () => {
           </Button>
         </DialogActions>
       </Dialog>
-    </Box>
+    </Stack>
   );
 };
 

@@ -65,7 +65,7 @@ const DashboardPage = () => {
   //
   // if (error) {
   //   return (
-  //     <Alert severity='error' sx={{ mb: 2 }}>
+  //     <Alert severity='error'>
   //       {error}
   //     </Alert>
   //   );

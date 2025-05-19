@@ -177,7 +177,7 @@ const PermissionsPage = () => {
       </Stack>
 
       {error && (
-        <Alert severity='error' sx={{ mb: 2 }}>
+        <Alert severity='error'>
           {error}
         </Alert>
       )}

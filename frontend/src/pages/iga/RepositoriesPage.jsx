@@ -1,3 +1,4 @@
+import { GitHub as GitHubIcon } from '@mui/icons-material';
 import {
   FiPlus as AddIcon,
   FiDelete as DeleteIcon,
@@ -20,7 +21,7 @@ import {
   FormControl,
   IconButton,
   InputLabel, LinearProgress,
-  MenuItem,
+  MenuItem, Pagination,
   Paper,
   Select,
   Stack,
@@ -37,12 +38,22 @@ import {
 } from '@mui/material';
 import React, { useEffect, useState } from 'react';
 import PerfectScrollbar from 'react-perfect-scrollbar';
+import { QuickSearchBar } from '../../components/common/quick-search-bar';
+import { SearchCriteriaBar, SearchCriteriaItem } from '../../components/common/search-criteria-bar';
+import { usePagingQueryRequest } from '../../components/common/usePagingQueryRequest';
 import { useAuth } from '../../contexts/AuthContext.jsx';
 import { usePermissions } from '../../hooks/usePermissions';
 import { useRepositories } from '../../hooks/useRepositories';
 
 const RepositoriesPage = () => {
+
+  const { queryRequest, handleQuickSearch, setQueryRequest, resetQueryRequest, handlePageChange } =
+    usePagingQueryRequest({
+      page: 0,
+      size: 20,
+    });
   const [data, setData] = useState({});
+
   const [repositories, setRepositories] = useState([]);
   const [error, setError] = useState(null);
   const [selectedRepository, setSelectedRepository] = useState(null);
@@ -50,6 +61,7 @@ const RepositoriesPage = () => {
   const [isTeamModalOpen, setIsTeamModalOpen] = useState(false);
   const [isUserModalOpen, setIsUserModalOpen] = useState(false);
   const [activeTab, setActiveTab] = useState(0);
+  const [isSyncing, setIsSyncing] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
     description: '',
@@ -59,7 +71,7 @@ const RepositoriesPage = () => {
     users: [],
   });
 
-  const { logAuditEvent } = useAuth();
+  const { organization, logAuditEvent } = useAuth();
   const { hasPermission } = usePermissions();
   const {
     isLoading,
@@ -87,6 +99,23 @@ const RepositoriesPage = () => {
     } catch (err) {
       setError('Failed to load repositories');
       console.error('Error loading repositories:', err);
+    }
+  };
+
+  const handleSyncWithGitHub = async () => {
+    try {
+      setIsSyncing(true);
+      // await syncWithGitHub();
+      logAuditEvent(
+        'users_synced',
+        'user',
+        'all',
+        { organization: organization.name }
+      );
+    } catch (err) {
+      console.error('Error syncing with GitHub:', err);
+    } finally {
+      setIsSyncing(false);
     }
   };
 
@@ -197,48 +226,69 @@ const RepositoriesPage = () => {
     setActiveTab(newValue);
   };
 
-  if (isLoading) {
-    return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '60vh' }}>
-        <CircularProgress />
-      </Box>
-    );
-  }
-
   return (
-    <Box>
-      <Stack direction='row' justifyContent='space-between' alignItems='center' mb={3}>
-        {hasPermission('repositories.create') && (
-          <Button
-            variant='contained'
-            startIcon={<AddIcon />}
-            onClick={() => openRepositoryModal()}
-          >
-            Create Repository
-          </Button>
-        )}
-      </Stack>
-
+    <Stack direction='column' gap={2}>
       {!hasPermission('repositories.view') && (
-        <Alert severity='error' sx={{ mb: 2 }}>
+        <Alert severity='error'>
           <Typography variant='h4' gutterBottom>Access Denied</Typography>
           <Typography>You do not have permission to view organization details.</Typography>
         </Alert>
       )}
 
+      <Stack direction='row' justifyContent='space-between' alignItems='center'>
+        <Stack direction='row' spacing={2}>
+          {hasPermission('repositories.create') && (
+            <Button
+              variant='contained'
+              startIcon={<AddIcon />}
+              onClick={() => openRepositoryModal()}
+            >
+              Create Repository
+            </Button>
+          )}
+          <Button
+            variant='outlined'
+            startIcon={<GitHubIcon />}
+            onClick={handleSyncWithGitHub}
+            disabled={isSyncing}
+          >
+            {isSyncing ? 'Syncing...' : 'Sync with GitHub'}
+          </Button>
+        </Stack>
+
+        <QuickSearchBar
+          width='250'
+          onSearch={handleQuickSearch}
+          placeholder={'Search Name ...'}
+        />
+      </Stack>
+
       {error && (
-        <Alert severity='error' sx={{ mb: 2 }}>
+        <Alert severity='error'>
           {error}
         </Alert>
       )}
 
       <Stack direction='column'>
-        {isLoading && (
-          <LinearProgress />
-        )}
+        <SearchCriteriaBar
+          sx={{
+            borderRadius: 0,
+          }}
+          disabled={isLoading}
+          onRefresh={getRepositories}>
+          <SearchCriteriaItem label={'Total Records'} value={data?.totalElements ?? 0} />
+          <SearchCriteriaItem
+            label={'Account'}
+            value={queryRequest.account}
+          />
+          <SearchCriteriaItem label={'Email'} value={queryRequest.email} />
+        </SearchCriteriaBar>
+
+        {isLoading && <LinearProgress />}
         <PerfectScrollbar>
           <Box sx={{ minWidth: 1050, minHeight: 500 }}>
             <Table>
+              {data?.content?.length === 0 && <caption>Empty</caption>}
               <TableHead>
                 <TableRow>
                   <TableCell>Name</TableCell>
@@ -251,21 +301,21 @@ const RepositoriesPage = () => {
                 </TableRow>
               </TableHead>
               <TableBody>
-                {repositories?.map((repository) => (
-                  <TableRow key={repository.id}>
-                    <TableCell>{repository.name}</TableCell>
-                    <TableCell>{repository.description}</TableCell>
+                {data?.content?.map((item) => (
+                  <TableRow key={item.id}>
+                    <TableCell>{item.name}</TableCell>
+                    <TableCell>{item.description}</TableCell>
                     <TableCell>
                       <Chip
-                        label={repository.visibility}
-                        color={repository.visibility === 'public' ? 'success' : 'default'}
+                        label={item.visibility}
+                        color={item.visibility === 'public' ? 'success' : 'default'}
                         size='small'
                       />
                     </TableCell>
-                    <TableCell>{repository.defaultBranch}</TableCell>
+                    <TableCell>{item.defaultBranch}</TableCell>
                     <TableCell>
                       <AvatarGroup max={3}>
-                        {repository?.teams?.map((team) => (
+                        {item?.teams?.map((team) => (
                           <Avatar key={team.id} sx={{ width: 24, height: 24 }}>
                             <GroupIcon fontSize='small' />
                           </Avatar>
@@ -274,7 +324,7 @@ const RepositoriesPage = () => {
                     </TableCell>
                     <TableCell>
                       <AvatarGroup max={3}>
-                        {repository?.users?.map((user) => (
+                        {item?.users?.map((user) => (
                           <Avatar key={user.id} sx={{ width: 24, height: 24 }}>
                             <PersonIcon fontSize='small' />
                           </Avatar>
@@ -286,7 +336,7 @@ const RepositoriesPage = () => {
                         {hasPermission('repositories.edit') && (
                           <IconButton
                             size='small'
-                            onClick={() => openRepositoryModal(repository)}
+                            onClick={() => openRepositoryModal(item)}
                           >
                             <EditIcon />
                           </IconButton>
@@ -295,20 +345,20 @@ const RepositoriesPage = () => {
                           <IconButton
                             size='small'
                             color='error'
-                            onClick={() => handleDeleteRepository(repository)}
+                            onClick={() => handleDeleteRepository(item)}
                           >
                             <DeleteIcon />
                           </IconButton>
                         )}
                         <IconButton
                           size='small'
-                          onClick={() => openTeamModal(repository)}
+                          onClick={() => openTeamModal(item)}
                         >
                           <GroupIcon />
                         </IconButton>
                         <IconButton
                           size='small'
-                          onClick={() => openUserModal(repository)}
+                          onClick={() => openUserModal(item)}
                         >
                           <PersonIcon />
                         </IconButton>
@@ -333,6 +383,7 @@ const RepositoriesPage = () => {
           </Stack>
         )}
       </Stack>
+
       {/* Repository Modal */}
       <Dialog
         open={isRepositoryModalOpen}
@@ -429,7 +480,7 @@ const RepositoriesPage = () => {
           <Button onClick={() => setIsUserModalOpen(false)}>Close</Button>
         </DialogActions>
       </Dialog>
-    </Box>
+    </Stack>
   );
 };
 

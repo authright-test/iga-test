@@ -8,7 +8,7 @@ export const useTeams = () => {
   const [error, setError] = useState(null);
   const { organization } = useAuth();
 
-  const fetchTeams = async (filters = {}) => {
+  const getTeams = async (filters = {}) => {
     try {
       setIsLoading(true);
       setError(null);
@@ -158,7 +158,7 @@ export const useTeams = () => {
 
   useEffect(() => {
     if (organization?.id) {
-      fetchTeams();
+      getTeams();
     }
   }, [organization?.id]);
 
@@ -166,6 +166,7 @@ export const useTeams = () => {
     teams,
     isLoading,
     error,
+    getTeams,
     createTeam,
     updateTeam,
     deleteTeam,
@@ -177,6 +178,5 @@ export const useTeams = () => {
     removeRepository,
     getTeamPermissions,
     updateTeamPermissions,
-    refreshTeams: fetchTeams,
   };
 };

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import {
+  Alert,
   Avatar,
   Box,
   Button,
@@ -14,12 +15,12 @@ import {
   FormControl,
   Grid,
   IconButton,
-  InputLabel,
+  InputLabel, LinearProgress,
   Menu,
-  MenuItem,
+  MenuItem, Pagination,
   Paper,
   Select,
-  Stack,
+  Stack, Table, TableBody, TableCell, TableHead, TableRow,
   TextField,
   Typography,
 } from '@mui/material';
@@ -32,6 +33,10 @@ import {
   People as PeopleIcon,
   Shield as ShieldIcon,
 } from '@mui/icons-material';
+import PerfectScrollbar from 'react-perfect-scrollbar';
+import { QuickSearchBar } from '../../components/common/quick-search-bar';
+import { SearchCriteriaBar, SearchCriteriaItem } from '../../components/common/search-criteria-bar';
+import { usePagingQueryRequest } from '../../components/common/usePagingQueryRequest';
 import { useAuth } from '../../contexts/AuthContext.jsx';
 import { usePermissions } from '../../hooks/usePermissions';
 import { useRepositories } from '../../hooks/useRepositories';
@@ -39,6 +44,13 @@ import { useTeams } from '../../hooks/useTeams';
 import { useUsers } from '../../hooks/useUsers';
 
 const TeamsPage = () => {
+  const { queryRequest, handleQuickSearch, setQueryRequest, resetQueryRequest, handlePageChange } =
+    usePagingQueryRequest({
+      page: 0,
+      size: 20,
+    });
+  const [data, setData] = useState({});
+
   const [selectedTeam, setSelectedTeam] = useState(null);
   const [isTeamModalOpen, setIsTeamModalOpen] = useState(false);
   const [isMembersModalOpen, setIsMembersModalOpen] = useState(false);
@@ -70,6 +82,7 @@ const TeamsPage = () => {
     teams,
     isLoading,
     error,
+    getTeams,
     createTeam,
     updateTeam,
     deleteTeam,
@@ -306,117 +319,147 @@ const TeamsPage = () => {
     }));
   };
 
-  if (isLoading) {
-    return (
-      <Box p={4}>
-        <Typography variant='h4' gutterBottom>Loading teams...</Typography>
-      </Box>
-    );
-  }
-
-  if (error) {
-    return (
-      <Box p={4}>
-        <Typography variant='h4' gutterBottom>Error loading teams</Typography>
-        <Typography color='error'>{error}</Typography>
-      </Box>
-    );
-  }
-
   return (
-    <Box p={4}>
-      <Stack direction='row' justifyContent='space-between' alignItems='center' mb={4}>
-        <Typography variant='h4'>Teams</Typography>
-        {hasPermission('teams.create') && (
-          <Button
-            variant='contained'
-            startIcon={<AddIcon />}
-            onClick={() => openTeamModal()}
-          >
-            Create Team
-          </Button>
-        )}
+    <Stack direction='column' gap={2}>
+
+      {!hasPermission('teams.view') && (
+        <Alert severity='error'>
+          <Typography variant='h4' gutterBottom>Access Denied</Typography>
+          <Typography>You do not have permission to view teams details.</Typography>
+        </Alert>
+      )}
+
+      <Stack direction='row' justifyContent='space-between' alignItems='center'>
+        <Stack direction='row' spacing={2}>
+          {hasPermission('teams.create') && (
+            <Button
+              variant='contained'
+              startIcon={<AddIcon />}
+              onClick={() => openTeamModal()}
+            >
+              Create Team
+            </Button>
+          )}
+        </Stack>
+
+        <QuickSearchBar
+          width='250'
+          onSearch={handleQuickSearch}
+          placeholder={'Search Name ...'}
+        />
       </Stack>
 
-      <Grid container spacing={3}>
-        {teams?.map((team) => (
-          <Grid item xs={12} md={6} lg={4} key={team.id}>
-            <Card>
-              <CardContent>
-                <Stack spacing={2}>
-                  <Stack direction='row' spacing={2} alignItems='center'>
-                    <Avatar>{team.name[0]}</Avatar>
-                    <Box flex={1}>
-                      <Typography variant='h6'>{team.name}</Typography>
-                      <Typography variant='body2' color='text.secondary'>
-                        {team.description}
-                      </Typography>
-                    </Box>
-                    <Stack direction='row' spacing={1}>
-                      {hasPermission('teams.edit') && (
-                        <IconButton
-                          size='small'
-                          onClick={() => openTeamModal(team)}
-                        >
-                          <EditIcon />
-                        </IconButton>
-                      )}
-                      <IconButton
-                        size='small'
-                        onClick={() => openMembersModal(team)}
-                      >
-                        <PeopleIcon />
-                      </IconButton>
-                      <IconButton
-                        size='small'
-                        onClick={() => handleManagePermissions(team)}
-                      >
-                        <ShieldIcon />
-                      </IconButton>
-                      {hasPermission('teams.delete') && (
-                        <IconButton
-                          size='small'
-                          color='error'
-                          onClick={() => handleDeleteTeam(team)}
-                        >
-                          <DeleteIcon />
-                        </IconButton>
-                      )}
-                    </Stack>
-                  </Stack>
+      {error && (
+        <Alert severity='error'>
+          {error}
+        </Alert>
+      )}
 
-                  <Box>
-                    <Typography variant='subtitle2' color='text.secondary' gutterBottom>
-                      Type
-                    </Typography>
-                    <Chip
-                      label={team.type}
-                      color={team.type === 'admin' ? 'primary' : 'default'}
-                      size='small'
-                    />
-                  </Box>
+      <Stack direction='column'>
+        <SearchCriteriaBar
+          sx={{
+            borderRadius: 0,
+          }}
+          disabled={isLoading}
+          onRefresh={getTeams}>
+          <SearchCriteriaItem label={'Total Records'} value={data?.totalElements ?? 0} />
+          <SearchCriteriaItem
+            label={'Account'}
+            value={queryRequest.account}
+          />
+          <SearchCriteriaItem label={'Name'} value={queryRequest.name} />
+        </SearchCriteriaBar>
 
-                  <Box>
-                    <Typography variant='subtitle2' color='text.secondary' gutterBottom>
-                      Members
-                    </Typography>
-                    <Stack direction='row' spacing={1} flexWrap='wrap' useFlexGap>
-                      {team?.members?.map((member) => (
+        {(isLoading) && <LinearProgress />}
+        <PerfectScrollbar>
+          <Box sx={{ minWidth: 1050, minHeight: 500 }}>
+            <Table>
+              {data?.content?.length === 0 && <caption>Empty</caption>}
+              <TableHead>
+                <TableRow>
+                  <TableCell>Name</TableCell>
+                  <TableCell>Description</TableCell>
+                  <TableCell>Members</TableCell>
+                  <TableCell>
+                  </TableCell>
+                  <TableCell align='right'>Actions</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {data?.content?.map((item) => (
+                  <TableRow key={item.id}>
+                    <TableCell>
+                      <Stack direction='row' spacing={1} alignItems='center'>
+                        <Avatar>{item.name[0]}</Avatar>
+                        <Typography>{item.name}</Typography>
+                      </Stack>
+                    </TableCell>
+                    <TableCell>{item.description}</TableCell>
+                    <TableCell>
+                      {item?.permissions?.map((permission) => (
                         <Chip
-                          key={member.id}
-                          avatar={<Avatar src={member.avatarUrl}>{member.username[0]}</Avatar>}
-                          label={member.username}
+                          key={permission.id}
+                          label={permission.name}
                           size='small'
+                          color='primary'
+                          variant='outlined'
                         />
                       ))}
-                    </Stack>
-                  </Box>
-                </Stack>
-              </CardContent>
-            </Card>
-          </Grid>
-        ))}
-      </Grid>
+                    </TableCell>
+                    <TableCell>
+                    </TableCell>
+                    <TableCell align='right'>
+                      <Stack direction='row' spacing={1}>
+                        {hasPermission('teams.edit') && (
+                          <IconButton
+                            size='small'
+                            onClick={() => openTeamModal(team)}
+                          >
+                            <EditIcon />
+                          </IconButton>
+                        )}
+                        <IconButton
+                          size='small'
+                          onClick={() => openMembersModal(team)}
+                        >
+                          <PeopleIcon />
+                        </IconButton>
+                        <IconButton
+                          size='small'
+                          onClick={() => handleManagePermissions(team)}
+                        >
+                          <ShieldIcon />
+                        </IconButton>
+                        {hasPermission('teams.delete') && (
+                          <IconButton
+                            size='small'
+                            color='error'
+                            onClick={() => handleDeleteTeam(team)}
+                          >
+                            <DeleteIcon />
+                          </IconButton>
+                        )}
+                      </Stack>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </Box>
+        </PerfectScrollbar>
+      </Stack>
+
+      {data?.totalPages > 1 && (
+        <Stack direction={'row'} justifyContent={'center'} pt={2}>
+          <Pagination
+            color={'primary'}
+            shape={'circular'}
+            onChange={(event, value) => handlePageChange(value - 1)}
+            count={data.totalPages ?? 0}
+            page={data.page + 1}
+          />
+        </Stack>
+      )}
 
       {/* Team Modal */}
       <Dialog
@@ -509,7 +552,7 @@ const TeamsPage = () => {
           </Button>
         </DialogActions>
       </Dialog>
-    </Box>
+    </Stack>
   );
 };
 

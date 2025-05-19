@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import {
+  Alert,
   Box,
   Button,
   Card,
@@ -8,9 +9,9 @@ import {
   FormControl,
   Grid,
   IconButton,
-  InputAdornment,
+  InputAdornment, LinearProgress,
   Menu,
-  MenuItem,
+  MenuItem, Pagination,
   Paper,
   Select,
   Stack,
@@ -24,15 +25,28 @@ import {
   Typography,
 } from '@mui/material';
 import {
+  Delete as DeleteIcon,
+  Edit as EditIcon,
   FilterList as FilterIcon,
   MoreVert as MoreVertIcon,
   Search as SearchIcon,
 } from '@mui/icons-material';
+import PerfectScrollbar from 'react-perfect-scrollbar';
+import { SearchCriteriaBar, SearchCriteriaItem } from '../../components/common/search-criteria-bar';
+import { usePagingQueryRequest } from '../../components/common/usePagingQueryRequest';
 import { useAuth } from '../../contexts/AuthContext.jsx';
 import { useAuditLogs } from '../../hooks/useAuditLogs';
 import { usePermissions } from '../../hooks/usePermissions';
 
 const AuditLogsPage = () => {
+
+  const { queryRequest, handleQuickSearch, setQueryRequest, resetQueryRequest, handlePageChange } =
+    usePagingQueryRequest({
+      page: 0,
+      size: 20,
+    });
+  const [data, setData] = useState({});
+
   const [filters, setFilters] = useState({
     action: '',
     resourceType: '',
@@ -94,38 +108,18 @@ const AuditLogsPage = () => {
     }
   };
 
-  if (!hasPermission('audit_logs.view')) {
-    return (
-      <Box p={4}>
-        <Typography variant='h4' gutterBottom>Access Denied</Typography>
-        <Typography>You do not have permission to view audit logs.</Typography>
-      </Box>
-    );
-  }
-
-  if (isLoading) {
-    return (
-      <Box p={4}>
-        <Typography variant='h4' gutterBottom>Loading audit logs...</Typography>
-      </Box>
-    );
-  }
-
-  if (error) {
-    return (
-      <Box p={4}>
-        <Typography variant='h4' gutterBottom>Error loading audit logs</Typography>
-        <Typography color='error'>{error}</Typography>
-      </Box>
-    );
-  }
+  // if (!hasPermission('audit_logs.view')) {
+  //   return (
+  //     <Box p={4}>
+  //       <Typography variant='h4' gutterBottom>Access Denied</Typography>
+  //       <Typography>You do not have permission to view audit logs.</Typography>
+  //     </Box>
+  //   );
+  // }
 
   return (
-    <Box p={4}>
-      <Typography variant='h4' gutterBottom>Audit Logs</Typography>
-
-      {/* Filters */}
-      <Stack direction='row' spacing={2} mb={4} flexWrap='wrap' useFlexGap>
+    <Stack direction='column' gap={2}>
+      <Stack direction='row' justifyContent='center' spacing={2} flexWrap='wrap' useFlexGap>
         <FormControl sx={{ minWidth: 200 }}>
           <Select
             name='action'
@@ -181,67 +175,110 @@ const AuditLogsPage = () => {
         </Button>
       </Stack>
 
-      {/* Logs Table */}
-      <TableContainer component={Paper}>
-        <Table>
-          <TableHead>
-            <TableRow>
-              <TableCell>Timestamp</TableCell>
-              <TableCell>Action</TableCell>
-              <TableCell>Resource Type</TableCell>
-              <TableCell>Resource ID</TableCell>
-              <TableCell>User</TableCell>
-              <TableCell>Details</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {logs?.map((log) => (
-              <TableRow key={log.id}>
-                <TableCell>
-                  <Typography variant='body2'>
-                    {new Date(log.timestamp).toLocaleString()}
-                  </Typography>
-                </TableCell>
-                <TableCell>
-                  <Chip
-                    label={log.action}
-                    color={getActionColor(log.action)}
-                    size='small'
-                  />
-                </TableCell>
-                <TableCell>
-                  <Chip
-                    label={log.resourceType}
-                    color={getResourceTypeColor(log.resourceType)}
-                    size='small'
-                  />
-                </TableCell>
-                <TableCell>
-                  <Typography variant='body2'>{log.resourceId}</Typography>
-                </TableCell>
-                <TableCell>
-                  <Stack spacing={0}>
-                    <Typography variant='body2'>{log.user.username}</Typography>
-                    <Typography variant='caption' color='text.secondary'>
-                      ({log.user.email})
-                    </Typography>
-                  </Stack>
-                </TableCell>
-                <TableCell>
-                  <Stack spacing={0}>
-                    {Object.entries(log?.details)?.map(([key, value]) => (
-                      <Typography key={key} variant='caption'>
-                        <strong>{key}:</strong> {JSON.stringify(value)}
+
+      {error && (
+        <Alert severity='error'>
+          {error}
+        </Alert>
+      )}
+
+
+      <Stack direction='column'>
+        <SearchCriteriaBar
+          sx={{
+            borderRadius: 0,
+          }}
+          disabled={isLoading}
+          onRefresh={getLogs}>
+          <SearchCriteriaItem label={'Total Records'} value={data?.totalElements ?? 0} />
+          <SearchCriteriaItem
+            label={'Account'}
+            value={queryRequest.account}
+          />
+          <SearchCriteriaItem label={'Email'} value={queryRequest.email} />
+        </SearchCriteriaBar>
+
+        {(isLoading) && <LinearProgress />}
+        <PerfectScrollbar>
+          <Box sx={{ minWidth: 1050, minHeight: 500 }}>
+            {/* Logs Table */}
+            <Table>
+              {data?.content?.length === 0 && <caption>Empty</caption>}
+              <TableHead>
+                <TableRow>
+                  <TableCell>Timestamp</TableCell>
+                  <TableCell>Action</TableCell>
+                  <TableCell>Resource Type</TableCell>
+                  <TableCell>Resource ID</TableCell>
+                  <TableCell>User</TableCell>
+                  <TableCell>Details</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {data?.content?.map((log) => (
+                  <TableRow key={log.id}>
+                    <TableCell>
+                      <Typography variant='body2'>
+                        {new Date(log.timestamp).toLocaleString()}
                       </Typography>
-                    ))}
-                  </Stack>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </TableContainer>
-    </Box>
+                    </TableCell>
+                    <TableCell>
+                      <Chip
+                        label={log.action}
+                        color={getActionColor(log.action)}
+                        size='small'
+                      />
+                    </TableCell>
+                    <TableCell>
+                      <Chip
+                        label={log.resourceType}
+                        color={getResourceTypeColor(log.resourceType)}
+                        size='small'
+                      />
+                    </TableCell>
+                    <TableCell>
+                      <Typography variant='body2'>{log.resourceId}</Typography>
+                    </TableCell>
+                    <TableCell>
+                      <Stack spacing={0}>
+                        <Typography variant='body2'>{log.user.username}</Typography>
+                        <Typography variant='caption' color='text.secondary'>
+                          ({log.user.email})
+                        </Typography>
+                      </Stack>
+                    </TableCell>
+                    <TableCell>
+                      <Stack spacing={0}>
+                        {Object.entries(log?.details)?.map(([key, value]) => (
+                          <Typography key={key} variant='caption'>
+                            <strong>{key}:</strong> {JSON.stringify(value)}
+                          </Typography>
+                        ))}
+                      </Stack>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+
+          </Box>
+        </PerfectScrollbar>
+      </Stack>
+
+      {data?.totalPages > 1 && (
+        <Stack direction={'row'} justifyContent={'center'} pt={2}>
+          <Pagination
+            color={'primary'}
+            shape={'circular'}
+            onChange={(event, value) => handlePageChange(value - 1)}
+            count={data.totalPages ?? 0}
+            page={data.page + 1}
+          />
+        </Stack>
+      )}
+
+
+    </Stack>
   );
 };
 

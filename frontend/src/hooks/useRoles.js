@@ -8,7 +8,7 @@ export const useRoles = () => {
   const [error, setError] = useState(null);
   const { organization } = useAuth();
 
-  const fetchRoles = async () => {
+  const getRoles = async () => {
     try {
       setIsLoading(true);
       setError(null);
@@ -112,7 +112,7 @@ export const useRoles = () => {
 
   useEffect(() => {
     if (organization?.id) {
-      fetchRoles();
+      getRoles();
     }
   }, [organization?.id]);
 
@@ -120,6 +120,7 @@ export const useRoles = () => {
     roles,
     isLoading,
     error,
+    getRoles,
     createRole,
     updateRole,
     deleteRole,
@@ -127,6 +128,5 @@ export const useRoles = () => {
     revokeRole,
     getRolePermissions,
     updateRolePermissions,
-    refreshRoles: fetchRoles,
   };
 };

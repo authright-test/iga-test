@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import {
+  Alert,
   Avatar,
   Box,
   Button,
@@ -54,6 +55,7 @@ const UsersPage = () => {
       page: 0,
       size: 20,
     });
+  const [data, setData] = useState({});
 
   const [selectedUser, setSelectedUser] = useState(null);
   const [isUserModalOpen, setIsUserModalOpen] = useState(false);
@@ -69,8 +71,6 @@ const UsersPage = () => {
 
   const { organization, logAuditEvent } = useAuth();
   const { hasPermission } = usePermissions();
-
-  const [data, setData] = useState({});
 
   const {
     users,
@@ -200,17 +200,16 @@ const UsersPage = () => {
     setSelectedUser(null);
   };
 
-  if (error) {
-    return (
-      <Box p={4}>
-        <Typography variant='h4' gutterBottom>Error loading users</Typography>
-        <Typography color='error'>{error}</Typography>
-      </Box>
-    );
-  }
-
   return (
     <Stack direction='column' gap={2}>
+
+      {!hasPermission('users.view') && (
+        <Alert severity='error'>
+          <Typography variant='h4' gutterBottom>Access Denied</Typography>
+          <Typography>You do not have permission to view users details.</Typography>
+        </Alert>
+      )}
+      
       <Stack direction='row' justifyContent='space-between' alignItems='center'>
         <Stack direction='row' spacing={2}>
           {hasPermission('users.create') && (
@@ -238,6 +237,12 @@ const UsersPage = () => {
           placeholder={'Search User, Email ...'}
         />
       </Stack>
+
+      {error && (
+        <Alert severity='error'>
+          {error}
+        </Alert>
+      )}
 
       <Stack direction='column'>
         <SearchCriteriaBar
@@ -271,34 +276,34 @@ const UsersPage = () => {
                 </TableRow>
               </TableHead>
               <TableBody>
-                {users?.map((user) => (
-                  <TableRow key={user.id}>
+                {data?.content?.map((item) => (
+                  <TableRow key={item.id}>
                     <TableCell>
-                      <Stack direction='row' spacing={2} alignItems='center'>
-                        <Avatar src={user.avatarUrl}>{user.username[0]}</Avatar>
-                        <Typography>{user.username}</Typography>
+                      <Stack direction='row' spacing={1} alignItems='center'>
+                        <Avatar src={item.avatarUrl}>{item.username[0]}</Avatar>
+                        <Typography>{item.username}</Typography>
                       </Stack>
                     </TableCell>
-                    <TableCell>{user.email}</TableCell>
+                    <TableCell>{item.email}</TableCell>
                     <TableCell>
                       <Chip
-                        label={user.role}
-                        color={user.role === 'admin' ? 'primary' : 'default'}
+                        label={item.role}
+                        color={item.role === 'admin' ? 'primary' : 'default'}
                         size='small'
                       />
                     </TableCell>
                     <TableCell>
                       <Chip
-                        label={user.status}
-                        color={user.status === 'active' ? 'success' : 'error'}
+                        label={item.status}
+                        color={item.status === 'active' ? 'success' : 'error'}
                         size='small'
                       />
                     </TableCell>
-                    <TableCell>{new Date(user.lastLogin).toLocaleString()}</TableCell>
+                    <TableCell>{new Date(item.lastLogin).toLocaleString()}</TableCell>
                     <TableCell align='right'>
                       <IconButton
                         size='small'
-                        onClick={(e) => handleMenuOpen(e, user)}
+                        onClick={(e) => handleMenuOpen(e, item)}
                       >
                         <MoreVertIcon />
                       </IconButton>
