@@ -26,16 +26,16 @@ export const getOrganizations = async ({ page, size, searchKeyword, sort }) => {
       offset,
       order: [[sortField, sortOrder.toUpperCase()]],
       include: [
-        {
-          model: User,
-          as: 'members',
-          attributes: ['id', 'username', 'email', 'githubLogin']
-        },
-        {
-          model: Repository,
-          as: 'repositories',
-          attributes: ['id', 'name', 'private']
-        }
+        // {
+        //   model: User,
+        //   as: 'members',
+        //   attributes: ['id', 'username', 'email', 'githubLogin']
+        // },
+        // {
+        //   model: Repository,
+        //   as: 'repositories',
+        //   attributes: ['id', 'name', 'private']
+        // }
       ]
     });
 
@@ -123,7 +123,7 @@ export const createOrganization = async (organizationData, userId) => {
       action: 'create',
       resourceType: 'organization',
       resourceId: organization.id,
-      details: { 
+      details: {
         name: organization.name,
         login: organization.login,
         githubId: organization.githubId
@@ -396,4 +396,4 @@ export const syncOrganizationWithGitHub = async (organizationId, octokit) => {
     logger.error('Error in syncOrganizationWithGitHub:', error);
     throw error;
   }
-}; 
+};

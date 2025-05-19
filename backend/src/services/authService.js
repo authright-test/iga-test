@@ -18,7 +18,6 @@ const githubApp = new App({
  * @returns {Promise<string>} User access token
  */
 const exchangeCodeForToken = async (code) => {
-
   logger.info('exchangeCodeForToken', {
     client_id: process.env.GITHUB_APP_CLIENT_ID,
     client_secret: process.env.GITHUB_APP_CLIENT_SECRET,
@@ -36,34 +35,17 @@ const exchangeCodeForToken = async (code) => {
       }
     });
 
+    // logger.info('response from github', response)
+
     if (!response.data.access_token) {
       throw new Error('Failed to obtain access token');
     }
 
     return response.data.access_token;
   } catch (error) {
-    logger.error('Token exchange error:', error.response?.data || error.message);
+    logger.error('Token exchange error:', error);
     throw new Error('Failed to exchange code for token');
   }
-};
-
-/**
- * Generate a JWT token for a user
- * @param {Object} user - User object from database
- * @param {number|null} installationId - GitHub App installation ID
- * @returns {string} JWT token
- */
-const generateToken = (user, installationId = null) => {
-  return jwt.sign(
-    {
-      userId: user.id,
-      githubId: user.githubId,
-      username: user.username,
-      installationId: installationId
-    },
-    process.env.JWT_SECRET,
-    { expiresIn: process.env.JWT_EXPIRATION || '24h' }
-  );
 };
 
 /**
@@ -122,6 +104,25 @@ const generateRefreshToken = async (user) => {
   });
 
   return token;
+};
+
+/**
+ * Generate a JWT token for a user
+ * @param {Object} user - User object from database
+ * @param {number|null} installationId - GitHub App installation ID
+ * @returns {string} JWT token
+ */
+const generateToken = (user, installationId = null) => {
+  return jwt.sign(
+    {
+      userId: user.id,
+      githubId: user.githubId,
+      username: user.username,
+      installationId: installationId
+    },
+    process.env.JWT_SECRET,
+    { expiresIn: process.env.JWT_EXPIRATION || '24h' }
+  );
 };
 
 /**
@@ -229,7 +230,7 @@ const authenticateUser = async (code) => {
 
     // Step 3: Get authenticated user info using user access token
     const { data: githubUser } = await userOctokit.users.getAuthenticated();
-    logger.info('Successfully authenticated GitHub user:', githubUser.login);
+    logger.info('Successfully authenticated GitHub user:', githubUser);
 
     // Step 4: Find or create user in database
     let [user, created] = await User.findOrCreate({

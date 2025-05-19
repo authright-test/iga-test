@@ -29,11 +29,11 @@ function setupRoutes(app) {
   // Protected routes
   router.use('/api', authenticateJWT);
   router.use('/api/github', authenticateGitHubApp);
-  
+
   // API routes
-  router.use('/api/roles', roleRoutes);
-  router.use('/api/users', userRoutes);
-  router.use('/api/policies', policyRoutes);
+  router.use('/api', roleRoutes);
+  router.use('/api', userRoutes);
+  router.use('/api', policyRoutes);
   router.use('/api/audit', auditRoutes);
   router.use('/api/dashboard', dashboardRoutes);
   router.use('/api/permissions', permissionRoutes);

@@ -12,14 +12,18 @@ const User = sequelize.define('User', {
     allowNull: false,
     unique: true
   },
-  login: {
+  username: {
     type: DataTypes.STRING,
     allowNull: false,
     unique: true
   },
   name: {
     type: DataTypes.STRING,
-    allowNull: false
+    allowNull: true
+  },
+  location: {
+    type: DataTypes.STRING,
+    allowNull: true
   },
   email: {
     type: DataTypes.STRING,
@@ -55,7 +59,7 @@ const User = sequelize.define('User', {
     },
     {
       unique: true,
-      fields: ['login']
+      fields: ['username']
     },
     {
       unique: true,
@@ -64,4 +68,4 @@ const User = sequelize.define('User', {
   ]
 });
 
-export default User; 
+export default User;

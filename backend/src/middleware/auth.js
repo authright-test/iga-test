@@ -19,10 +19,11 @@ const authenticateJWT = async (req, res, next) => {
 
     // Get user from database
     const user = await User.findByPk(decoded.userId, {
-      include: [{
-        model: Organization,
-        attributes: ['id', 'name', 'login', 'avatarUrl']
-      }]
+      // FIXME: Include organization if needed
+      // include: [{
+      //   model: Organization,
+      //   attributes: ['id', 'name', 'login', 'avatarUrl']
+      // }]
     });
 
     if (!user) {
