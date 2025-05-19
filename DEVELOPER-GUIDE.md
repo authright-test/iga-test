@@ -38,3 +38,26 @@ start backend & frontend
 ## More
 
 > https://github.com/codedthemes/mantis-free-react-admin-template/
+
+## Database Migration
+
+> npx sequelize-cli db:migrate
+
+```shell
+cd backend
+
+# 运行迁移
+npm run db:migrate
+
+# 填充测试数据
+npm run db:seed
+
+# 重置数据库
+npm run db:reset
+
+# 检查数据库状态
+npm run db:check
+
+# 完整设置（重置 + 填充测试数据）
+npm run db:setup
+```

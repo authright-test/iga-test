@@ -46,16 +46,24 @@ import { SimpleQueryBar } from '../../components/common/simple-query-bar';
 import { usePagingQueryRequest } from '../../components/common/usePagingQueryRequest';
 import { useAuth } from '../../contexts/AuthContext.jsx';
 import { usePermissions } from '../../hooks/usePermissions';
-import { useUsers } from '../../hooks/useUsers';
+import { useUserPage, useUsers } from '../../hooks/useUsers';
 
 const UsersPage = () => {
 
-  const { queryRequest, handleQuickSearch, setQueryRequest, resetQueryRequest, handlePageChange } =
-    usePagingQueryRequest({
-      page: 0,
-      size: 20,
-    });
-  const [data, setData] = useState({});
+  const { organization, logAuditEvent } = useAuth();
+  const { hasPermission } = usePermissions();
+
+  const {
+    queryRequest,
+    handleQuickSearch,
+    setQueryRequest,
+    resetQueryRequest,
+    handlePageChange,
+    users,
+    isLoadingUsers,
+    usersError,
+    getUsers,
+  } = useUserPage({ orgId: organization?.id });
 
   const [selectedUser, setSelectedUser] = useState(null);
   const [isUserModalOpen, setIsUserModalOpen] = useState(false);
@@ -69,19 +77,24 @@ const UsersPage = () => {
   const [isSyncing, setIsSyncing] = useState(false);
   const [anchorEl, setAnchorEl] = useState(null);
 
-  const { organization, logAuditEvent } = useAuth();
-  const { hasPermission } = usePermissions();
-
   const {
-    users,
-    isLoading,
-    error,
     createUser,
+    isCreatingUser,
+    createUserError,
     updateUser,
+    isUpdatingUser,
+    updateUserError,
     deleteUser,
-    getUsers,
-    syncWithGitHub,
-  } = useUsers();
+    isDeletingUser,
+    deleteUserError,
+    useUserRoles,
+    assignRole,
+    isAssigningRole,
+    assignRoleError,
+    revokeRole,
+    isRevokingRole,
+    revokeRoleError,
+  } = useUsers({ orgId: organization?.id });
 
   const handleCreateUser = async () => {
     try {
@@ -106,7 +119,7 @@ const UsersPage = () => {
   const handleUpdateUser = async () => {
     try {
       if (!selectedUser) return;
-      const updatedUser = await updateUser(selectedUser.id, formData);
+      const updatedUser = await updateUser({ userId: selectedUser.id, userData: formData });
       logAuditEvent(
         'user_updated',
         'user',
@@ -147,7 +160,7 @@ const UsersPage = () => {
   const handleSyncWithGitHub = async () => {
     try {
       setIsSyncing(true);
-      await syncWithGitHub();
+      // TODO: Implement GitHub sync
       logAuditEvent(
         'users_synced',
         'user',
@@ -209,7 +222,7 @@ const UsersPage = () => {
           <Typography>You do not have permission to view users details.</Typography>
         </Alert>
       )}
-      
+
       <Stack direction='row' justifyContent='space-between' alignItems='center'>
         <Stack direction='row' spacing={2}>
           {hasPermission('users.create') && (
@@ -217,8 +230,9 @@ const UsersPage = () => {
               variant='contained'
               startIcon={<AddIcon />}
               onClick={() => openUserModal()}
+              disabled={isCreatingUser}
             >
-              Create User
+              {isCreatingUser ? 'Creating...' : 'Create User'}
             </Button>
           )}
           <Button
@@ -238,9 +252,9 @@ const UsersPage = () => {
         />
       </Stack>
 
-      {error && (
+      {(usersError || createUserError || updateUserError || deleteUserError) && (
         <Alert severity='error'>
-          {error}
+          {usersError?.message || createUserError?.message || updateUserError?.message || deleteUserError?.message}
         </Alert>
       )}
 
@@ -249,10 +263,9 @@ const UsersPage = () => {
           sx={{
             borderRadius: 0,
           }}
-          disabled={isLoading}
-
+          disabled={isLoadingUsers}
           onRefresh={getUsers}>
-          <SearchCriteriaItem label={'Total Records'} value={data?.totalElements ?? 0} />
+          <SearchCriteriaItem label={'Total Records'} value={users?.totalElements ?? 0} />
           <SearchCriteriaItem
             label={'Account'}
             value={queryRequest.account}
@@ -260,50 +273,56 @@ const UsersPage = () => {
           <SearchCriteriaItem label={'Email'} value={queryRequest.email} />
         </SearchCriteriaBar>
 
-        {(isLoading) && <LinearProgress />}
+        {(isLoadingUsers || isCreatingUser || isUpdatingUser || isDeletingUser) && <LinearProgress />}
         <PerfectScrollbar>
-          <Box sx={{ minWidth: 1050, minHeight: 500 }}>
+          <Box sx={{ minHeight: 'calc(100vh - 320px)', backgroundColor: 'white' }}>
             <Table>
-              {data?.content?.length === 0 && <caption>Empty</caption>}
+              {users?.content?.length === 0 && <caption>No users found</caption>}
               <TableHead>
-                <TableRow>
+                <TableRow hover>
                   <TableCell>User</TableCell>
                   <TableCell>Email</TableCell>
-                  <TableCell>Role</TableCell>
+                  <TableCell>Organization</TableCell>
+                  <TableCell>Roles</TableCell>
                   <TableCell>Status</TableCell>
                   <TableCell>Last Login</TableCell>
                   <TableCell align='right'>Actions</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
-                {data?.content?.map((item) => (
-                  <TableRow key={item.id}>
+                {users?.content?.map((user) => (
+                  <TableRow key={user.id} hover>
                     <TableCell>
                       <Stack direction='row' spacing={1} alignItems='center'>
-                        <Avatar src={item.avatarUrl}>{item.username[0]}</Avatar>
-                        <Typography>{item.username}</Typography>
+                        <Avatar src={user.avatarUrl}>{user.username[0]}</Avatar>
+                        <Typography>{user.username}</Typography>
                       </Stack>
                     </TableCell>
-                    <TableCell>{item.email}</TableCell>
+                    <TableCell>{user.email}</TableCell>
+                    <TableCell></TableCell>
                     <TableCell>
-                      <Chip
-                        label={item.role}
-                        color={item.role === 'admin' ? 'primary' : 'default'}
-                        size='small'
-                      />
+                      <Stack direction='row' spacing={1}>
+                        {user.roles?.map((role) => (
+                          <Chip
+                            key={role.id}
+                            label={role.name}
+                            size='small'
+                          />
+                        ))}
+                      </Stack>
                     </TableCell>
                     <TableCell>
                       <Chip
-                        label={item.status}
-                        color={item.status === 'active' ? 'success' : 'error'}
+                        label={user.isActive ? 'active' : 'inactive'}
+                        color={user.isActive ? 'primary' : 'error'}
                         size='small'
                       />
                     </TableCell>
-                    <TableCell>{new Date(item.lastLogin).toLocaleString()}</TableCell>
+                    <TableCell>{new Date(user.lastLogin).toLocaleString()}</TableCell>
                     <TableCell align='right'>
                       <IconButton
                         size='small'
-                        onClick={(e) => handleMenuOpen(e, item)}
+                        onClick={(e) => handleMenuOpen(e, user)}
                       >
                         <MoreVertIcon />
                       </IconButton>
@@ -316,14 +335,14 @@ const UsersPage = () => {
         </PerfectScrollbar>
       </Stack>
 
-      {data?.totalPages > 1 && (
+      {users && (
         <Stack direction={'row'} justifyContent={'center'} pt={2}>
           <Pagination
             color={'primary'}
             shape={'circular'}
             onChange={(event, value) => handlePageChange(value - 1)}
-            count={data.totalPages ?? 0}
-            page={data.page + 1}
+            count={users.totalPages ?? 0}
+            page={queryRequest.page + 1}
           />
         </Stack>
       )}
@@ -382,6 +401,7 @@ const UsersPage = () => {
               value={formData.username}
               onChange={handleInputChange}
               fullWidth
+              disabled={isCreatingUser || isUpdatingUser}
             />
             <TextField
               label='Email'
@@ -390,6 +410,7 @@ const UsersPage = () => {
               value={formData.email}
               onChange={handleInputChange}
               fullWidth
+              disabled={isCreatingUser || isUpdatingUser}
             />
             <FormControl fullWidth>
               <InputLabel>Role</InputLabel>
@@ -398,6 +419,7 @@ const UsersPage = () => {
                 value={formData.role}
                 onChange={handleInputChange}
                 label='Role'
+                disabled={isCreatingUser || isUpdatingUser}
               >
                 <MenuItem value='user'>User</MenuItem>
                 <MenuItem value='admin'>Admin</MenuItem>
@@ -411,6 +433,7 @@ const UsersPage = () => {
                 value={formData.status}
                 onChange={handleInputChange}
                 label='Status'
+                disabled={isCreatingUser || isUpdatingUser}
               >
                 <MenuItem value='active'>Active</MenuItem>
                 <MenuItem value='inactive'>Inactive</MenuItem>
@@ -420,12 +443,18 @@ const UsersPage = () => {
           </Stack>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setIsUserModalOpen(false)}>Cancel</Button>
+          <Button
+            onClick={() => setIsUserModalOpen(false)}
+            disabled={isCreatingUser || isUpdatingUser}
+          >
+            Cancel
+          </Button>
           <Button
             onClick={selectedUser ? handleUpdateUser : handleCreateUser}
             variant='contained'
+            disabled={isCreatingUser || isUpdatingUser}
           >
-            {selectedUser ? 'Update' : 'Create'}
+            {isCreatingUser ? 'Creating...' : isUpdatingUser ? 'Updating...' : selectedUser ? 'Update' : 'Create'}
           </Button>
         </DialogActions>
       </Dialog>
@@ -444,12 +473,18 @@ const UsersPage = () => {
           </Stack>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setIsRolesModalOpen(false)}>Cancel</Button>
+          <Button
+            onClick={() => setIsRolesModalOpen(false)}
+            disabled={isAssigningRole || isRevokingRole}
+          >
+            Cancel
+          </Button>
           <Button
             onClick={() => handleUpdateRoles(selectedUser?.id, formData.roles)}
             variant='contained'
+            disabled={isAssigningRole || isRevokingRole}
           >
-            Update Roles
+            {isAssigningRole || isRevokingRole ? 'Updating...' : 'Update Roles'}
           </Button>
         </DialogActions>
       </Dialog>

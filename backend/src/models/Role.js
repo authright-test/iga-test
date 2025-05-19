@@ -16,13 +16,22 @@ const Role = sequelize.define('Role', {
     type: DataTypes.TEXT,
     allowNull: true
   },
-  isSystem: {
+  permissions: {
+    type: DataTypes.JSON,
+    defaultValue: []
+  },
+  isActive: {
     type: DataTypes.BOOLEAN,
-    defaultValue: false,
-    comment: 'If true, this role cannot be deleted'
+    defaultValue: true
   }
 }, {
-  timestamps: true
+  timestamps: true,
+  indexes: [
+    {
+      unique: true,
+      fields: ['name']
+    }
+  ]
 });
 
 export default Role; 

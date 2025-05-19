@@ -19,18 +19,38 @@ const auth = createAppAuth({
 
 /**
  * @route   GET /api/roles
- * @desc    Get all roles for current organization
+ * @desc    Get all roles for current organization with pagination, search and sorting
  * @access  Private
  */
-router.get('/', checkPermission('view:roles'), async (req, res) => {
+router.get('/organizations/:organizationId/roles', 
+  checkPermission('view:roles'), 
+  async (req, res) => {
   try {
-    const organizationId = req.query.organizationId;
+    const organizationId = req.params.organizationId;
 
-    if (!organizationId) {
-      return res.status(400).json({ error: 'Organization ID is required' });
+    // Extract query parameters
+    const page = parseInt(req.query.page) || 0;
+    const size = parseInt(req.query.size) || 20;
+    const searchKeyword = req.query.searchKeyword || '';
+    const sort = req.query.sort || 'name,asc';
+
+    // Validate parameters
+    if (page < 0) {
+      return res.status(400).json({ error: 'Page number must be non-negative' });
+    }
+    if (size < 1 || size > 100) {
+      return res.status(400).json({ error: 'Page size must be between 1 and 100' });
+    }
+    if (!['name,asc', 'name,desc'].includes(sort)) {
+      return res.status(400).json({ error: 'Invalid sort parameter' });
     }
 
-    const roles = await getOrganizationRoles(organizationId);
+    const roles = await getOrganizationRoles(organizationId, {
+      page,
+      size,
+      searchKeyword,
+      sort
+    });
 
     res.json(roles);
   } catch (error) {
@@ -40,13 +60,16 @@ router.get('/', checkPermission('view:roles'), async (req, res) => {
 });
 
 /**
- * @route   GET /api/roles/:id
+ * @route   GET /api/roles/:roleId
  * @desc    Get role by ID
  * @access  Private
  */
-router.get('/:id', checkPermission('view:roles'), async (req, res) => {
+router.get('/organizations/:organizationId/roles/:roleId', 
+  checkPermission('view:roles'), 
+  async (req, res) => {
   try {
-    const role = await Role.findByPk(req.params.id, {
+    const organizationId = req.params.organizationId;
+    const role = await Role.findByPk(req.params.roleId, {
       include: [Organization]
     });
 
@@ -66,9 +89,12 @@ router.get('/:id', checkPermission('view:roles'), async (req, res) => {
  * @desc    Create a new role
  * @access  Private
  */
-router.post('/', checkPermission('create:roles'), async (req, res) => {
+router.post('/organizations/:organizationId/roles', 
+  checkPermission('create:roles'), 
+  async (req, res) => {
   try {
-    const { name, description, permissions, organizationId } = req.body;
+    const organizationId = req.params.organizationId;
+    const { name, description, permissions } = req.body;
 
     if (!name || !permissions || !organizationId) {
       return res.status(400).json({ error: 'Name, permissions, and organization ID are required' });
@@ -88,16 +114,19 @@ router.post('/', checkPermission('create:roles'), async (req, res) => {
 });
 
 /**
- * @route   PUT /api/roles/:id
+ * @route   PUT /api/roles/:roleId
  * @desc    Update a role
  * @access  Private
  */
-router.put('/:id', checkPermission('update:roles'), async (req, res) => {
+router.put('/organizations/:organizationId/roles/:roleId', 
+  checkPermission('update:roles'), 
+  async (req, res) => {
   try {
+    const organizationId = req.params.organizationId;
     const { name, description, permissions } = req.body;
 
     const role = await updateRole(
-      req.params.id,
+      req.params.roleId,
       { name, description, permissions },
       req.user.id
     );
@@ -110,13 +139,16 @@ router.put('/:id', checkPermission('update:roles'), async (req, res) => {
 });
 
 /**
- * @route   DELETE /api/roles/:id
+ * @route   DELETE /api/roles/:roleId
  * @desc    Delete a role
  * @access  Private
  */
-router.delete('/:id', checkPermission('delete:roles'), async (req, res) => {
+router.delete('/organizations/:organizationId/roles/:roleId', 
+  checkPermission('delete:roles'), 
+  async (req, res) => {
   try {
-    const success = await deleteRole(req.params.id, req.user.id);
+    const organizationId = req.params.organizationId;
+    const success = await deleteRole(req.params.roleId, req.user.id);
 
     if (!success) {
       return res.status(400).json({ error: 'Failed to delete role' });
@@ -130,19 +162,22 @@ router.delete('/:id', checkPermission('delete:roles'), async (req, res) => {
 });
 
 /**
- * @route   POST /api/roles/:id/assign
+ * @route   POST /api/roles/:roleId/assign
  * @desc    Assign role to users
  * @access  Private
  */
-router.post('/:id/assign', checkPermission('update:roles'), async (req, res) => {
+router.post('/organizations/:organizationId/roles/:roleId/assign', 
+  checkPermission('update:roles'), 
+  async (req, res) => {
   try {
+    const organizationId = req.params.organizationId;
     const { userIds } = req.body;
 
     if (!userIds || !Array.isArray(userIds)) {
       return res.status(400).json({ error: 'User IDs array is required' });
     }
 
-    const role = await Role.findByPk(req.params.id);
+    const role = await Role.findByPk(req.params.roleId);
 
     if (!role) {
       return res.status(404).json({ error: 'Role not found' });
@@ -173,19 +208,22 @@ router.post('/:id/assign', checkPermission('update:roles'), async (req, res) => 
 });
 
 /**
- * @route   POST /api/roles/:id/unassign
+ * @route   POST /api/roles/:roleId/unassign
  * @desc    Unassign role from users
  * @access  Private
  */
-router.post('/:id/unassign', checkPermission('update:roles'), async (req, res) => {
+router.post('/organizations/:organizationId/roles/:roleId/unassign', 
+  checkPermission('update:roles'), 
+  async (req, res) => {
   try {
+    const organizationId = req.params.organizationId;
     const { userIds } = req.body;
 
     if (!userIds || !Array.isArray(userIds)) {
       return res.status(400).json({ error: 'User IDs array is required' });
     }
 
-    const role = await Role.findByPk(req.params.id);
+    const role = await Role.findByPk(req.params.roleId);
 
     if (!role) {
       return res.status(404).json({ error: 'Role not found' });
@@ -216,26 +254,22 @@ router.post('/:id/unassign', checkPermission('update:roles'), async (req, res) =
 });
 
 /**
- * @route   POST /api/roles/:id/permissions
+ * @route   POST /api/roles/:roleId/permissions
  * @desc    Add permissions to a role
  * @access  Private
  */
-router.post('/:id/permissions', async (req, res) => {
+router.post('/organizations/:organizationId/roles/:roleId/permissions', 
+  checkPermission('update:roles'),
+  async (req, res) => {
   try {
-    // Check if user has permission to update roles
-    const hasUpdatePermission = await hasPermission(req.user.id, 'update:roles');
-
-    if (!hasUpdatePermission) {
-      return res.status(403).json({ error: 'Forbidden: Insufficient permissions' });
-    }
-
+    const organizationId = req.params.organizationId;
     const { permissionIds } = req.body;
 
     if (!permissionIds || !Array.isArray(permissionIds)) {
       return res.status(400).json({ error: 'Permission IDs array is required' });
     }
 
-    const role = await Role.findByPk(req.params.id);
+    const role = await Role.findByPk(req.params.roleId);
 
     if (!role) {
       return res.status(404).json({ error: 'Role not found' });
@@ -265,7 +299,7 @@ router.post('/:id/permissions', async (req, res) => {
     });
 
     // Get updated role with permissions
-    const updatedRole = await Role.findByPk(req.params.id, {
+    const updatedRole = await Role.findByPk(req.params.roleId, {
       include: [Permission]
     });
 
@@ -277,20 +311,16 @@ router.post('/:id/permissions', async (req, res) => {
 });
 
 /**
- * @route   DELETE /api/roles/:id/permissions/:permissionId
+ * @route   DELETE organizations/:organizationId/roles/:roleId/permissions/:permissionId
  * @desc    Remove a permission from a role
  * @access  Private
  */
-router.delete('/:id/permissions/:permissionId', async (req, res) => {
+router.delete('/organizations/:organizationId/roles/:roleId/permissions/:permissionId', 
+  checkPermission('update:roles'),
+  async (req, res) => {
   try {
-    // Check if user has permission to update roles
-    const hasUpdatePermission = await hasPermission(req.user.id, 'update:roles');
-
-    if (!hasUpdatePermission) {
-      return res.status(403).json({ error: 'Forbidden: Insufficient permissions' });
-    }
-
-    const role = await Role.findByPk(req.params.id);
+    const organizationId = req.params.organizationId;
+    const role = await Role.findByPk(req.params.roleId);
 
     if (!role) {
       return res.status(404).json({ error: 'Role not found' });

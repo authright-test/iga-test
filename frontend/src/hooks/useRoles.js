@@ -1,40 +1,83 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useAuth } from '../contexts/AuthContext.jsx';
 import api from '../api/api';
+import { usePagingQueryRequest } from '../components/common/usePagingQueryRequest';
 
-export const useRoles = () => {
-  const { organization } = useAuth();
-  const queryClient = useQueryClient();
+export const useRolePage = ({ orgId = '-1' }) => {
+  // 集成分页查询请求
+  const { queryRequest, handleQuickSearch, setQueryRequest, resetQueryRequest, handlePageChange } =
+    usePagingQueryRequest({
+      page: 0,
+      size: 20,
+      searchKeyword: '',
+      sort: 'name,asc'
+    });
 
-  // Query key factory
-  const getQueryKey = (key) => ['roles', organization?.id, key];
-
-  // Get all roles
+  // Get all roles with pagination and filters
   const {
-    data: roles = {},
-    isLoading: isLoadingRoles,
+    data: rolesData = { content: [], totalElements: 0, totalPages: 0 },
+    isLoading,
+    isFetching,
+    isRefetching,
     error: rolesError,
     refetch: getRoles
   } = useQuery({
-    queryKey: getQueryKey('list'),
+    queryKey: ['useRolePage', queryRequest],
     queryFn: async () => {
-      const response = await api.get(`/organizations/${organization.id}/roles`);
+      const response = await api.get(
+        `/api/organizations/${orgId}/roles`,
+        {
+          params: {
+            organizationId: orgId,
+            ...queryRequest
+          }
+        }
+      );
       return response.data;
     },
-    enabled: !!organization?.id
+    enabled: !!orgId
+  });
+
+  return {
+    // 分页查询相关
+    queryRequest,
+    handleQuickSearch,
+    setQueryRequest,
+    resetQueryRequest,
+    handlePageChange,
+
+    // Queries
+    isLoadingRoles: isLoading || isFetching || isRefetching,
+    roles: rolesData,
+    rolesError,
+    getRoles,
+  };
+};
+
+export const useRoles = ({ orgId = '-1' }) => {
+  const queryClient = useQueryClient();
+
+  // Get role by ID query
+  const useRoleById = (roleId) => useQuery({
+    queryKey: ['useRoleById', roleId],
+    queryFn: async () => {
+      const response = await api.get(
+        `/api/organizations/${orgId}/roles/${roleId}`
+      );
+      return response.data;
+    },
+    enabled: !!roleId
   });
 
   // Create role mutation
   const createRoleMutation = useMutation({
     mutationFn: async (roleData) => {
       const response = await api.post(
-        `/organizations/${organization.id}/roles`,
+        `/api/organizations/${orgId}/roles`,
         roleData
       );
       return response.data;
     },
-    onSuccess: (newRole) => {
-      queryClient.setQueryData(getQueryKey('list'), (oldRoles) => [...oldRoles, newRole]);
+    onSuccess: () => {
     }
   });
 
@@ -42,85 +85,54 @@ export const useRoles = () => {
   const updateRoleMutation = useMutation({
     mutationFn: async ({ roleId, roleData }) => {
       const response = await api.put(
-        `/organizations/${organization.id}/roles/${roleId}`,
+        `/api/organizations/${orgId}/roles/${roleId}`,
         roleData
       );
       return response.data;
     },
     onSuccess: (updatedRole) => {
-      queryClient.setQueryData(getQueryKey('list'), (oldRoles) =>
-        oldRoles.map(role => role.id === updatedRole.id ? updatedRole : role)
-      );
     }
   });
 
   // Delete role mutation
   const deleteRoleMutation = useMutation({
-    mutationFn: async (roleId) => {
-      await api.delete(`/organizations/${organization.id}/roles/${roleId}`);
+    mutationFn: async (orgId, roleId) => {
+      await api.delete(`/api/organizations/${orgId}/roles/${roleId}`);
       return roleId;
     },
     onSuccess: (deletedRoleId) => {
-      queryClient.setQueryData(getQueryKey('list'), (oldRoles) =>
-        oldRoles.filter(role => role.id !== deletedRoleId)
-      );
-    }
-  });
-
-  // Assign role mutation
-  const assignRoleMutation = useMutation({
-    mutationFn: async ({ roleId, userId }) => {
-      const response = await api.post(
-        `/organizations/${organization.id}/roles/${roleId}/assign`,
-        { userId }
-      );
-      return response.data;
-    }
-  });
-
-  // Revoke role mutation
-  const revokeRoleMutation = useMutation({
-    mutationFn: async ({ roleId, userId }) => {
-      const response = await api.delete(
-        `/organizations/${organization.id}/roles/${roleId}/assign/${userId}`
-      );
-      return response.data;
     }
   });
 
   // Get role permissions query
-  const getRolePermissionsQuery = (roleId) => useQuery({
-    queryKey: getQueryKey(['permissions', roleId]),
+  const useRolePermissions = (roleId) => useQuery({
+    queryKey: ['useRolePermissions', roleId],
     queryFn: async () => {
       const response = await api.get(
-        `/organizations/${organization.id}/roles/${roleId}/permissions`
+        `/api/organizations/${orgId}/roles/${roleId}/permissions`
       );
       return response.data;
     },
-    enabled: !!roleId && !!organization?.id
+    enabled: !!roleId && !!orgId
   });
 
   // Update role permissions mutation
   const updateRolePermissionsMutation = useMutation({
     mutationFn: async ({ roleId, permissions }) => {
       const response = await api.put(
-        `/organizations/${organization.id}/roles/${roleId}/permissions`,
+        `/api/organizations/${orgId}/roles/${roleId}/permissions`,
         permissions
       );
       return response.data;
     },
-    onSuccess: (data, { roleId }) => {
-      queryClient.invalidateQueries(getQueryKey(['permissions', roleId]));
+    onSuccess: (data) => {
     }
   });
 
   return {
     // Queries
-    roles,
-    isLoadingRoles,
-    rolesError,
-    getRoles,
-    getRolePermissionsQuery,
+    useRoleById,
+    useRolePermissions,
 
     // Mutations
     createRole: createRoleMutation.mutate,
@@ -134,14 +146,6 @@ export const useRoles = () => {
     deleteRole: deleteRoleMutation.mutate,
     isDeletingRole: deleteRoleMutation.isPending,
     deleteRoleError: deleteRoleMutation.error,
-
-    assignRole: assignRoleMutation.mutate,
-    isAssigningRole: assignRoleMutation.isPending,
-    assignRoleError: assignRoleMutation.error,
-
-    revokeRole: revokeRoleMutation.mutate,
-    isRevokingRole: revokeRoleMutation.isPending,
-    revokeRoleError: revokeRoleMutation.error,
 
     updateRolePermissions: updateRolePermissionsMutation.mutate,
     isUpdatingPermissions: updateRolePermissionsMutation.isPending,

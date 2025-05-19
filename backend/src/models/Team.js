@@ -7,16 +7,7 @@ const Team = sequelize.define('Team', {
     autoIncrement: true,
     primaryKey: true
   },
-  githubId: {
-    type: DataTypes.STRING,
-    allowNull: false,
-    unique: true
-  },
   name: {
-    type: DataTypes.STRING,
-    allowNull: false
-  },
-  slug: {
     type: DataTypes.STRING,
     allowNull: false
   },
@@ -24,17 +15,29 @@ const Team = sequelize.define('Team', {
     type: DataTypes.TEXT,
     allowNull: true
   },
-  privacy: {
-    type: DataTypes.STRING,
+  organizationId: {
+    type: DataTypes.INTEGER,
     allowNull: false,
-    defaultValue: 'secret'
+    references: {
+      model: 'Organizations',
+      key: 'id'
+    }
   },
   isActive: {
     type: DataTypes.BOOLEAN,
     defaultValue: true
   }
 }, {
-  timestamps: true
+  timestamps: true,
+  indexes: [
+    {
+      fields: ['organizationId']
+    },
+    {
+      unique: true,
+      fields: ['name', 'organizationId']
+    }
+  ]
 });
 
 export default Team; 

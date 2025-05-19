@@ -1,28 +1,77 @@
 import { Role, Organization, Permission } from '../models/index.js';
 import { createAuditLog } from './auditService.js';
 import logger from '../utils/logger.js';
+import { Op } from 'sequelize';
 
 /**
- * Get all roles for an organization
+ * Get all roles for an organization with pagination, search and sorting
  * @param {number} organizationId - Organization ID
- * @returns {Promise<Array>} Array of roles
+ * @param {Object} options - Query options
+ * @param {number} options.page - Page number (0-based)
+ * @param {number} options.size - Page size
+ * @param {string} options.searchKeyword - Search keyword for name
+ * @param {string} options.sort - Sort field and direction (e.g. "name,asc")
+ * @returns {Promise<Object>} Paginated roles data
  */
-export const getOrganizationRoles = async (organizationId) => {
+export const getOrganizationRoles = async (organizationId, options = {}) => {
   try {
-    const roles = await Role.findAll({
-      where: { organizationId },
-      include: [
-        {
-          model: Organization,
-          attributes: ['id', 'name']
-        },
-        {
-          model: Permission,
-          attributes: ['id', 'name', 'description']
+    const {
+      page = 0,
+      size = 20,
+      searchKeyword = '',
+      sort = 'name,asc'
+    } = options;
+
+    // Parse sort parameter
+    const [sortField, sortDirection] = sort.split(',');
+    const order = [[sortField, sortDirection.toUpperCase()]];
+
+    // Build where clause
+    let where = {}
+    if (organizationId) {
+      // FIXME comment out for dev only
+      // where = { ...where, organizationId }
+    }
+    if (searchKeyword) {
+      where = {
+        ...where,
+        name: {
+          [Op.iLike]: `%${searchKeyword}%`
         }
-      ]
+      }
+    }
+
+    // Get total count
+    const totalElements = await Role.count({ where });
+
+    // Get paginated data
+    const roles = await Role.findAll({
+      where,
+      // include: [
+      //   {
+      //     model: Organization,
+      //     attributes: ['id', 'name']
+      //   },
+      //   {
+      //     model: Permission,
+      //     attributes: ['id', 'name', 'description']
+      //   }
+      // ],
+      order,
+      limit: size,
+      offset: page * size
     });
-    return roles;
+
+    // Calculate total pages
+    const totalPages = Math.ceil(totalElements / size);
+
+    return {
+      content: roles,
+      totalElements,
+      totalPages,
+      size,
+      number: page
+    };
   } catch (error) {
     logger.error('Error in getOrganizationRoles:', error);
     throw error;
@@ -196,4 +245,4 @@ export const deleteRole = async (roleId, userId) => {
     logger.error('Error in deleteRole:', error);
     throw error;
   }
-}; 
+};

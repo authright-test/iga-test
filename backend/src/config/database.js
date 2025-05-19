@@ -25,7 +25,7 @@ async function setupDatabase() {
     logger.info('Database connection has been established successfully.');
 
     // Sync all models
-    await sequelize.sync({ alter: process.env.NODE_ENV === 'development' });
+    // await sequelize.sync({ alter: process.env.NODE_ENV === 'development' });
     logger.info('Database models synchronized successfully.');
   } catch (error) {
     logger.error('Unable to connect to the database:', error);

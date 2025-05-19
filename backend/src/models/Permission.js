@@ -16,18 +16,18 @@ const Permission = sequelize.define('Permission', {
     type: DataTypes.TEXT,
     allowNull: true
   },
-  resource: {
-    type: DataTypes.STRING,
-    allowNull: false,
-    comment: 'The resource type this permission applies to, e.g. repository, organization'
-  },
-  action: {
-    type: DataTypes.STRING,
-    allowNull: false,
-    comment: 'The action allowed by this permission, e.g. read, write, admin'
+  isActive: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: true
   }
 }, {
-  timestamps: true
+  timestamps: true,
+  indexes: [
+    {
+      unique: true,
+      fields: ['name']
+    }
+  ]
 });
 
 export default Permission; 

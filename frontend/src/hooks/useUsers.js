@@ -1,206 +1,281 @@
-import { useEffect, useState } from 'react';
-import { useAuth } from '../contexts/AuthContext.jsx';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import api from '../api/api';
+import { usePagingQueryRequest } from '../components/common/usePagingQueryRequest';
 
-export const useUsers = () => {
-  const [users, setUsers] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const { organization } = useAuth();
+export const useUserPage = ({ orgId = '-1' }) => {
+  // 集成分页查询请求
+  const { queryRequest, handleQuickSearch, setQueryRequest, resetQueryRequest, handlePageChange } =
+    usePagingQueryRequest({
+      page: 0,
+      size: 20,
+      searchKeyword: '',
+      sort: 'username,asc'
+    });
 
-  const getUsers = async (filters = {}) => {
-    try {
-      setIsLoading(true);
-      setError(null);
-
+  // Get all users with pagination and filters
+  const {
+    data: usersData = { content: [], totalElements: 0, totalPages: 0 },
+    isLoading,
+    isFetching,
+    isRefetching,
+    error: usersError,
+    refetch: getUsers
+  } = useQuery({
+    queryKey: ['useUserPage', queryRequest],
+    queryFn: async () => {
       const response = await api.get(
-        `/organizations/${organization.id}/users`,
-        { params: filters }
+        `/api/organizations/${orgId}/users`,
+        {
+          params: {
+            organizationId: orgId,
+            ...queryRequest
+          }
+        }
       );
+      return response.data;
+    },
+    enabled: !!orgId
+  });
 
-      setUsers(response.data);
-    } catch (err) {
-      setError(err.response?.data?.error || err.message);
-    } finally {
-      setIsLoading(false);
-    }
+  return {
+    // 分页查询相关
+    queryRequest,
+    handleQuickSearch,
+    setQueryRequest,
+    resetQueryRequest,
+    handlePageChange,
+
+    // Queries
+    isLoadingUsers: isLoading || isFetching || isRefetching,
+    users: usersData,
+    usersError,
+    getUsers,
   };
+};
 
-  const createUser = async (userData) => {
-    try {
+export const useUsers = ({ orgId = '-1' }) => {
+  const queryClient = useQueryClient();
+
+  // Get user by ID query
+  const useUserById = (userId) => useQuery({
+    queryKey: ['useUserById', userId],
+    queryFn: async () => {
+      const response = await api.get(
+        `/api/organizations/${orgId}/users/${userId}`
+      );
+      return response.data;
+    },
+    enabled: !!userId && !!orgId
+  });
+
+  // Create user mutation
+  const createUserMutation = useMutation({
+    mutationFn: async (userData) => {
       const response = await api.post(
-        `/organizations/${organization.id}/users`,
+        `/api/organizations/${orgId}/users`,
         userData
       );
-      setUsers([...users, response.data]);
       return response.data;
-    } catch (err) {
-      throw err.response?.data?.error || err.message;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries(['useUserPage']);
     }
-  };
+  });
 
-  const updateUser = async (userId, userData) => {
-    try {
+  // Update user mutation
+  const updateUserMutation = useMutation({
+    mutationFn: async ({ userId, userData }) => {
       const response = await api.put(
-        `/organizations/${organization.id}/users/${userId}`,
+        `/api/organizations/${orgId}/users/${userId}`,
         userData
       );
-      setUsers(users.map(user =>
-        user.id === userId ? response.data : user
-      ));
       return response.data;
-    } catch (err) {
-      throw err.response?.data?.error || err.message;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries(['useUserPage']);
+      queryClient.invalidateQueries(['useUserById']);
     }
-  };
+  });
 
-  const deleteUser = async (userId) => {
-    try {
-      await api.delete(
-        `/organizations/${organization.id}/users/${userId}`
-      );
-      setUsers(users.filter(user => user.id !== userId));
-    } catch (err) {
-      throw err.response?.data?.error || err.message;
+  // Delete user mutation
+  const deleteUserMutation = useMutation({
+    mutationFn: async (userId) => {
+      await api.delete(`/api/organizations/${orgId}/users/${userId}`);
+      return userId;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries(['useUserPage']);
     }
-  };
+  });
 
-  const getUserRoles = async (userId) => {
-    try {
+  // Get user roles query
+  const useUserRoles = (userId) => useQuery({
+    queryKey: ['useUserRoles', userId],
+    queryFn: async () => {
       const response = await api.get(
-        `/organizations/${organization.id}/users/${userId}/roles`
+        `/api/organizations/${orgId}/users/${userId}/roles`
       );
       return response.data;
-    } catch (err) {
-      throw err.response?.data?.error || err.message;
-    }
-  };
+    },
+    enabled: !!userId && !!orgId
+  });
 
-  const assignRole = async (userId, roleId) => {
-    try {
+  // Assign role mutation
+  const assignRoleMutation = useMutation({
+    mutationFn: async ({ userId, roleId }) => {
       const response = await api.post(
-        `/organizations/${organization.id}/users/${userId}/roles`,
+        `/api/organizations/${orgId}/users/${userId}/roles`,
         { roleId }
       );
       return response.data;
-    } catch (err) {
-      throw err.response?.data?.error || err.message;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries(['useUserRoles']);
     }
-  };
+  });
 
-  const revokeRole = async (userId, roleId) => {
-    try {
-      const response = await api.delete(
-        `/organizations/${organization.id}/users/${userId}/roles/${roleId}`
+  // Revoke role mutation
+  const revokeRoleMutation = useMutation({
+    mutationFn: async ({ userId, roleId }) => {
+      await api.delete(
+        `/api/organizations/${orgId}/users/${userId}/roles/${roleId}`
       );
-      return response.data;
-    } catch (err) {
-      throw err.response?.data?.error || err.message;
+      return { userId, roleId };
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries(['useUserRoles']);
     }
-  };
+  });
 
-  const getUserTeams = async (userId) => {
-    try {
+  // Get user teams query
+  const useUserTeams = (userId) => useQuery({
+    queryKey: ['useUserTeams', userId],
+    queryFn: async () => {
       const response = await api.get(
-        `/organizations/${organization.id}/users/${userId}/teams`
+        `/api/organizations/${orgId}/users/${userId}/teams`
       );
       return response.data;
-    } catch (err) {
-      throw err.response?.data?.error || err.message;
-    }
-  };
+    },
+    enabled: !!userId && !!orgId
+  });
 
-  const addToTeam = async (userId, teamId) => {
-    try {
+  // Add to team mutation
+  const addToTeamMutation = useMutation({
+    mutationFn: async ({ userId, teamId }) => {
       const response = await api.post(
-        `/organizations/${organization.id}/users/${userId}/teams`,
+        `/api/organizations/${orgId}/users/${userId}/teams`,
         { teamId }
       );
       return response.data;
-    } catch (err) {
-      throw err.response?.data?.error || err.message;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries(['useUserTeams']);
     }
-  };
+  });
 
-  const removeFromTeam = async (userId, teamId) => {
-    try {
-      const response = await api.delete(
-        `/organizations/${organization.id}/users/${userId}/teams/${teamId}`
+  // Remove from team mutation
+  const removeFromTeamMutation = useMutation({
+    mutationFn: async ({ userId, teamId }) => {
+      await api.delete(
+        `/api/organizations/${orgId}/users/${userId}/teams/${teamId}`
       );
-      return response.data;
-    } catch (err) {
-      throw err.response?.data?.error || err.message;
+      return { userId, teamId };
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries(['useUserTeams']);
     }
-  };
+  });
 
-  const getUserActivity = async (userId) => {
-    try {
+  // Get user activity query
+  const useUserActivity = (userId) => useQuery({
+    queryKey: ['useUserActivity', userId],
+    queryFn: async () => {
       const response = await api.get(
-        `/organizations/${organization.id}/users/${userId}/activity`
+        `/api/organizations/${orgId}/users/${userId}/activity`
       );
       return response.data;
-    } catch (err) {
-      throw err.response?.data?.error || err.message;
-    }
-  };
+    },
+    enabled: !!userId && !!orgId
+  });
 
-  const getUserAccessLogs = async (userId) => {
-    try {
+  // Get user access logs query
+  const useUserAccessLogs = (userId) => useQuery({
+    queryKey: ['useUserAccessLogs', userId],
+    queryFn: async () => {
       const response = await api.get(
-        `/organizations/${organization.id}/users/${userId}/access-logs`
+        `/api/organizations/${orgId}/users/${userId}/access-logs`
       );
       return response.data;
-    } catch (err) {
-      throw err.response?.data?.error || err.message;
-    }
-  };
+    },
+    enabled: !!userId && !!orgId
+  });
 
-  const getUserPermissions = async (userId) => {
-    try {
+  // Get user permissions query
+  const useUserPermissions = (userId) => useQuery({
+    queryKey: ['useUserPermissions', userId],
+    queryFn: async () => {
       const response = await api.get(
-        `/organizations/${organization.id}/users/${userId}/permissions`
+        `/api/organizations/${orgId}/users/${userId}/permissions`
       );
       return response.data;
-    } catch (err) {
-      throw err.response?.data?.error || err.message;
-    }
-  };
+    },
+    enabled: !!userId && !!orgId
+  });
 
-  const updateUserPermissions = async (userId, permissions) => {
-    try {
+  // Update user permissions mutation
+  const updateUserPermissionsMutation = useMutation({
+    mutationFn: async ({ userId, permissions }) => {
       const response = await api.put(
-        `/organizations/${organization.id}/users/${userId}/permissions`,
+        `/api/organizations/${orgId}/users/${userId}/permissions`,
         permissions
       );
       return response.data;
-    } catch (err) {
-      throw err.response?.data?.error || err.message;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries(['useUserPermissions']);
     }
-  };
-
-  useEffect(() => {
-    if (organization?.id) {
-      getUsers();
-    }
-  }, [organization?.id]);
+  });
 
   return {
-    users,
-    isLoading,
-    error,
-    getUsers,
-    createUser,
-    updateUser,
-    deleteUser,
-    getUserRoles,
-    assignRole,
-    revokeRole,
-    getUserTeams,
-    addToTeam,
-    removeFromTeam,
-    getUserActivity,
-    getUserAccessLogs,
-    getUserPermissions,
-    updateUserPermissions,
+    // Queries
+    useUserById,
+    useUserRoles,
+    useUserTeams,
+    useUserActivity,
+    useUserAccessLogs,
+    useUserPermissions,
+
+    // Mutations
+    createUser: createUserMutation.mutate,
+    isCreatingUser: createUserMutation.isPending,
+    createUserError: createUserMutation.error,
+
+    updateUser: updateUserMutation.mutate,
+    isUpdatingUser: updateUserMutation.isPending,
+    updateUserError: updateUserMutation.error,
+
+    deleteUser: deleteUserMutation.mutate,
+    isDeletingUser: deleteUserMutation.isPending,
+    deleteUserError: deleteUserMutation.error,
+
+    assignRole: assignRoleMutation.mutate,
+    isAssigningRole: assignRoleMutation.isPending,
+    assignRoleError: assignRoleMutation.error,
+
+    revokeRole: revokeRoleMutation.mutate,
+    isRevokingRole: revokeRoleMutation.isPending,
+    revokeRoleError: revokeRoleMutation.error,
+
+    addToTeam: addToTeamMutation.mutate,
+    isAddingToTeam: addToTeamMutation.isPending,
+    addToTeamError: addToTeamMutation.error,
+
+    removeFromTeam: removeFromTeamMutation.mutate,
+    isRemovingFromTeam: removeFromTeamMutation.isPending,
+    removeFromTeamError: removeFromTeamMutation.error,
+
+    updateUserPermissions: updateUserPermissionsMutation.mutate,
+    isUpdatingPermissions: updateUserPermissionsMutation.isPending,
+    updatePermissionsError: updateUserPermissionsMutation.error
   };
 };

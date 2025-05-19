@@ -7,8 +7,10 @@ import dashboardRoutes from './dashboardRoutes.js';
 import permissionRoutes from './permissionRoutes.js';
 import policyRoutes from './policyRoutes.js';
 import roleRoutes from './roleRoutes.js';
+import userRoutes from './userRoutes.js';
 import repositoryRoutes from './repositoryRoutes.js';
-import { getOrganization, getOrganizationMembers, getOrganizationTeams } from '../services/organizationService.js';
+import organizationRoutes from './organizationRoutes.js';
+import installationRoutes from './installationRoutes.js';
 
 function setupRoutes(app) {
   const router = express.Router();
@@ -21,52 +23,23 @@ function setupRoutes(app) {
   // Auth routes (public)
   router.use('/auth', authRoutes);
 
+  // Installation routes (public)
+  router.use('/installations', installationRoutes);
+
   // Protected routes
   router.use('/api', authenticateJWT);
-
-  // GitHub App routes
   router.use('/api/github', authenticateGitHubApp);
-
-  // API routes (protected)
+  
+  // API routes
   router.use('/api/roles', roleRoutes);
+  router.use('/api/users', userRoutes);
   router.use('/api/policies', policyRoutes);
   router.use('/api/audit', auditRoutes);
   router.use('/api/dashboard', dashboardRoutes);
   router.use('/api/permissions', permissionRoutes);
   router.use('/api/repositories', repositoryRoutes);
-
-  // Organization routes
-  router.get('/api/organizations/:org', async (req, res) => {
-    try {
-      const organization = await getOrganization(req.params.org);
-      res.json(organization);
-    } catch (error) {
-      logger.error('Error fetching organization:', error);
-      res.status(500).json({ error: error.message });
-    }
-  });
-
-  // Member routes
-  router.get('/api/organizations/:org/members', async (req, res) => {
-    try {
-      const members = await getOrganizationMembers(req.params.org);
-      res.json(members);
-    } catch (error) {
-      logger.error('Error fetching organization members:', error);
-      res.status(500).json({ error: error.message });
-    }
-  });
-
-  // Team routes
-  router.get('/api/organizations/:org/teams', async (req, res) => {
-    try {
-      const teams = await getOrganizationTeams(req.params.org);
-      res.json(teams);
-    } catch (error) {
-      logger.error('Error fetching organization teams:', error);
-      res.status(500).json({ error: error.message });
-    }
-  });
+  router.use('/api/organizations', organizationRoutes);
+  router.use('/api/installations', installationRoutes);
 
   app.use(router);
 }

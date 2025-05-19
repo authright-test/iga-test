@@ -1,12 +1,11 @@
 import { DataTypes } from 'sequelize';
 import { sequelize } from '../config/database.js';
-import { User } from './index.js';
 
 const RefreshToken = sequelize.define('RefreshToken', {
   id: {
     type: DataTypes.INTEGER,
-    primaryKey: true,
-    autoIncrement: true
+    autoIncrement: true,
+    primaryKey: true
   },
   token: {
     type: DataTypes.STRING,
@@ -30,11 +29,16 @@ const RefreshToken = sequelize.define('RefreshToken', {
     defaultValue: false
   }
 }, {
-  timestamps: true
+  timestamps: true,
+  indexes: [
+    {
+      unique: true,
+      fields: ['token']
+    },
+    {
+      fields: ['userId']
+    }
+  ]
 });
-
-// 建立与User的关联
-RefreshToken.belongsTo(User, { foreignKey: 'userId' });
-User.hasMany(RefreshToken, { foreignKey: 'userId' });
 
 export default RefreshToken;

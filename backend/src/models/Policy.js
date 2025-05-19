@@ -9,33 +9,50 @@ const Policy = sequelize.define('Policy', {
   },
   name: {
     type: DataTypes.STRING,
-    allowNull: false,
-    unique: true
+    allowNull: false
   },
   description: {
     type: DataTypes.TEXT,
     allowNull: true
   },
-  conditions: {
-    type: DataTypes.JSON,
+  organizationId: {
+    type: DataTypes.INTEGER,
     allowNull: false,
-    comment: 'JSON conditions for policy evaluation'
+    references: {
+      model: 'Organizations',
+      key: 'id'
+    }
   },
-  actions: {
+  repositoryId: {
+    type: DataTypes.INTEGER,
+    allowNull: true,
+    references: {
+      model: 'Repositories',
+      key: 'id'
+    }
+  },
+  rules: {
     type: DataTypes.JSON,
-    allowNull: false,
-    comment: 'JSON actions to take when policy is violated'
+    defaultValue: []
   },
   isActive: {
     type: DataTypes.BOOLEAN,
     defaultValue: true
-  },
-  severity: {
-    type: DataTypes.ENUM('low', 'medium', 'high', 'critical'),
-    defaultValue: 'medium'
   }
 }, {
-  timestamps: true
+  timestamps: true,
+  indexes: [
+    {
+      fields: ['organizationId']
+    },
+    {
+      fields: ['repositoryId']
+    },
+    {
+      unique: true,
+      fields: ['name', 'organizationId', 'repositoryId']
+    }
+  ]
 });
 
 export default Policy; 

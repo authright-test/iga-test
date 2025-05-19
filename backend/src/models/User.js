@@ -12,16 +12,23 @@ const User = sequelize.define('User', {
     allowNull: false,
     unique: true
   },
-  username: {
+  login: {
+    type: DataTypes.STRING,
+    allowNull: false,
+    unique: true
+  },
+  name: {
     type: DataTypes.STRING,
     allowNull: false
   },
   email: {
     type: DataTypes.STRING,
-    allowNull: true,
-    validate: {
-      isEmail: true
-    }
+    allowNull: false,
+    unique: true
+  },
+  password: {
+    type: DataTypes.STRING,
+    allowNull: true
   },
   avatarUrl: {
     type: DataTypes.STRING,
@@ -40,7 +47,21 @@ const User = sequelize.define('User', {
     defaultValue: true
   }
 }, {
-  timestamps: true
+  timestamps: true,
+  indexes: [
+    {
+      unique: true,
+      fields: ['githubId']
+    },
+    {
+      unique: true,
+      fields: ['login']
+    },
+    {
+      unique: true,
+      fields: ['email']
+    }
+  ]
 });
 
 export default User; 

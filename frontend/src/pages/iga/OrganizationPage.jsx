@@ -4,32 +4,29 @@ import {
   Avatar,
   Box,
   Button,
-  Card,
-  CardContent,
   Chip,
   Dialog,
   DialogActions,
   DialogContent,
   DialogTitle,
-  Divider,
   FormControl,
-  Grid,
+  FormControlLabel,
   IconButton,
   InputLabel,
   LinearProgress,
   Menu,
   MenuItem,
-  Paper,
+  Pagination,
   Select,
   Stack,
   Table,
   TableBody,
   TableCell,
-  TableContainer,
   TableHead,
   TableRow,
   TextField,
   Typography,
+  Switch,
 } from '@mui/material';
 import {
   Add as AddIcon,
@@ -41,21 +38,18 @@ import {
 import PerfectScrollbar from 'react-perfect-scrollbar';
 import { QuickSearchBar } from '../../components/common/quick-search-bar';
 import { SearchCriteriaBar, SearchCriteriaItem } from '../../components/common/search-criteria-bar';
-import { usePagingQueryRequest } from '../../components/common/usePagingQueryRequest';
 import { useAuth } from '../../contexts/AuthContext.jsx';
-import { useOrganization } from '../../hooks/useOrganization';
 import { usePermissions } from '../../hooks/usePermissions';
+import { useOrganizationPage, useOrganization } from '../../hooks/useOrganization';
 
 const OrganizationPage = () => {
-  const { queryRequest, handleQuickSearch, setQueryRequest, resetQueryRequest, handlePageChange } =
-    usePagingQueryRequest({
-      page: 0,
-      size: 20,
-    });
-  const [data, setData] = useState({});
+  const { logAuditEvent } = useAuth();
+  const { hasPermission } = usePermissions();
+
   const [selectedOrg, setSelectedOrg] = useState(null);
   const [isOrgModalOpen, setIsOrgModalOpen] = useState(false);
   const [isMemberModalOpen, setIsMemberModalOpen] = useState(false);
+  const [anchorEl, setAnchorEl] = useState(null);
   const [formData, setFormData] = useState({
     name: '',
     description: '',
@@ -64,23 +58,38 @@ const OrganizationPage = () => {
     email: '',
     plan: 'free',
     status: 'active',
+    defaultRepositoryPermission: 'read',
+    membersCanCreateRepositories: true,
+    twoFactorRequirementEnabled: false,
+    samlEnabled: false
   });
-  const [anchorEl, setAnchorEl] = useState(null);
-
-  const { organization, logAuditEvent } = useAuth();
-  const { hasPermission } = usePermissions();
 
   const {
+    queryRequest,
+    handleQuickSearch,
+    setQueryRequest,
+    resetQueryRequest,
+    handlePageChange,
     organizations,
-    isLoading,
-    error,
-    createOrganization,
-    updateOrganization,
-    deleteOrganization,
+    isLoadingOrganizations,
+    organizationsError,
     getOrganizations,
-    addMember,
-    removeMember,
-    updateMemberRole,
+  } = useOrganizationPage();
+
+  const {
+    createOrganization,
+    isCreatingOrganization,
+    createOrganizationError,
+    updateOrganization,
+    isUpdatingOrganization,
+    updateOrganizationError,
+    deleteOrganization,
+    isDeletingOrganization,
+    deleteOrganizationError,
+    useOrganizationMembers,
+    updateOrganizationMembers,
+    isUpdatingMembers,
+    updateMembersError,
   } = useOrganization();
 
   const handleCreateOrg = async () => {
@@ -106,7 +115,10 @@ const OrganizationPage = () => {
   const handleUpdateOrg = async () => {
     try {
       if (!selectedOrg) return;
-      const updatedOrg = await updateOrganization(selectedOrg.id, formData);
+      const updatedOrg = await updateOrganization({
+        organizationId: selectedOrg.id,
+        organizationData: formData
+      });
       logAuditEvent(
         'organization_updated',
         'organization',
@@ -155,6 +167,10 @@ const OrganizationPage = () => {
         email: org.email,
         plan: org.plan,
         status: org.status,
+        defaultRepositoryPermission: org.defaultRepositoryPermission,
+        membersCanCreateRepositories: org.membersCanCreateRepositories,
+        twoFactorRequirementEnabled: org.twoFactorRequirementEnabled,
+        samlEnabled: org.samlEnabled
       });
     } else {
       setSelectedOrg(null);
@@ -166,6 +182,10 @@ const OrganizationPage = () => {
         email: '',
         plan: 'free',
         status: 'active',
+        defaultRepositoryPermission: 'read',
+        membersCanCreateRepositories: true,
+        twoFactorRequirementEnabled: false,
+        samlEnabled: false
       });
     }
     setIsOrgModalOpen(true);
@@ -189,15 +209,17 @@ const OrganizationPage = () => {
     setSelectedOrg(null);
   };
 
+  if (!hasPermission('organization.view')) {
+    return (
+      <Alert severity='error'>
+        <Typography variant='h4' gutterBottom>Access Denied</Typography>
+        <Typography>You do not have permission to view organization details.</Typography>
+      </Alert>
+    );
+  }
+
   return (
     <Stack direction='column' gap={2}>
-      {!hasPermission('organization.view') && (
-        <Alert severity='error'>
-          <Typography variant='h4' gutterBottom>Access Denied</Typography>
-          <Typography>You do not have permission to view organization details.</Typography>
-        </Alert>
-      )}
-
       <Stack direction='row' justifyContent='space-between' alignItems='center'>
         <Stack direction='row' spacing={2}>
           {hasPermission('organization.create') && (
@@ -205,8 +227,9 @@ const OrganizationPage = () => {
               variant='contained'
               startIcon={<AddIcon />}
               onClick={() => openOrgModal()}
+              disabled={isCreatingOrganization}
             >
-              Create Organization
+              {isCreatingOrganization ? 'Creating...' : 'Create Organization'}
             </Button>
           )}
         </Stack>
@@ -218,34 +241,32 @@ const OrganizationPage = () => {
         />
       </Stack>
 
-      {error && (
+      {(organizationsError || createOrganizationError || updateOrganizationError || deleteOrganizationError) && (
         <Alert severity='error'>
-          {error}
+          {organizationsError?.message || createOrganizationError?.message || updateOrganizationError?.message || deleteOrganizationError?.message}
         </Alert>
       )}
 
       <Stack direction='column'>
         <SearchCriteriaBar
-          sx={{
-            borderRadius: 0,
-          }}
-          disabled={isLoading}
-          onRefresh={getOrganizations}>
-          <SearchCriteriaItem label={'Total Records'} value={data?.totalElements ?? 0} />
-          <SearchCriteriaItem
-            label={'Plan'}
-            value={queryRequest.plan}
-          />
+          sx={{ borderRadius: 0 }}
+          disabled={isLoadingOrganizations}
+          onRefresh={getOrganizations}
+        >
+          <SearchCriteriaItem label={'Total Records'} value={organizations?.totalElements} />
+          <SearchCriteriaItem label={'Plan'} value={queryRequest.plan} />
           <SearchCriteriaItem label={'Status'} value={queryRequest.status} />
         </SearchCriteriaBar>
 
-        {(isLoading) && <LinearProgress />}
+        {(isLoadingOrganizations || isCreatingOrganization || isUpdatingOrganization || isDeletingOrganization) &&
+          <LinearProgress />}
+
         <PerfectScrollbar>
-          <Box sx={{ minWidth: 1050, minHeight: 500 }}>
+          <Box sx={{ minHeight: 'calc(100vh - 320px)', backgroundColor: 'white' }}>
             <Table>
-              {data?.content?.length === 0 && <caption>Empty</caption>}
+              {organizations?.content?.length === 0 && <caption>No organizations found</caption>}
               <TableHead>
-                <TableRow>
+                <TableRow hover>
                   <TableCell>Organization</TableCell>
                   <TableCell>Email</TableCell>
                   <TableCell>Plan</TableCell>
@@ -255,34 +276,34 @@ const OrganizationPage = () => {
                 </TableRow>
               </TableHead>
               <TableBody>
-                {data?.content?.map((item) => (
-                  <TableRow key={item.id}>
+                {organizations?.content?.map((org) => (
+                  <TableRow key={org.id} hover>
                     <TableCell>
                       <Stack direction='row' spacing={1} alignItems='center'>
-                        <Avatar src={item.avatar}>{item.name[0]}</Avatar>
-                        <Typography>{item.name}</Typography>
+                        <Avatar src={org.avatar}>{org.name[0]}</Avatar>
+                        <Typography>{org.name}</Typography>
                       </Stack>
                     </TableCell>
-                    <TableCell>{item.email}</TableCell>
+                    <TableCell>{org.email}</TableCell>
                     <TableCell>
                       <Chip
-                        label={item.plan}
-                        color={item.plan === 'enterprise' ? 'primary' : 'default'}
+                        label={org.plan}
+                        color={org.plan === 'enterprise' ? 'primary' : 'default'}
                         size='small'
                       />
                     </TableCell>
                     <TableCell>
                       <Chip
-                        label={item.status}
-                        color={item.status === 'active' ? 'success' : 'error'}
+                        label={org.status}
+                        color={org.status === 'active' ? 'success' : 'error'}
                         size='small'
                       />
                     </TableCell>
-                    <TableCell>{item.location}</TableCell>
+                    <TableCell>{org.location}</TableCell>
                     <TableCell align='right'>
                       <IconButton
-                        size='small'
-                        onClick={(e) => handleMenuOpen(e, item)}
+                        onClick={(e) => handleMenuOpen(e, org)}
+                        disabled={isUpdatingOrganization || isDeletingOrganization}
                       >
                         <MoreVertIcon />
                       </IconButton>
@@ -293,19 +314,19 @@ const OrganizationPage = () => {
             </Table>
           </Box>
         </PerfectScrollbar>
-      </Stack>
 
-      {data?.totalPages > 1 && (
-        <Stack direction={'row'} justifyContent={'center'} pt={2}>
-          <Pagination
-            color={'primary'}
-            shape={'circular'}
-            onChange={(event, value) => handlePageChange(value - 1)}
-            count={data.totalPages ?? 0}
-            page={data.page + 1}
-          />
-        </Stack>
-      )}
+        {organizations && (
+          <Stack direction='row' justifyContent='center' pt={2}>
+            <Pagination
+              color='primary'
+              shape='circular'
+              onChange={(event, value) => handlePageChange(value - 1)}
+              count={organizations.totalPages}
+              page={queryRequest.page + 1}
+            />
+          </Stack>
+        )}
+      </Stack>
 
       {/* Organization Menu */}
       <Menu
@@ -362,6 +383,7 @@ const OrganizationPage = () => {
               onChange={handleInputChange}
               fullWidth
               required
+              disabled={isCreatingOrganization || isUpdatingOrganization}
             />
             <TextField
               label='Description'
@@ -371,6 +393,7 @@ const OrganizationPage = () => {
               fullWidth
               multiline
               rows={4}
+              disabled={isCreatingOrganization || isUpdatingOrganization}
             />
             <TextField
               label='Website'
@@ -378,6 +401,7 @@ const OrganizationPage = () => {
               value={formData.website}
               onChange={handleInputChange}
               fullWidth
+              disabled={isCreatingOrganization || isUpdatingOrganization}
             />
             <TextField
               label='Location'
@@ -385,6 +409,7 @@ const OrganizationPage = () => {
               value={formData.location}
               onChange={handleInputChange}
               fullWidth
+              disabled={isCreatingOrganization || isUpdatingOrganization}
             />
             <TextField
               label='Email'
@@ -394,6 +419,7 @@ const OrganizationPage = () => {
               onChange={handleInputChange}
               fullWidth
               required
+              disabled={isCreatingOrganization || isUpdatingOrganization}
             />
             <FormControl fullWidth>
               <InputLabel>Plan</InputLabel>
@@ -402,6 +428,7 @@ const OrganizationPage = () => {
                 value={formData.plan}
                 onChange={handleInputChange}
                 label='Plan'
+                disabled={isCreatingOrganization || isUpdatingOrganization}
               >
                 <MenuItem value='free'>Free</MenuItem>
                 <MenuItem value='pro'>Pro</MenuItem>
@@ -415,21 +442,88 @@ const OrganizationPage = () => {
                 value={formData.status}
                 onChange={handleInputChange}
                 label='Status'
+                disabled={isCreatingOrganization || isUpdatingOrganization}
               >
                 <MenuItem value='active'>Active</MenuItem>
                 <MenuItem value='inactive'>Inactive</MenuItem>
                 <MenuItem value='suspended'>Suspended</MenuItem>
               </Select>
             </FormControl>
+            <FormControl fullWidth>
+              <InputLabel>Default Repository Permission</InputLabel>
+              <Select
+                name='defaultRepositoryPermission'
+                value={formData.defaultRepositoryPermission}
+                onChange={handleInputChange}
+                label='Default Repository Permission'
+                disabled={isCreatingOrganization || isUpdatingOrganization}
+              >
+                <MenuItem value='read'>Read</MenuItem>
+                <MenuItem value='write'>Write</MenuItem>
+                <MenuItem value='admin'>Admin</MenuItem>
+                <MenuItem value='none'>None</MenuItem>
+              </Select>
+            </FormControl>
+            <FormControlLabel
+              control={
+                <Switch
+                  checked={formData.membersCanCreateRepositories}
+                  onChange={(e) => handleInputChange({
+                    target: {
+                      name: 'membersCanCreateRepositories',
+                      value: e.target.checked
+                    }
+                  })}
+                  disabled={isCreatingOrganization || isUpdatingOrganization}
+                />
+              }
+              label="Members can create repositories"
+            />
+            <FormControlLabel
+              control={
+                <Switch
+                  checked={formData.twoFactorRequirementEnabled}
+                  onChange={(e) => handleInputChange({
+                    target: {
+                      name: 'twoFactorRequirementEnabled',
+                      value: e.target.checked
+                    }
+                  })}
+                  disabled={isCreatingOrganization || isUpdatingOrganization}
+                />
+              }
+              label="Require two-factor authentication"
+            />
+            <FormControlLabel
+              control={
+                <Switch
+                  checked={formData.samlEnabled}
+                  onChange={(e) => handleInputChange({
+                    target: {
+                      name: 'samlEnabled',
+                      value: e.target.checked
+                    }
+                  })}
+                  disabled={isCreatingOrganization || isUpdatingOrganization}
+                />
+              }
+              label="Enable SAML SSO"
+            />
           </Stack>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setIsOrgModalOpen(false)}>Cancel</Button>
+          <Button
+            onClick={() => setIsOrgModalOpen(false)}
+            disabled={isCreatingOrganization || isUpdatingOrganization}
+          >
+            Cancel
+          </Button>
           <Button
             onClick={selectedOrg ? handleUpdateOrg : handleCreateOrg}
             variant='contained'
+            disabled={isCreatingOrganization || isUpdatingOrganization}
           >
-            {selectedOrg ? 'Update' : 'Create'}
+            {isCreatingOrganization ? 'Creating...' : isUpdatingOrganization ? 'Updating...' : selectedOrg ? 'Update' : 'Create'}
           </Button>
         </DialogActions>
       </Dialog>
@@ -448,7 +542,21 @@ const OrganizationPage = () => {
           </Stack>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setIsMemberModalOpen(false)}>Close</Button>
+          <Button
+            onClick={() => setIsMemberModalOpen(false)}
+            disabled={isUpdatingMembers}
+          >
+            Cancel
+          </Button>
+          <Button
+            onClick={() => {
+              // Implement member update logic
+            }}
+            variant='contained'
+            disabled={isUpdatingMembers}
+          >
+            {isUpdatingMembers ? 'Saving...' : 'Save'}
+          </Button>
         </DialogActions>
       </Dialog>
     </Stack>

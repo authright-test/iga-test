@@ -21,24 +21,41 @@ const Repository = sequelize.define('Repository', {
     allowNull: false,
     unique: true
   },
-  private: {
-    type: DataTypes.BOOLEAN,
-    defaultValue: false
-  },
   description: {
     type: DataTypes.TEXT,
     allowNull: true
   },
-  url: {
-    type: DataTypes.STRING,
-    allowNull: true
+  organizationId: {
+    type: DataTypes.INTEGER,
+    allowNull: false,
+    references: {
+      model: 'Organizations',
+      key: 'id'
+    }
+  },
+  isPrivate: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: false
   },
   isActive: {
     type: DataTypes.BOOLEAN,
     defaultValue: true
   }
 }, {
-  timestamps: true
+  timestamps: true,
+  indexes: [
+    {
+      unique: true,
+      fields: ['githubId']
+    },
+    {
+      unique: true,
+      fields: ['fullName']
+    },
+    {
+      fields: ['organizationId']
+    }
+  ]
 });
 
 export default Repository; 

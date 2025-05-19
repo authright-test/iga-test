@@ -20,25 +20,20 @@ const queryClient = new QueryClient({
     queries: {
       staleTime: 5 * 60 * 1000, // 5 minutes
       cacheTime: 10 * 60 * 1000, // 10 minutes
-      retry: 3,
+      retry: false,
       refetchOnWindowFocus: false,
-      refetchOnMount: true,
-      refetchOnReconnect: true,
+      refetchOnReconnect: false,
+      retryOnMount: false,
+      onError: (error) => {
+        console.error('Query error:', error);
+      },
     },
     mutations: {
-      retry: 2,
+      retry: false,
+      useErrorBoundary: false,
       onError: (error) => {
         console.error('Mutation error:', error);
       },
-    },
-  },
-});
-
-// Global error handler
-queryClient.setDefaultOptions({
-  queries: {
-    onError: (error) => {
-      console.error('Query error:', error);
     },
   },
 });

@@ -1,127 +1,156 @@
-import { useEffect, useState } from 'react';
-import { useAuth } from '../contexts/AuthContext.jsx';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { usePagingQueryRequest } from '../components/common/usePagingQueryRequest';
 import api from '../api/api';
 
-export const useOrganization = () => {
-  const [organization, setOrganization] = useState(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const { organization: authOrg } = useAuth();
+export const useOrganizationPage = () => {
+  // 集成分页查询请求
+  const { queryRequest, handleQuickSearch, setQueryRequest, resetQueryRequest, handlePageChange } =
+    usePagingQueryRequest({
+      page: 0,
+      size: 20,
+      searchKeyword: '',
+      sort: 'name,asc'
+    });
 
-  const fetchOrganization = async () => {
-    try {
-      setIsLoading(true);
-      setError(null);
-
+  // Get all organizations with pagination and filters
+  const {
+    data: organizationsData = { content: [], totalElements: 0, totalPages: 0 },
+    isLoading,
+    isFetching,
+    isRefetching,
+    error: organizationsError,
+    refetch: getOrganizations
+  } = useQuery({
+    queryKey: ['useOrganizationPage', queryRequest],
+    queryFn: async () => {
       const response = await api.get(
-        `/organizations/${authOrg.id}`
-      );
-
-      setOrganization(response.data);
-    } catch (err) {
-      setError(err.response?.data?.error || err.message);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const updateOrganization = async (orgData) => {
-    try {
-      const response = await api.put(
-        `/organizations/${authOrg.id}`,
-        orgData
-      );
-      setOrganization(response.data);
-      return response.data;
-    } catch (err) {
-      throw err.response?.data?.error || err.message;
-    }
-  };
-
-  const getOrganizationStats = async () => {
-    try {
-      const response = await api.get(
-        `/organizations/${authOrg.id}/stats`
+        `/api/organizations`,
+        {
+          params: {
+            ...queryRequest
+          }
+        }
       );
       return response.data;
-    } catch (err) {
-      throw err.response?.data?.error || err.message;
-    }
-  };
-
-  const getOrganizationSettings = async () => {
-    try {
-      const response = await api.get(
-        `/organizations/${authOrg.id}/settings`
-      );
-      return response.data;
-    } catch (err) {
-      throw err.response?.data?.error || err.message;
-    }
-  };
-
-  const updateOrganizationSettings = async (settings) => {
-    try {
-      const response = await api.put(
-        `/organizations/${authOrg.id}/settings`,
-        settings
-      );
-      return response.data;
-    } catch (err) {
-      throw err.response?.data?.error || err.message;
-    }
-  };
-
-  const getOrganizationMembers = async () => {
-    try {
-      const response = await api.get(
-        `/organizations/${authOrg.id}/members`
-      );
-      return response.data;
-    } catch (err) {
-      throw err.response?.data?.error || err.message;
-    }
-  };
-
-  const getOrganizationRepositories = async () => {
-    try {
-      const response = await api.get(
-        `/organizations/${authOrg.id}/repositories`
-      );
-      return response.data;
-    } catch (err) {
-      throw err.response?.data?.error || err.message;
-    }
-  };
-
-  const getOrganizationTeams = async () => {
-    try {
-      const response = await api.get(
-        `/organizations/${authOrg.id}/teams`
-      );
-      return response.data;
-    } catch (err) {
-      throw err.response?.data?.error || err.message;
-    }
-  };
-
-  useEffect(() => {
-    if (authOrg?.id) {
-      fetchOrganization();
-    }
-  }, [authOrg?.id]);
+    },
+  });
 
   return {
-    organization,
-    isLoading,
-    error,
-    updateOrganization,
-    getOrganizationStats,
-    getOrganizationSettings,
-    updateOrganizationSettings,
-    getOrganizationMembers,
-    getOrganizationRepositories,
-    getOrganizationTeams,
-    refreshOrganization: fetchOrganization,
+    // 分页查询相关
+    queryRequest,
+    handleQuickSearch,
+    setQueryRequest,
+    resetQueryRequest,
+    handlePageChange,
+
+    // Queries
+    isLoadingOrganizations: isLoading || isFetching || isRefetching,
+    organizations: organizationsData,
+    organizationsError,
+    getOrganizations,
+  };
+};
+
+export const useOrganization = () => {
+  const queryClient = useQueryClient();
+
+  // Get organization by ID query
+  const useOrganizationById = (organizationId) => useQuery({
+    queryKey: ['useOrganizationById', organizationId],
+    queryFn: async () => {
+      const response = await api.get(
+        `/api/organizations/${organizationId}`
+      );
+      return response.data;
+    },
+    enabled: !!organizationId
+  });
+
+  // Create organization mutation
+  const createOrganizationMutation = useMutation({
+    mutationFn: async (organizationData) => {
+      const response = await api.post(
+        `/api/organizations`,
+        organizationData
+      );
+      return response.data;
+    },
+    onSuccess: () => {
+
+    }
+  });
+
+  // Update organization mutation
+  const updateOrganizationMutation = useMutation({
+    mutationFn: async ({ organizationId, organizationData }) => {
+      const response = await api.put(
+        `/api/organizations/${organizationId}`,
+        organizationData
+      );
+      return response.data;
+    },
+    onSuccess: () => {
+
+    }
+  });
+
+  // Delete organization mutation
+  const deleteOrganizationMutation = useMutation({
+    mutationFn: async (organizationId) => {
+      await api.delete(`/api/organizations/${organizationId}`);
+      return organizationId;
+    },
+    onSuccess: () => {
+
+    }
+  });
+
+  // Get organization members query
+  const useOrganizationMembers = (organizationId) => useQuery({
+    queryKey: ['useOrganizationMembers', organizationId],
+    queryFn: async () => {
+      const response = await api.get(
+        `/api/organizations/${organizationId}/members`
+      );
+      return response.data;
+    },
+    enabled: !!organizationId
+  });
+
+  // Update organization members mutation
+  const updateOrganizationMembersMutation = useMutation({
+    mutationFn: async ({ organizationId, members }) => {
+      const response = await api.put(
+        `/api/organizations/${organizationId}/members`,
+        members
+      );
+      return response.data;
+    },
+    onSuccess: () => {
+
+    }
+  });
+
+  return {
+    // Queries
+    useOrganizationById,
+    useOrganizationMembers,
+
+    // Mutations
+    createOrganization: createOrganizationMutation.mutate,
+    isCreatingOrganization: createOrganizationMutation.isPending,
+    createOrganizationError: createOrganizationMutation.error,
+
+    updateOrganization: updateOrganizationMutation.mutate,
+    isUpdatingOrganization: updateOrganizationMutation.isPending,
+    updateOrganizationError: updateOrganizationMutation.error,
+
+    deleteOrganization: deleteOrganizationMutation.mutate,
+    isDeletingOrganization: deleteOrganizationMutation.isPending,
+    deleteOrganizationError: deleteOrganizationMutation.error,
+
+    updateOrganizationMembers: updateOrganizationMembersMutation.mutate,
+    isUpdatingMembers: updateOrganizationMembersMutation.isPending,
+    updateMembersError: updateOrganizationMembersMutation.error
   };
 };

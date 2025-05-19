@@ -6,10 +6,15 @@
   "main": "src/index.js",
   "scripts": {
     "start": "node src/index.js",
-    "dev": "nodemon src/index.js",
+    "dev": "HTTP_PROXY=http://127.0.0.1:1087 HTTPS_PROXY=http://127.0.0.1:1087 nodemon src/index.js",
     "test": "jest",
     "lint": "eslint \"**/*.{js,ts,tsx}\" --cache",
-    "lint:fix": "run-s \"lint --fix\""
+    "lint:fix": "run-s \"lint --fix\"",
+    "db:migrate": "node src/scripts/migrate.js",
+    "db:seed": "node src/scripts/seed.js",
+    "db:reset": "node src/scripts/reset.js",
+    "db:check": "node src/scripts/check.js",
+    "db:setup": "npm run db:reset && npm run db:seed"
   },
   "type": "module",
   "dependencies": {

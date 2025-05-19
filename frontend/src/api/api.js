@@ -5,7 +5,6 @@ import { toast } from 'react-toastify';
  * API service configuration and error handling
  * Provides centralized API request handling with comprehensive error management
  */
-
 const api = axios.create({
   baseURL: import.meta.env.VITE_REACT_APP_API_URL || '/api',
   timeout: 30000, // 30 seconds timeout

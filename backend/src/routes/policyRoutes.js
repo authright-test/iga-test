@@ -12,14 +12,11 @@ const router = express.Router();
  * @desc    Get all policies for current organization
  * @access  Private
  */
-router.get('/', checkPermission('view:policies'), async (req, res) => {
+router.get('/organizations/:organizationId/policies', 
+  checkPermission('view:policies'), 
+  async (req, res) => {
   try {
     const organizationId = req.query.organizationId;
-
-    if (!organizationId) {
-      return res.status(400).json({ error: 'Organization ID is required' });
-    }
-
     const policies = await getOrganizationPolicies(organizationId);
 
     res.json(policies);
@@ -30,13 +27,16 @@ router.get('/', checkPermission('view:policies'), async (req, res) => {
 });
 
 /**
- * @route   GET /api/policies/:id
+ * @route   GET /api/policies/:policyId
  * @desc    Get policy by ID
  * @access  Private
  */
-router.get('/:id', checkPermission('view:policies'), async (req, res) => {
+router.get('/organizations/:organizationId/policies/:policyId', 
+  checkPermission('view:policies'), 
+  async (req, res) => {
   try {
-    const policy = await Policy.findByPk(req.params.id, {
+    const organizationId = req.params.organizationId;
+    const policy = await Policy.findByPk(req.params.policyId, {
       include: [Organization]
     });
 
@@ -56,9 +56,12 @@ router.get('/:id', checkPermission('view:policies'), async (req, res) => {
  * @desc    Create a new policy
  * @access  Private
  */
-router.post('/', checkPermission('create:policies'), async (req, res) => {
+router.post('/organizations/:organizationId/policies', 
+  checkPermission('create:policies'), 
+  async (req, res) => {
   try {
-    const { name, description, conditions, actions, severity, isActive, organizationId } = req.body;
+    const organizationId = req.params.organizationId;
+    const { name, description, conditions, actions, severity, isActive } = req.body;
 
     if (!name || !conditions || !actions || !organizationId) {
       return res.status(400).json({ error: 'Name, conditions, actions, and organization ID are required' });
@@ -78,16 +81,19 @@ router.post('/', checkPermission('create:policies'), async (req, res) => {
 });
 
 /**
- * @route   PUT /api/policies/:id
+ * @route   PUT /api/policies/:policyId
  * @desc    Update a policy
  * @access  Private
  */
-router.put('/:id', checkPermission('update:policies'), async (req, res) => {
+router.put('/organizations/:organizationId/policies/:policyId', 
+  checkPermission('update:policies'), 
+  async (req, res) => {
   try {
+    const organizationId = req.params.organizationId;
     const { name, description, conditions, actions, severity, isActive } = req.body;
 
     const policy = await updatePolicy(
-      req.params.id,
+      req.params.policyId,
       { name, description, conditions, actions, severity, isActive },
       req.user.id
     );
@@ -100,13 +106,15 @@ router.put('/:id', checkPermission('update:policies'), async (req, res) => {
 });
 
 /**
- * @route   DELETE /api/policies/:id
+ * @route   DELETE /api/policies/:policyId
  * @desc    Delete a policy
  * @access  Private
  */
-router.delete('/:id', checkPermission('delete:policies'), async (req, res) => {
+router.delete('/organizations/:organizationId/policies/:policyId', 
+  checkPermission('delete:policies'), 
+  async (req, res) => {
   try {
-    const success = await deletePolicy(req.params.id, req.user.id);
+    const success = await deletePolicy(req.params.policyId, req.user.id);
 
     if (!success) {
       return res.status(400).json({ error: 'Failed to delete policy' });
@@ -120,13 +128,16 @@ router.delete('/:id', checkPermission('delete:policies'), async (req, res) => {
 });
 
 /**
- * @route   POST /api/policies/:id/activate
+ * @route   POST /api/policies/:policyId/activate
  * @desc    Activate a policy
  * @access  Private
  */
-router.post('/:id/activate', checkPermission('update:policies'), async (req, res) => {
+router.post('/organizations/:organizationId/policies/:policyId/activate', 
+  checkPermission('update:policies'), 
+  async (req, res) => {
   try {
-    const policy = await Policy.findByPk(req.params.id);
+    const organizationId = req.params.organizationId;
+    const policy = await Policy.findByPk(req.params.policyId);
 
     if (!policy) {
       return res.status(404).json({ error: 'Policy not found' });
@@ -156,13 +167,16 @@ router.post('/:id/activate', checkPermission('update:policies'), async (req, res
 });
 
 /**
- * @route   POST /api/policies/:id/deactivate
+ * @route   POST /api/policies/:policyId/deactivate
  * @desc    Deactivate a policy
  * @access  Private
  */
-router.post('/:id/deactivate', checkPermission('update:policies'), async (req, res) => {
+router.post('/organizations/:organizationId/policies/:policyId/deactivate', 
+  checkPermission('update:policies'), 
+  async (req, res) => {
   try {
-    const policy = await Policy.findByPk(req.params.id);
+    const organizationId = req.params.organizationId;
+    const policy = await Policy.findByPk(req.params.policyId);
 
     if (!policy) {
       return res.status(404).json({ error: 'Policy not found' });

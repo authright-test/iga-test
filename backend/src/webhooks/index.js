@@ -6,10 +6,23 @@ import {
   handleRepositoryDeleted,
   handleRepositoryVisibilityChanged
 } from './handlers/repositoryHandler.js';
+import {
+  handleInstallationCreated,
+  handleInstallationDeleted
+} from './handlers/installationHandler.js';
 
 // Use Webhooks here
 const webhooks = new Webhooks({
   secret: process.env.GITHUB_APP_WEBHOOK_SECRET
+});
+
+// Handle installation events
+webhooks.on('installation.created', async ({ payload }) => {
+  await handleInstallationCreated(payload);
+});
+
+webhooks.on('installation.deleted', async ({ payload }) => {
+  await handleInstallationDeleted(payload);
 });
 
 // Handle member events
@@ -21,7 +34,7 @@ webhooks.on('member.removed', async ({ payload }) => {
   await handleMemberRemoved(payload);
 });
 
-webhooks.on('member.edited', async ({ payload }) => {
+webhooks.on('member.updated', async ({ payload }) => {
   await handleMemberUpdated(payload);
 });
 
@@ -34,13 +47,7 @@ webhooks.on('repository.deleted', async ({ payload }) => {
   await handleRepositoryDeleted(payload);
 });
 
-webhooks.on('repository.publicized', async ({ payload }) => {
-  payload.visibility = 'public';
-  await handleRepositoryVisibilityChanged(payload);
-});
-
-webhooks.on('repository.privatized', async ({ payload }) => {
-  payload.visibility = 'private';
+webhooks.on('repository.visibility_changed', async ({ payload }) => {
   await handleRepositoryVisibilityChanged(payload);
 });
 
