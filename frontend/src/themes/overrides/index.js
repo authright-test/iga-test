@@ -40,7 +40,6 @@ export default function ComponentsOverrides(theme) {
     FormHelperText(),
     IconButton(theme),
     InputLabel(theme),
-    LinearProgress(),
     Link(),
     ListItemButton(theme),
     ListItemIcon(theme),

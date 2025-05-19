@@ -4,8 +4,8 @@ import { ThemeProvider } from '@mui/material/styles';
 import DashboardLayout from './layout/Dashboard';
 import theme from './theme';
 import { AuthProvider } from './contexts/AuthContext.jsx';
-import GitHubLogin from './components/auth/GitHubLogin';
-import OAuthCallback from './components/auth/OAuthCallback';
+import GitHubLoginPage from './pages/auth/GitHubLogin';
+import OAuthCallback from './pages/auth/OAuthCallback';
 import Layout from './components/layout/Layout';
 import { useAuth } from './contexts/AuthContext.jsx';
 import AuditLogsPage from './pages/mui/AuditLogsPage';
@@ -44,7 +44,7 @@ const App = () => {
       <AuthProvider>
         <Routes>
           {/* Public routes */}
-          <Route path='/login' element={<GitHubLogin />} />
+          <Route path='/login' element={<GitHubLoginPage />} />
           <Route path='/oauth-callback' element={<OAuthCallback />} />
 
           {/* Protected routes */}

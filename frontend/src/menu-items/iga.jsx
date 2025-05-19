@@ -22,7 +22,7 @@ const pages = {
       id: 'organization',
       title: 'Organization',
       type: 'item',
-      url: '/organization',
+      url: '/iga/organization',
       icon: AiOutlineApartment,
       breadcrumbs: true
     },
@@ -30,7 +30,7 @@ const pages = {
       id: 'repository',
       title: 'Repositories',
       type: 'item',
-      url: '/repositories',
+      url: '/iga/repositories',
       icon: AiOutlineGithub,
       breadcrumbs: true
     },
@@ -38,7 +38,7 @@ const pages = {
       id: 'users',
       title: 'Users',
       type: 'item',
-      url: '/users',
+      url: '/iga/users',
       icon: AiOutlineUser,
       breadcrumbs: true
     },
@@ -46,7 +46,7 @@ const pages = {
       id: 'roles',
       title: 'Roles',
       type: 'item',
-      url: '/roles',
+      url: '/iga/roles',
       icon: AiOutlineTrademark,
       breadcrumbs: true
     },
@@ -54,7 +54,7 @@ const pages = {
       id: 'teams',
       title: 'Teams',
       type: 'item',
-      url: '/teams',
+      url: '/iga/teams',
       icon: AiOutlineUsergroupAdd,
       breadcrumbs: true
     },
@@ -62,7 +62,7 @@ const pages = {
       id: 'policies',
       title: 'Policies',
       type: 'item',
-      url: '/policies',
+      url: '/iga/policies',
       icon: AiOutlineFork,
       breadcrumbs: true
     },
@@ -70,7 +70,7 @@ const pages = {
       id: 'auditLogs',
       title: 'Audit Logs',
       type: 'item',
-      url: '/audit-logs',
+      url: '/iga/audit-logs',
       icon: AiOutlineAudit,
       breadcrumbs: true
     },

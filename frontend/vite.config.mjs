@@ -4,8 +4,8 @@ import jsconfigPaths from 'vite-jsconfig-paths';
 
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '');
-  const API_URL = `${env.VITE_APP_BASE_NAME}`;
-  const PORT = 3000;
+  const API_URL = `${env.VITE_APP_BASE_NAME}` || '';
+  const PORT = `${env.VITE_PORT}` || 3001;
 
   return {
     server: {

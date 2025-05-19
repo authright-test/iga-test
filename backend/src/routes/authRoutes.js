@@ -10,7 +10,8 @@ const router = express.Router();
  * @access  Public
  */
 router.get('/github', (req, res) => {
-  const githubAuthUrl = `https://github.com/login/oauth/authorize?client_id=${process.env.GITHUB_APP_CLIENT_ID}&redirect_uri=${process.env.GITHUB_CALLBACK_URL}&scope=user:email`;
+  const callbackUrl = encodeURI(process.env.GITHUB_CALLBACK_URL);
+  const githubAuthUrl = `https://github.com/login/oauth/authorize?client_id=${process.env.GITHUB_APP_CLIENT_ID}&redirect_uri=${callbackUrl}&scope=user:email`;
   logger.info('Redirecting to GitHub OAuth URL:' + githubAuthUrl);
   res.redirect(githubAuthUrl);
 });
@@ -23,7 +24,7 @@ router.get('/github', (req, res) => {
 router.get('/github/callback', async (req, res) => {
   try {
     const { code } = req.query;
-    logger.info('receive code from GitHub:' + code);
+    logger.info('receive response from GitHub:', req.query);
 
     if (!code) {
       return res.redirect(`${process.env.FRONTEND_URL}/login?error=no_code`);
@@ -40,6 +41,8 @@ router.get('/github/callback', async (req, res) => {
 });
 
 /**
+ * FIXME: change to account & password login
+ *
  * @route   POST /auth/login
  * @desc    Authenticate user with GitHub OAuth code (API endpoint)
  * @access  Public

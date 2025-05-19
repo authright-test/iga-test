@@ -1,11 +1,9 @@
 import { toast } from 'react-toastify';
 import jwt_decode from 'jwt-decode';
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import api from '../services/api.js';
+import api from '../api/api.js';
 
 const AuthContext = createContext();
-
-export const useAuth = () => useContext(AuthContext);
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
@@ -90,31 +88,36 @@ export const AuthProvider = ({ children }) => {
             draggable: true,
           });
         }
+      } finally {
+        setLoading(false);
       }
     } else {
       // Token expired, try to refresh
-      const refreshSuccess = await refreshAccessToken();
-      if (!refreshSuccess) {
-        // Only clear everything if refresh fails
-        setToken(null);
-        setRefreshToken(null);
-        setUser(null);
-        setOrganization(null);
-        setAuthToken(null);
-        localStorage.removeItem('token');
-        localStorage.removeItem('refreshToken');
+      try {
+        const refreshSuccess = await refreshAccessToken();
+        if (!refreshSuccess) {
+          // Only clear everything if refresh fails
+          setToken(null);
+          setRefreshToken(null);
+          setUser(null);
+          setOrganization(null);
+          setAuthToken(null);
+          localStorage.removeItem('token');
+          localStorage.removeItem('refreshToken');
 
-        toast.error('Session Expired. Please log in again.', {
-          position: 'top-right',
-          autoClose: 5000,
-          hideProgressBar: false,
-          closeOnClick: true,
-          pauseOnHover: true,
-          draggable: true,
-        });
+          toast.error('Session Expired. Please log in again.', {
+            position: 'top-right',
+            autoClose: 5000,
+            hideProgressBar: false,
+            closeOnClick: true,
+            pauseOnHover: true,
+            draggable: true,
+          });
+        }
+      } finally {
+        setLoading(false);
       }
     }
-    setLoading(false);
   };
 
   // Login user
@@ -176,6 +179,8 @@ export const AuthProvider = ({ children }) => {
 
   // Logout user
   const logout = async () => {
+    console.log('logout');
+    setLoading(true)
     try {
       // 记录登出审计日志
       if (user && organization) {
@@ -202,7 +207,9 @@ export const AuthProvider = ({ children }) => {
           console.error('Failed to logout from server:', error);
         }
       }
-
+    } catch (error) {
+      console.error('Logout error:', error);
+    } finally {
       // 清除本地状态
       setToken(null);
       setRefreshToken(null);
@@ -211,16 +218,8 @@ export const AuthProvider = ({ children }) => {
       setAuthToken(null);
       localStorage.removeItem('token');
       localStorage.removeItem('refreshToken');
-    } catch (error) {
-      console.error('Logout error:', error);
-      // 即使出错也清除本地状态
-      setToken(null);
-      setRefreshToken(null);
-      setUser(null);
-      setOrganization(null);
-      setAuthToken(null);
-      localStorage.removeItem('token');
-      localStorage.removeItem('refreshToken');
+
+      setLoading(false)
     }
   };
 
@@ -264,3 +263,5 @@ export const AuthProvider = ({ children }) => {
 
   return (<AuthContext.Provider value={value}>{children}</AuthContext.Provider>);
 };
+
+export const useAuth = () => useContext(AuthContext);

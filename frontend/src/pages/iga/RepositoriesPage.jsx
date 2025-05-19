@@ -19,7 +19,7 @@ import {
   DialogTitle,
   FormControl,
   IconButton,
-  InputLabel,
+  InputLabel, LinearProgress,
   MenuItem,
   Paper,
   Select,
@@ -36,11 +36,13 @@ import {
   Typography,
 } from '@mui/material';
 import React, { useEffect, useState } from 'react';
+import PerfectScrollbar from 'react-perfect-scrollbar';
 import { useAuth } from '../../contexts/AuthContext.jsx';
 import { usePermissions } from '../../hooks/usePermissions';
 import { useRepositories } from '../../hooks/useRepositories';
 
 const RepositoriesPage = () => {
+  const [data, setData] = useState({});
   const [repositories, setRepositories] = useState([]);
   const [error, setError] = useState(null);
   const [selectedRepository, setSelectedRepository] = useState(null);
@@ -206,9 +208,6 @@ const RepositoriesPage = () => {
   return (
     <Box>
       <Stack direction='row' justifyContent='space-between' alignItems='center' mb={3}>
-        <Typography variant='h4' component='h1'>
-          Repositories
-        </Typography>
         {hasPermission('repositories.create') && (
           <Button
             variant='contained'
@@ -220,98 +219,120 @@ const RepositoriesPage = () => {
         )}
       </Stack>
 
+      {!hasPermission('repositories.view') && (
+        <Alert severity='error' sx={{ mb: 2 }}>
+          <Typography variant='h4' gutterBottom>Access Denied</Typography>
+          <Typography>You do not have permission to view organization details.</Typography>
+        </Alert>
+      )}
+
       {error && (
         <Alert severity='error' sx={{ mb: 2 }}>
           {error}
         </Alert>
       )}
 
-      {isLoading && (
-        <LinearProgress />
-      )}
-      <TableContainer component={Paper}>
-        <Table>
-          <TableHead>
-            <TableRow>
-              <TableCell>Name</TableCell>
-              <TableCell>Description</TableCell>
-              <TableCell>Visibility</TableCell>
-              <TableCell>Default Branch</TableCell>
-              <TableCell>Teams</TableCell>
-              <TableCell>Users</TableCell>
-              <TableCell align='right'>Actions</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {repositories?.map((repository) => (
-              <TableRow key={repository.id}>
-                <TableCell>{repository.name}</TableCell>
-                <TableCell>{repository.description}</TableCell>
-                <TableCell>
-                  <Chip
-                    label={repository.visibility}
-                    color={repository.visibility === 'public' ? 'success' : 'default'}
-                    size='small'
-                  />
-                </TableCell>
-                <TableCell>{repository.defaultBranch}</TableCell>
-                <TableCell>
-                  <AvatarGroup max={3}>
-                    {repository?.teams?.map((team) => (
-                      <Avatar key={team.id} sx={{ width: 24, height: 24 }}>
-                        <GroupIcon fontSize='small' />
-                      </Avatar>
-                    ))}
-                  </AvatarGroup>
-                </TableCell>
-                <TableCell>
-                  <AvatarGroup max={3}>
-                    {repository?.users?.map((user) => (
-                      <Avatar key={user.id} sx={{ width: 24, height: 24 }}>
-                        <PersonIcon fontSize='small' />
-                      </Avatar>
-                    ))}
-                  </AvatarGroup>
-                </TableCell>
-                <TableCell align='right'>
-                  <Stack direction='row' spacing={1} justifyContent='flex-end'>
-                    {hasPermission('repositories.edit') && (
-                      <IconButton
+      <Stack direction='column'>
+        {isLoading && (
+          <LinearProgress />
+        )}
+        <PerfectScrollbar>
+          <Box sx={{ minWidth: 1050, minHeight: 500 }}>
+            <Table>
+              <TableHead>
+                <TableRow>
+                  <TableCell>Name</TableCell>
+                  <TableCell>Description</TableCell>
+                  <TableCell>Visibility</TableCell>
+                  <TableCell>Default Branch</TableCell>
+                  <TableCell>Teams</TableCell>
+                  <TableCell>Users</TableCell>
+                  <TableCell align='right'>Actions</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {repositories?.map((repository) => (
+                  <TableRow key={repository.id}>
+                    <TableCell>{repository.name}</TableCell>
+                    <TableCell>{repository.description}</TableCell>
+                    <TableCell>
+                      <Chip
+                        label={repository.visibility}
+                        color={repository.visibility === 'public' ? 'success' : 'default'}
                         size='small'
-                        onClick={() => openRepositoryModal(repository)}
-                      >
-                        <EditIcon />
-                      </IconButton>
-                    )}
-                    {hasPermission('repositories.delete') && (
-                      <IconButton
-                        size='small'
-                        color='error'
-                        onClick={() => handleDeleteRepository(repository)}
-                      >
-                        <DeleteIcon />
-                      </IconButton>
-                    )}
-                    <IconButton
-                      size='small'
-                      onClick={() => openTeamModal(repository)}
-                    >
-                      <GroupIcon />
-                    </IconButton>
-                    <IconButton
-                      size='small'
-                      onClick={() => openUserModal(repository)}
-                    >
-                      <PersonIcon />
-                    </IconButton>
-                  </Stack>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </TableContainer>
+                      />
+                    </TableCell>
+                    <TableCell>{repository.defaultBranch}</TableCell>
+                    <TableCell>
+                      <AvatarGroup max={3}>
+                        {repository?.teams?.map((team) => (
+                          <Avatar key={team.id} sx={{ width: 24, height: 24 }}>
+                            <GroupIcon fontSize='small' />
+                          </Avatar>
+                        ))}
+                      </AvatarGroup>
+                    </TableCell>
+                    <TableCell>
+                      <AvatarGroup max={3}>
+                        {repository?.users?.map((user) => (
+                          <Avatar key={user.id} sx={{ width: 24, height: 24 }}>
+                            <PersonIcon fontSize='small' />
+                          </Avatar>
+                        ))}
+                      </AvatarGroup>
+                    </TableCell>
+                    <TableCell align='right'>
+                      <Stack direction='row' spacing={1} justifyContent='flex-end'>
+                        {hasPermission('repositories.edit') && (
+                          <IconButton
+                            size='small'
+                            onClick={() => openRepositoryModal(repository)}
+                          >
+                            <EditIcon />
+                          </IconButton>
+                        )}
+                        {hasPermission('repositories.delete') && (
+                          <IconButton
+                            size='small'
+                            color='error'
+                            onClick={() => handleDeleteRepository(repository)}
+                          >
+                            <DeleteIcon />
+                          </IconButton>
+                        )}
+                        <IconButton
+                          size='small'
+                          onClick={() => openTeamModal(repository)}
+                        >
+                          <GroupIcon />
+                        </IconButton>
+                        <IconButton
+                          size='small'
+                          onClick={() => openUserModal(repository)}
+                        >
+                          <PersonIcon />
+                        </IconButton>
+                      </Stack>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </Box>
+        </PerfectScrollbar>
 
+        {data?.totalPages > 1 && (
+          <Stack direction={'row'} justifyContent={'center'} pt={2}>
+            <Pagination
+              color={'primary'}
+              shape={'circular'}
+              onChange={(event, value) => handlePageChange(value - 1)}
+              count={data.totalPages ?? 0}
+              page={data.page + 1}
+            />
+          </Stack>
+        )}
+      </Stack>
       {/* Repository Modal */}
       <Dialog
         open={isRepositoryModalOpen}

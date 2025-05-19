@@ -1,5 +1,5 @@
 // material-ui
-import LinearProgress from '@mui/material/LinearProgress';
+import { LinearProgress } from '@mui/material';
 import Box from '@mui/material/Box';
 
 // ==============================|| Loader ||============================== //
@@ -7,7 +7,7 @@ import Box from '@mui/material/Box';
 export default function Loader() {
   return (
     <Box sx={{ position: 'fixed', top: 0, left: 0, zIndex: 2001, width: '100%' }}>
-      <LinearProgress color="primary" />
+      <LinearProgress color='primary' />
     </Box>
   );
 }

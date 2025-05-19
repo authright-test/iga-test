@@ -8,7 +8,7 @@ import Loadable from 'components/Loadable';
 const LoginPage = Loadable(lazy(() => import('pages/auth/Login')));
 const RegisterPage = Loadable(lazy(() => import('pages/auth/Register')));
 
-// ==============================|| AUTH ROUTING ||============================== //
+// ==============================|| MANTIS LOGIN ROUTING ||============================== //
 
 const LoginRoutes = {
   path: '/',
@@ -18,11 +18,11 @@ const LoginRoutes = {
       element: <AuthLayout />,
       children: [
         {
-          path: '/login',
+          path: 'login',
           element: <LoginPage />
         },
         {
-          path: '/register',
+          path: 'register',
           element: <RegisterPage />
         }
       ]

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useAuth } from '../contexts/AuthContext.jsx';
-import api from '../services/api';
+import api from '../api/api';
 
 export const useUsers = () => {
   const [users, setUsers] = useState([]);
@@ -8,7 +8,7 @@ export const useUsers = () => {
   const [error, setError] = useState(null);
   const { organization } = useAuth();
 
-  const fetchUsers = async (filters = {}) => {
+  const getUsers = async (filters = {}) => {
     try {
       setIsLoading(true);
       setError(null);
@@ -180,7 +180,7 @@ export const useUsers = () => {
 
   useEffect(() => {
     if (organization?.id) {
-      fetchUsers();
+      getUsers();
     }
   }, [organization?.id]);
 
@@ -188,6 +188,7 @@ export const useUsers = () => {
     users,
     isLoading,
     error,
+    getUsers,
     createUser,
     updateUser,
     deleteUser,
@@ -201,6 +202,5 @@ export const useUsers = () => {
     getUserAccessLogs,
     getUserPermissions,
     updateUserPermissions,
-    refreshUsers: fetchUsers,
   };
 };

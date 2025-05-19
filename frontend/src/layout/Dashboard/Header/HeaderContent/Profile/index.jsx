@@ -31,6 +31,8 @@ import SettingOutlined from '@ant-design/icons/SettingOutlined';
 import UserOutlined from '@ant-design/icons/UserOutlined';
 import avatar1 from 'assets/images/users/avatar-1.png';
 
+import { useAuth } from '../../../../../contexts/AuthContext';
+
 // tab panel wrapper
 function TabPanel({ children, value, index, ...other }) {
   return (
@@ -51,9 +53,10 @@ function a11yProps(index) {
 // ==============================|| HEADER CONTENT - PROFILE ||============================== //
 
 export default function Profile() {
+  const { logout, user } = useAuth();
+
   const theme = useTheme();
 
-  const [user, setUser] = useState({});
   const anchorRef = useRef(null);
   const [open, setOpen] = useState(false);
   const handleToggle = () => {
@@ -147,7 +150,7 @@ export default function Profile() {
                       </Grid>
                       <Grid>
                         <Tooltip title='Logout'>
-                          <IconButton size='large' sx={{ color: 'text.primary' }}>
+                          <IconButton size='large' sx={{ color: 'text.primary' }} onClick={logout}>
                             <FiLogOut size={18} />
                           </IconButton>
                         </Tooltip>

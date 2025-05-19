@@ -12,42 +12,45 @@ import ProfileOutlined from '@ant-design/icons/ProfileOutlined';
 import LogoutOutlined from '@ant-design/icons/LogoutOutlined';
 import UserOutlined from '@ant-design/icons/UserOutlined';
 import WalletOutlined from '@ant-design/icons/WalletOutlined';
+import { useAuth } from '../../../../../contexts/AuthContext';
 
 // ==============================|| HEADER PROFILE - PROFILE TAB ||============================== //
 
 export default function ProfileTab() {
+  const { logout } = useAuth();
+
   return (
-    <List component="nav" sx={{ p: 0, '& .MuiListItemIcon-root': { minWidth: 32 } }}>
+    <List component='nav' sx={{ p: 0, '& .MuiListItemIcon-root': { minWidth: 32 } }}>
       <ListItemButton>
         <ListItemIcon>
           <EditOutlined />
         </ListItemIcon>
-        <ListItemText primary="Edit Profile" />
+        <ListItemText primary='Edit Profile' />
       </ListItemButton>
       <ListItemButton>
         <ListItemIcon>
           <UserOutlined />
         </ListItemIcon>
-        <ListItemText primary="View Profile" />
+        <ListItemText primary='View Profile' />
       </ListItemButton>
 
       <ListItemButton>
         <ListItemIcon>
           <ProfileOutlined />
         </ListItemIcon>
-        <ListItemText primary="Social Profile" />
+        <ListItemText primary='Social Profile' />
       </ListItemButton>
       <ListItemButton>
         <ListItemIcon>
           <WalletOutlined />
         </ListItemIcon>
-        <ListItemText primary="Billing" />
+        <ListItemText primary='Billing' />
       </ListItemButton>
       <ListItemButton>
         <ListItemIcon>
           <LogoutOutlined />
         </ListItemIcon>
-        <ListItemText primary="Logout" />
+        <ListItemText primary='Logout' onClick={logout} />
       </ListItemButton>
     </List>
   );

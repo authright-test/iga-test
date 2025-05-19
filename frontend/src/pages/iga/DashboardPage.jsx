@@ -10,7 +10,7 @@ import React, { useEffect, useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext.jsx';
 import { usePermissions } from '../../hooks/usePermissions';
 import StatCard from '../../components/dashboard/StatCard';
-import ActivityFeed from '../../components/common/ActivityFeed';
+import ActivityFeed from '../../components/dashboard/ActivityFeed';
 import {
   FiUsers,
   FiGitBranch,
@@ -55,21 +55,21 @@ const DashboardPage = () => {
     }
   };
 
-  if (isLoading) {
-    return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '60vh' }}>
-        <CircularProgress />
-      </Box>
-    );
-  }
-
-  if (error) {
-    return (
-      <Alert severity='error' sx={{ mb: 2 }}>
-        {error}
-      </Alert>
-    );
-  }
+  // if (isLoading) {
+  //   return (
+  //     <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '60vh' }}>
+  //       <CircularProgress />
+  //     </Box>
+  //   );
+  // }
+  //
+  // if (error) {
+  //   return (
+  //     <Alert severity='error' sx={{ mb: 2 }}>
+  //       {error}
+  //     </Alert>
+  //   );
+  // }
 
   return (
     <Box>

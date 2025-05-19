@@ -11,9 +11,6 @@ import Profile from './Profile';
 import Notification from './Notification';
 import MobileSection from './MobileSection';
 
-// project import
-import { GithubOutlined } from '@ant-design/icons';
-
 // ==============================|| HEADER - CONTENT ||============================== //
 
 export default function HeaderContent() {
@@ -21,7 +18,9 @@ export default function HeaderContent() {
 
   return (
     <>
-      {!downLG && <Search />}
+      {/*place holder for search when downLG is false*/}
+      {!downLG && <Box sx={{ width: '100%', ml: { xs: 0, md: 1 } }} />}
+      {/*{!downLG && <Search />}*/}
       {downLG && <Box sx={{ width: '100%', ml: 1 }} />}
       <IconButton
         component={Link}

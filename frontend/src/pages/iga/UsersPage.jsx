@@ -14,9 +14,9 @@ import {
   FormControl,
   Grid,
   IconButton,
-  InputLabel,
+  InputLabel, LinearProgress,
   Menu,
-  MenuItem,
+  MenuItem, Pagination,
   Paper,
   Select,
   Stack,
@@ -38,11 +38,23 @@ import {
   Person as PersonIcon,
   Shield as ShieldIcon,
 } from '@mui/icons-material';
+import PerfectScrollbar from 'react-perfect-scrollbar';
+import { QuickSearchBar } from '../../components/common/quick-search-bar';
+import { SearchCriteriaBar, SearchCriteriaItem } from '../../components/common/search-criteria-bar';
+import { SimpleQueryBar } from '../../components/common/simple-query-bar';
+import { usePagingQueryRequest } from '../../components/common/usePagingQueryRequest';
 import { useAuth } from '../../contexts/AuthContext.jsx';
 import { usePermissions } from '../../hooks/usePermissions';
 import { useUsers } from '../../hooks/useUsers';
 
 const UsersPage = () => {
+
+  const { queryRequest, handleQuickSearch, setQueryRequest, resetQueryRequest, handlePageChange } =
+    usePagingQueryRequest({
+      page: 0,
+      size: 20,
+    });
+
   const [selectedUser, setSelectedUser] = useState(null);
   const [isUserModalOpen, setIsUserModalOpen] = useState(false);
   const [isRolesModalOpen, setIsRolesModalOpen] = useState(false);
@@ -57,6 +69,8 @@ const UsersPage = () => {
 
   const { organization, logAuditEvent } = useAuth();
   const { hasPermission } = usePermissions();
+
+  const [data, setData] = useState({});
 
   const {
     users,
@@ -186,14 +200,6 @@ const UsersPage = () => {
     setSelectedUser(null);
   };
 
-  if (isLoading) {
-    return (
-      <Box p={4}>
-        <Typography variant='h4' gutterBottom>Loading users...</Typography>
-      </Box>
-    );
-  }
-
   if (error) {
     return (
       <Box p={4}>
@@ -204,9 +210,8 @@ const UsersPage = () => {
   }
 
   return (
-    <Box p={4}>
-      <Stack direction='row' justifyContent='space-between' alignItems='center' mb={4}>
-        <Typography variant='h4'>Users</Typography>
+    <Stack direction='column' gap={2}>
+      <Stack direction='row' justifyContent='space-between' alignItems='center'>
         <Stack direction='row' spacing={2}>
           {hasPermission('users.create') && (
             <Button
@@ -226,58 +231,97 @@ const UsersPage = () => {
             {isSyncing ? 'Syncing...' : 'Sync with GitHub'}
           </Button>
         </Stack>
+
+        <QuickSearchBar
+          width='250'
+          onSearch={handleQuickSearch}
+          placeholder={'Search User, Email ...'}
+        />
       </Stack>
 
-      <TableContainer component={Paper}>
-        <Table>
-          <TableHead>
-            <TableRow>
-              <TableCell>User</TableCell>
-              <TableCell>Email</TableCell>
-              <TableCell>Role</TableCell>
-              <TableCell>Status</TableCell>
-              <TableCell>Last Login</TableCell>
-              <TableCell align='right'>Actions</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {users?.map((user) => (
-              <TableRow key={user.id}>
-                <TableCell>
-                  <Stack direction='row' spacing={2} alignItems='center'>
-                    <Avatar src={user.avatarUrl}>{user.username[0]}</Avatar>
-                    <Typography>{user.username}</Typography>
-                  </Stack>
-                </TableCell>
-                <TableCell>{user.email}</TableCell>
-                <TableCell>
-                  <Chip
-                    label={user.role}
-                    color={user.role === 'admin' ? 'primary' : 'default'}
-                    size='small'
-                  />
-                </TableCell>
-                <TableCell>
-                  <Chip
-                    label={user.status}
-                    color={user.status === 'active' ? 'success' : 'error'}
-                    size='small'
-                  />
-                </TableCell>
-                <TableCell>{new Date(user.lastLogin).toLocaleString()}</TableCell>
-                <TableCell align='right'>
-                  <IconButton
-                    size='small'
-                    onClick={(e) => handleMenuOpen(e, user)}
-                  >
-                    <MoreVertIcon />
-                  </IconButton>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </TableContainer>
+      <Stack direction='column'>
+        <SearchCriteriaBar
+          sx={{
+            borderRadius: 0,
+          }}
+          disabled={isLoading}
+
+          onRefresh={getUsers}>
+          <SearchCriteriaItem label={'Total Records'} value={data?.totalElements ?? 0} />
+          <SearchCriteriaItem
+            label={'Account'}
+            value={queryRequest.account}
+          />
+          <SearchCriteriaItem label={'Email'} value={queryRequest.email} />
+        </SearchCriteriaBar>
+
+        {(isLoading) && <LinearProgress />}
+        <PerfectScrollbar>
+          <Box sx={{ minWidth: 1050, minHeight: 500 }}>
+            <Table>
+              {data?.content?.length === 0 && <caption>Empty</caption>}
+              <TableHead>
+                <TableRow>
+                  <TableCell>User</TableCell>
+                  <TableCell>Email</TableCell>
+                  <TableCell>Role</TableCell>
+                  <TableCell>Status</TableCell>
+                  <TableCell>Last Login</TableCell>
+                  <TableCell align='right'>Actions</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {users?.map((user) => (
+                  <TableRow key={user.id}>
+                    <TableCell>
+                      <Stack direction='row' spacing={2} alignItems='center'>
+                        <Avatar src={user.avatarUrl}>{user.username[0]}</Avatar>
+                        <Typography>{user.username}</Typography>
+                      </Stack>
+                    </TableCell>
+                    <TableCell>{user.email}</TableCell>
+                    <TableCell>
+                      <Chip
+                        label={user.role}
+                        color={user.role === 'admin' ? 'primary' : 'default'}
+                        size='small'
+                      />
+                    </TableCell>
+                    <TableCell>
+                      <Chip
+                        label={user.status}
+                        color={user.status === 'active' ? 'success' : 'error'}
+                        size='small'
+                      />
+                    </TableCell>
+                    <TableCell>{new Date(user.lastLogin).toLocaleString()}</TableCell>
+                    <TableCell align='right'>
+                      <IconButton
+                        size='small'
+                        onClick={(e) => handleMenuOpen(e, user)}
+                      >
+                        <MoreVertIcon />
+                      </IconButton>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </Box>
+        </PerfectScrollbar>
+      </Stack>
+
+      {data?.totalPages > 1 && (
+        <Stack direction={'row'} justifyContent={'center'} pt={2}>
+          <Pagination
+            color={'primary'}
+            shape={'circular'}
+            onChange={(event, value) => handlePageChange(value - 1)}
+            count={data.totalPages ?? 0}
+            page={data.page + 1}
+          />
+        </Stack>
+      )}
 
       {/* User Menu */}
       <Menu
@@ -404,7 +448,7 @@ const UsersPage = () => {
           </Button>
         </DialogActions>
       </Dialog>
-    </Box>
+    </Stack>
   );
 };
 

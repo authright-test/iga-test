@@ -30,6 +30,7 @@ import {
   Delete as DeleteIcon,
   Edit as EditIcon,
 } from '@mui/icons-material';
+import MainCard from '../../components/MainCard';
 import { useAuth } from '../../contexts/AuthContext.jsx';
 import { useOrganization } from '../../hooks/useOrganization';
 import { usePermissions } from '../../hooks/usePermissions';
@@ -123,28 +124,15 @@ const OrganizationPage = () => {
     updateMemberRole(memberId, newRole);
   };
 
-  if (!hasPermission('organization.view')) {
-    return (
-      <Box p={4}>
-        <Typography variant='h4' gutterBottom>Access Denied</Typography>
-        <Typography>You do not have permission to view organization details.</Typography>
-      </Box>
-    );
-  }
-
-  if (isLoading) {
-    return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '60vh' }}>
-        <CircularProgress />
-      </Box>
-    );
-  }
-
   return (
-    <Box>
-      <Typography variant='h4' component='h1' gutterBottom>
-        Organization Settings
-      </Typography>
+    <MainCard title='Organization Settings'>
+
+      {!hasPermission('organization.view') && (
+        <Box p={4}>
+          <Typography variant='h4' gutterBottom>Access Denied</Typography>
+          <Typography>You do not have permission to view organization details.</Typography>
+        </Box>
+      )}
 
       {error && (
         <Alert severity='error' sx={{ mb: 2 }}>
@@ -152,10 +140,10 @@ const OrganizationPage = () => {
         </Alert>
       )}
 
-      <Paper sx={{ p: 3 }}>
+      <Stack sx={{ p: 3 }}>
         <form onSubmit={handleSubmit}>
           <Grid container spacing={3}>
-            <Grid item xs={12} md={4}>
+            <Grid item xs={12} md={8}>
               <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
                 <Avatar
                   src={organization?.avatar}
@@ -171,7 +159,7 @@ const OrganizationPage = () => {
               </Box>
             </Grid>
 
-            <Grid item xs={12} md={8}>
+            <Grid item xs={12} md={16}>
               <Stack spacing={3}>
                 <TextField
                   label='Organization Name'
@@ -231,8 +219,8 @@ const OrganizationPage = () => {
             </Grid>
           </Grid>
         </form>
-      </Paper>
-    </Box>
+      </Stack>
+    </MainCard>
   );
 };
 

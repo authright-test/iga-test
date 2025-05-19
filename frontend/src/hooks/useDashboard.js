@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
 import { useQuery, useQueryClient } from 'react-query';
-import api from '../services/api';
+import api from '../api/api';
 import { useAuth } from '../contexts/AuthContext.jsx';
 
 /**
