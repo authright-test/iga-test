@@ -284,7 +284,14 @@ const authenticateUser = async (code) => {
         });
 
         // Step 9: Associate user with organization
-        await user.addOrganization(organization);
+        await user.addOrganization(organization, {
+          through: {
+            role: 'member',
+            status: 'active',
+            joinedAt: new Date(),
+            lastActiveAt: new Date()
+          }
+        });
         installationId = installation.id;
       } catch (error) {
         logger.error('Error getting organization info:', error);

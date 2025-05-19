@@ -16,10 +16,6 @@ const Role = sequelize.define('Role', {
     type: DataTypes.TEXT,
     allowNull: true
   },
-  permissions: {
-    type: DataTypes.JSON,
-    defaultValue: []
-  },
   isActive: {
     type: DataTypes.BOOLEAN,
     defaultValue: true
@@ -31,7 +27,16 @@ const Role = sequelize.define('Role', {
       unique: true,
       fields: ['name']
     }
-  ]
+  ],
+  getterMethods: {
+    permissionList() {
+      // 如果permissions关联已加载，返回权限名称列表
+      if (this.permissions) {
+        return this.permissions.map(p => p.name);
+      }
+      return [];
+    }
+  }
 });
 
 export default Role; 

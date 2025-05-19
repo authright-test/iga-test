@@ -5,235 +5,10 @@ import Team from './Team.js';
 import Role from './Role.js';
 import Repository from './Repository.js';
 import Policy from './Policy.js';
+import PolicyRule from './PolicyRule.js';
 import AuditLog from './AuditLog.js';
 import Permission from './Permission.js';
 import RefreshToken from './RefreshToken.js';
-
-// 定义模型关联关系
-const defineAssociations = () => {
-  // Organization 关联
-  Organization.associate = (models) => {
-    // 组织与用户的多对多关系
-    Organization.belongsToMany(models.User, {
-      through: 'OrganizationMembers',
-      as: 'members',
-      foreignKey: 'organizationId',
-      otherKey: 'userId'
-    });
-
-    // 组织与团队的一对多关系
-    Organization.hasMany(models.Team, {
-      as: 'teams',
-      foreignKey: 'organizationId'
-    });
-
-    // 组织与仓库的一对多关系
-    Organization.hasMany(models.Repository, {
-      as: 'repositories',
-      foreignKey: 'organizationId'
-    });
-
-    // 组织与策略的一对多关系
-    Organization.hasMany(models.Policy, {
-      as: 'policies',
-      foreignKey: 'organizationId'
-    });
-
-    // 组织与审计日志的一对多关系
-    Organization.hasMany(models.AuditLog, {
-      as: 'auditLogs',
-      foreignKey: 'organizationId'
-    });
-  };
-
-  // User 关联
-  User.associate = (models) => {
-    // 用户与组织的多对多关系
-    User.belongsToMany(models.Organization, {
-      through: 'OrganizationMembers',
-      as: 'organizations',
-      foreignKey: 'userId',
-      otherKey: 'organizationId'
-    });
-
-    // 用户与团队的多对多关系
-    User.belongsToMany(models.Team, {
-      through: 'TeamMembers',
-      as: 'teams',
-      foreignKey: 'userId',
-      otherKey: 'teamId'
-    });
-
-    // 用户与角色的多对多关系
-    User.belongsToMany(models.Role, {
-      through: 'UserRoles',
-      as: 'roles',
-      foreignKey: 'userId',
-      otherKey: 'roleId'
-    });
-
-    // 用户与权限的多对多关系
-    User.belongsToMany(models.Permission, {
-      through: 'UserPermissions',
-      as: 'permissions',
-      foreignKey: 'userId',
-      otherKey: 'permissionId'
-    });
-
-    // 用户与刷新令牌的一对多关系
-    User.hasMany(models.RefreshToken, {
-      as: 'refreshTokens',
-      foreignKey: 'userId'
-    });
-
-    // 用户与审计日志的一对多关系
-    User.hasMany(models.AuditLog, {
-      as: 'auditLogs',
-      foreignKey: 'userId'
-    });
-  };
-
-  // Team 关联
-  Team.associate = (models) => {
-    // 团队与组织的关系
-    Team.belongsTo(models.Organization, {
-      as: 'organization',
-      foreignKey: 'organizationId'
-    });
-
-    // 团队与用户的多对多关系
-    Team.belongsToMany(models.User, {
-      through: 'TeamMembers',
-      as: 'members',
-      foreignKey: 'teamId',
-      otherKey: 'userId'
-    });
-
-    // 团队与仓库的多对多关系
-    Team.belongsToMany(models.Repository, {
-      through: 'TeamRepositories',
-      as: 'repositories',
-      foreignKey: 'teamId',
-      otherKey: 'repositoryId'
-    });
-
-    // 团队与角色的多对多关系
-    Team.belongsToMany(models.Role, {
-      through: 'TeamRoles',
-      as: 'roles',
-      foreignKey: 'teamId',
-      otherKey: 'roleId'
-    });
-  };
-
-  // Role 关联
-  Role.associate = (models) => {
-    // 角色与用户的多对多关系
-    Role.belongsToMany(models.User, {
-      through: 'UserRoles',
-      as: 'users',
-      foreignKey: 'roleId',
-      otherKey: 'userId'
-    });
-
-    // 角色与团队的多对多关系
-    Role.belongsToMany(models.Team, {
-      through: 'TeamRoles',
-      as: 'teams',
-      foreignKey: 'roleId',
-      otherKey: 'teamId'
-    });
-
-    // 角色与权限的多对多关系
-    Role.belongsToMany(models.Permission, {
-      through: 'RolePermissions',
-      as: 'permissions',
-      foreignKey: 'roleId',
-      otherKey: 'permissionId'
-    });
-  };
-
-  // Repository 关联
-  Repository.associate = (models) => {
-    // 仓库与组织的关系
-    Repository.belongsTo(models.Organization, {
-      as: 'organization',
-      foreignKey: 'organizationId'
-    });
-
-    // 仓库与团队的多对多关系
-    Repository.belongsToMany(models.Team, {
-      through: 'TeamRepositories',
-      as: 'teams',
-      foreignKey: 'repositoryId',
-      otherKey: 'teamId'
-    });
-
-    // 仓库与策略的一对多关系
-    Repository.hasMany(models.Policy, {
-      as: 'policies',
-      foreignKey: 'repositoryId'
-    });
-  };
-
-  // Policy 关联
-  Policy.associate = (models) => {
-    // 策略与组织的关系
-    Policy.belongsTo(models.Organization, {
-      as: 'organization',
-      foreignKey: 'organizationId'
-    });
-
-    // 策略与仓库的关系
-    Policy.belongsTo(models.Repository, {
-      as: 'repository',
-      foreignKey: 'repositoryId'
-    });
-  };
-
-  // Permission 关联
-  Permission.associate = (models) => {
-    // 权限与用户的多对多关系
-    Permission.belongsToMany(models.User, {
-      through: 'UserPermissions',
-      as: 'users',
-      foreignKey: 'permissionId',
-      otherKey: 'userId'
-    });
-
-    // 权限与角色的多对多关系
-    Permission.belongsToMany(models.Role, {
-      through: 'RolePermissions',
-      as: 'roles',
-      foreignKey: 'permissionId',
-      otherKey: 'roleId'
-    });
-  };
-
-  // RefreshToken 关联
-  RefreshToken.associate = (models) => {
-    // 刷新令牌与用户的关系
-    RefreshToken.belongsTo(models.User, {
-      as: 'user',
-      foreignKey: 'userId'
-    });
-  };
-
-  // AuditLog 关联
-  AuditLog.associate = (models) => {
-    // 审计日志与用户的关系
-    AuditLog.belongsTo(models.User, {
-      as: 'user',
-      foreignKey: 'userId'
-    });
-
-    // 审计日志与组织的关系
-    AuditLog.belongsTo(models.Organization, {
-      as: 'organization',
-      foreignKey: 'organizationId'
-    });
-  };
-};
 
 // 初始化所有模型
 const models = {
@@ -243,9 +18,201 @@ const models = {
   Role,
   Repository,
   Policy,
+  PolicyRule,
   AuditLog,
   Permission,
   RefreshToken
+};
+
+// 定义模型关联关系
+const defineAssociations = () => {
+  // Organization 关联
+  Organization.belongsToMany(User, {
+    through: 'OrganizationMembers',
+    as: 'orgUsers',
+    foreignKey: 'organizationId',
+    otherKey: 'userId'
+  });
+
+  Organization.hasMany(Team, {
+    as: 'orgTeams',
+    foreignKey: 'organizationId'
+  });
+
+  Organization.hasMany(Repository, {
+    as: 'orgRepos',
+    foreignKey: 'organizationId'
+  });
+
+  Organization.hasMany(Policy, {
+    as: 'orgPolicies',
+    foreignKey: 'organizationId'
+  });
+
+  Organization.hasMany(AuditLog, {
+    as: 'orgAuditLogs',
+    foreignKey: 'organizationId'
+  });
+
+  // User 关联
+  User.belongsToMany(Organization, {
+    through: 'OrganizationMembers',
+    as: 'userOrgs',
+    foreignKey: 'userId',
+    otherKey: 'organizationId'
+  });
+
+  User.belongsToMany(Team, {
+    through: 'TeamMembers',
+    as: 'userTeams',
+    foreignKey: 'userId',
+    otherKey: 'teamId'
+  });
+
+  User.belongsToMany(Role, {
+    through: 'UserRoles',
+    as: 'userRoles',
+    foreignKey: 'userId',
+    otherKey: 'roleId'
+  });
+
+  User.belongsToMany(Permission, {
+    through: 'UserPermissions',
+    as: 'userPerms',
+    foreignKey: 'userId',
+    otherKey: 'permissionId'
+  });
+
+  User.hasMany(RefreshToken, {
+    as: 'userTokens',
+    foreignKey: 'userId'
+  });
+
+  User.hasMany(AuditLog, {
+    as: 'userAuditLogs',
+    foreignKey: 'userId'
+  });
+
+  // Team 关联
+  Team.belongsTo(Organization, {
+    as: 'teamOrg',
+    foreignKey: 'organizationId'
+  });
+
+  Team.belongsToMany(User, {
+    through: 'TeamMembers',
+    as: 'teamUsers',
+    foreignKey: 'teamId',
+    otherKey: 'userId'
+  });
+
+  Team.belongsToMany(Repository, {
+    through: 'TeamRepositories',
+    as: 'teamRepos',
+    foreignKey: 'teamId',
+    otherKey: 'repositoryId'
+  });
+
+  Team.belongsToMany(Role, {
+    through: 'TeamRoles',
+    as: 'teamRoles',
+    foreignKey: 'teamId',
+    otherKey: 'roleId'
+  });
+
+  // Role 关联
+  Role.belongsToMany(User, {
+    through: 'UserRoles',
+    as: 'roleUsers',
+    foreignKey: 'roleId',
+    otherKey: 'userId'
+  });
+
+  Role.belongsToMany(Team, {
+    through: 'TeamRoles',
+    as: 'roleTeams',
+    foreignKey: 'roleId',
+    otherKey: 'teamId'
+  });
+
+  Role.belongsToMany(Permission, {
+    through: 'RolePermissions',
+    as: 'rolePerms',
+    foreignKey: 'roleId',
+    otherKey: 'permissionId'
+  });
+
+  // Repository 关联
+  Repository.belongsTo(Organization, {
+    as: 'repoOrg',
+    foreignKey: 'organizationId'
+  });
+
+  Repository.belongsToMany(Team, {
+    through: 'TeamRepositories',
+    as: 'repoTeams',
+    foreignKey: 'repositoryId',
+    otherKey: 'teamId'
+  });
+
+  Repository.hasMany(Policy, {
+    as: 'repoPolicies',
+    foreignKey: 'repositoryId'
+  });
+
+  // Policy 关联
+  Policy.belongsTo(Organization, {
+    as: 'policyOrg',
+    foreignKey: 'organizationId'
+  });
+
+  Policy.belongsTo(Repository, {
+    as: 'policyRepo',
+    foreignKey: 'repositoryId'
+  });
+
+  Policy.hasMany(PolicyRule, {
+    as: 'policyRules',
+    foreignKey: 'policyId'
+  });
+
+  // PolicyRule 关联
+  PolicyRule.belongsTo(Policy, {
+    as: 'rulePolicy',
+    foreignKey: 'policyId'
+  });
+
+  // Permission 关联
+  Permission.belongsToMany(User, {
+    through: 'UserPermissions',
+    as: 'permUsers',
+    foreignKey: 'permissionId',
+    otherKey: 'userId'
+  });
+
+  Permission.belongsToMany(Role, {
+    through: 'RolePermissions',
+    as: 'permRoles',
+    foreignKey: 'permissionId',
+    otherKey: 'roleId'
+  });
+
+  // RefreshToken 关联
+  RefreshToken.belongsTo(User, {
+    as: 'tokenUser',
+    foreignKey: 'userId'
+  });
+
+  // AuditLog 关联
+  AuditLog.belongsTo(User, {
+    as: 'logUser',
+    foreignKey: 'userId'
+  });
+
+  AuditLog.belongsTo(Organization, {
+    as: 'logOrg',
+    foreignKey: 'organizationId'
+  });
 };
 
 // 定义所有关联关系
@@ -259,6 +226,7 @@ export {
   Role,
   Repository,
   Policy,
+  PolicyRule,
   AuditLog,
   Permission,
   RefreshToken

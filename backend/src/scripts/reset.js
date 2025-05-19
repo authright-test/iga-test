@@ -1,5 +1,5 @@
 import 'dotenv/config';
-import { sequelize } from '../models/index.js';
+import { sequelize, Organization, User, Team, Role, Repository, Policy, AuditLog, Permission, RefreshToken } from '../models/index.js';
 import logger from '../utils/logger.js';
 
 async function resetDatabase() {
@@ -7,15 +7,33 @@ async function resetDatabase() {
     logger.info('Starting database reset...');
 
     // 获取所有模型
-    const models = Object.values(sequelize.models);
+    const models = {
+      Organization,
+      User,
+      Team,
+      Role,
+      Repository,
+      Policy,
+      AuditLog,
+      Permission,
+      RefreshToken
+    };
 
     // 禁用外键约束
     await sequelize.query('SET FOREIGN_KEY_CHECKS = 0');
 
     // 删除所有表
-    for (const model of models) {
+    for (const model of Object.values(sequelize.models)) {
       logger.info(`Dropping table: ${model.tableName}`);
       await model.drop({ force: true });
+    }
+
+    // 建立所有关联关系
+    logger.info('Setting up model associations...');
+    for (const model of Object.values(models)) {
+      if (typeof model.associate === 'function') {
+        model.associate(models);
+      }
     }
 
     // 同步所有模型（创建表）

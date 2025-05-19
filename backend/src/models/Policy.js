@@ -31,10 +31,6 @@ const Policy = sequelize.define('Policy', {
       key: 'id'
     }
   },
-  rules: {
-    type: DataTypes.JSON,
-    defaultValue: []
-  },
   isActive: {
     type: DataTypes.BOOLEAN,
     defaultValue: true
@@ -52,7 +48,16 @@ const Policy = sequelize.define('Policy', {
       unique: true,
       fields: ['name', 'organizationId', 'repositoryId']
     }
-  ]
+  ],
+  getterMethods: {
+    rules() {
+      // 如果rules关联已加载，返回规则列表
+      if (this.policyRules) {
+        return this.policyRules.map(rule => rule.toJSON());
+      }
+      return [];
+    }
+  }
 });
 
 export default Policy; 
