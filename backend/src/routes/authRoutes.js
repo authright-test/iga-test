@@ -1,4 +1,5 @@
 import express from 'express';
+import { createAppAuth } from '@octokit/auth-app';
 import { authenticateUser, verifyToken, refreshAccessToken, logout } from '../services/authService.js';
 import logger from '../utils/logger.js';
 

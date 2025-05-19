@@ -1,4 +1,5 @@
 import express from 'express';
+import { createAppAuth } from '@octokit/auth-app';
 import { hasPermission } from '../services/accessControlService.js';
 import {
   exportAccessHistory,
@@ -13,6 +14,14 @@ import {
 import logger from '../utils/logger.js';
 
 const router = express.Router();
+
+// GitHub App Authentication
+const auth = createAppAuth({
+  appId: process.env.GITHUB_APP_ID,
+  privateKey: process.env.GITHUB_APP_PRIVATE_KEY,
+  clientId: process.env.GITHUB_APP_CLIENT_ID,
+  clientSecret: process.env.GITHUB_APP_CLIENT_SECRET,
+});
 
 /**
  * @route   GET /api/audit/logs
@@ -188,7 +197,10 @@ router.get('/organization/:organizationId/stats', async (req, res) => {
     const actionCountsArray = Object.entries(actionCounts).map(([action, count]) => ({ action, count }));
     actionCountsArray.sort((a, b) => b.count - a.count);
 
-    const resourceCountsArray = Object.entries(resourceCounts).map(([resourceType, count]) => ({ resourceType, count }));
+    const resourceCountsArray = Object.entries(resourceCounts).map(([resourceType, count]) => ({
+      resourceType,
+      count
+    }));
     resourceCountsArray.sort((a, b) => b.count - a.count);
 
     const userCountsArray = Object.entries(userCounts).map(([userId, data]) => ({

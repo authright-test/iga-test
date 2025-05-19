@@ -1,5 +1,7 @@
 import express from 'express';
-import { hasPermission } from '../services/accessControlService.js';
+import { createAppAuth } from '@octokit/auth-app';
+import { Repository, Organization } from '../models/index.js';
+import { checkPermission } from '../middleware/auth.js';
 import {
   addRepositoryDeployKey,
   addTeamToRepository,
@@ -46,9 +48,18 @@ import {
   updateRepositoryPermissions,
   updateRepositoryProtectedBranch
 } from '../services/repositoryService.js';
+import { createAuditLog } from '../services/auditService.js';
 import logger from '../utils/logger.js';
 
 const router = express.Router();
+
+// GitHub App Authentication
+const auth = createAppAuth({
+  appId: process.env.GITHUB_APP_ID,
+  privateKey: process.env.GITHUB_APP_PRIVATE_KEY,
+  clientId: process.env.GITHUB_APP_CLIENT_ID,
+  clientSecret: process.env.GITHUB_APP_CLIENT_SECRET,
+});
 
 /**
  * Repository Management Routes
@@ -63,22 +74,41 @@ const router = express.Router();
  * @param {number} organizationId - Organization ID
  * @param {Object} query - Query parameters for filtering and pagination
  */
-router.get('/', async (req, res) => {
+router.get('/', checkPermission('view:repositories'), async (req, res) => {
   try {
-    const hasViewPermission = await hasPermission(req.user.id, 'view:repositories');
+    const organizationId = req.query.organizationId;
 
-    if (!hasViewPermission) {
-      return res.status(403).json({ error: 'Forbidden: Insufficient permissions' });
+    if (!organizationId) {
+      return res.status(400).json({ error: 'Organization ID is required' });
     }
 
-    const organizationId = req.params.organizationId;
-    const filters = req.query;
-
-    const repositories = await getRepositories(organizationId, filters);
+    const repositories = await getRepositories(organizationId);
 
     res.json(repositories);
   } catch (error) {
     logger.error('Error getting repositories:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/**
+ * @route GET /repositories/:id
+ * @desc Get repository by ID
+ * @access Private
+ */
+router.get('/:id', checkPermission('view:repositories'), async (req, res) => {
+  try {
+    const repository = await Repository.findByPk(req.params.id, {
+      include: [Organization]
+    });
+
+    if (!repository) {
+      return res.status(404).json({ error: 'Repository not found' });
+    }
+
+    res.json(repository);
+  } catch (error) {
+    logger.error('Error getting repository:', error);
     res.status(500).json({ error: error.message });
   }
 });
@@ -90,18 +120,19 @@ router.get('/', async (req, res) => {
  * @param {number} organizationId - Organization ID
  * @param {Object} repositoryData - Repository creation data
  */
-router.post('/', async (req, res) => {
+router.post('/', checkPermission('create:repositories'), async (req, res) => {
   try {
-    const hasCreatePermission = await hasPermission(req.user.id, 'create:repositories');
+    const { name, description, organizationId, visibility, defaultBranch } = req.body;
 
-    if (!hasCreatePermission) {
-      return res.status(403).json({ error: 'Forbidden: Insufficient permissions' });
+    if (!name || !organizationId) {
+      return res.status(400).json({ error: 'Name and organization ID are required' });
     }
 
-    const organizationId = req.params.organizationId;
-    const repositoryData = req.body;
-
-    const repository = await createRepository(organizationId, repositoryData);
+    const repository = await createRepository(
+      { name, description, visibility, defaultBranch },
+      organizationId,
+      req.user.id
+    );
 
     res.status(201).json(repository);
   } catch (error) {
@@ -117,18 +148,15 @@ router.post('/', async (req, res) => {
  * @param {number} id - Repository ID
  * @param {Object} updateData - Repository update data
  */
-router.put('/:id', async (req, res) => {
+router.put('/:id', checkPermission('update:repositories'), async (req, res) => {
   try {
-    const hasUpdatePermission = await hasPermission(req.user.id, 'update:repositories');
+    const { name, description, visibility, defaultBranch } = req.body;
 
-    if (!hasUpdatePermission) {
-      return res.status(403).json({ error: 'Forbidden: Insufficient permissions' });
-    }
-
-    const { organizationId, repoId } = req.params;
-    const repositoryData = req.body;
-
-    const repository = await updateRepository(organizationId, repoId, repositoryData);
+    const repository = await updateRepository(
+      req.params.id,
+      { name, description, visibility, defaultBranch },
+      req.user.id
+    );
 
     res.json(repository);
   } catch (error) {
@@ -143,19 +171,15 @@ router.put('/:id', async (req, res) => {
  * @access Private
  * @param {number} id - Repository ID
  */
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', checkPermission('delete:repositories'), async (req, res) => {
   try {
-    const hasDeletePermission = await hasPermission(req.user.id, 'delete:repositories');
+    const success = await deleteRepository(req.params.id, req.user.id);
 
-    if (!hasDeletePermission) {
-      return res.status(403).json({ error: 'Forbidden: Insufficient permissions' });
+    if (!success) {
+      return res.status(400).json({ error: 'Failed to delete repository' });
     }
 
-    const { organizationId, repoId } = req.params;
-
-    await deleteRepository(organizationId, repoId);
-
-    res.status(204).send();
+    res.json({ message: 'Repository deleted successfully' });
   } catch (error) {
     logger.error('Error deleting repository:', error);
     res.status(500).json({ error: error.message });
@@ -1206,6 +1230,80 @@ router.put('/:id/notifications/read', async (req, res) => {
     res.status(204).send();
   } catch (error) {
     logger.error('Error marking repository notifications as read:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/**
+ * @route POST /repositories/:id/archive
+ * @desc Archive a repository
+ * @access Private
+ * @param {number} id - Repository ID
+ */
+router.post('/:id/archive', checkPermission('update:repositories'), async (req, res) => {
+  try {
+    const repository = await Repository.findByPk(req.params.id);
+
+    if (!repository) {
+      return res.status(404).json({ error: 'Repository not found' });
+    }
+
+    // Update repository status
+    await repository.update({ isArchived: true });
+
+    // Audit log
+    await createAuditLog({
+      action: 'repository_archived',
+      resourceType: 'repository',
+      resourceId: repository.id.toString(),
+      details: {
+        repositoryName: repository.name
+      },
+      userId: req.user.id,
+      ipAddress: req.ip,
+      userAgent: req.get('user-agent')
+    });
+
+    res.json(repository);
+  } catch (error) {
+    logger.error('Error archiving repository:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/**
+ * @route POST /repositories/:id/unarchive
+ * @desc Unarchive a repository
+ * @access Private
+ * @param {number} id - Repository ID
+ */
+router.post('/:id/unarchive', checkPermission('update:repositories'), async (req, res) => {
+  try {
+    const repository = await Repository.findByPk(req.params.id);
+
+    if (!repository) {
+      return res.status(404).json({ error: 'Repository not found' });
+    }
+
+    // Update repository status
+    await repository.update({ isArchived: false });
+
+    // Audit log
+    await createAuditLog({
+      action: 'repository_unarchived',
+      resourceType: 'repository',
+      resourceId: repository.id.toString(),
+      details: {
+        repositoryName: repository.name
+      },
+      userId: req.user.id,
+      ipAddress: req.ip,
+      userAgent: req.get('user-agent')
+    });
+
+    res.json(repository);
+  } catch (error) {
+    logger.error('Error unarchiving repository:', error);
     res.status(500).json({ error: error.message });
   }
 });

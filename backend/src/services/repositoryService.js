@@ -3,6 +3,7 @@ import { DataTypes, Op } from 'sequelize';
 import { AuditLog, Organization, Repository, Team, User } from '../models/index.js';
 import logger from '../utils/logger.js';
 import { getAccessHistoryByRepository } from './auditService.js';
+import { createAuditLog } from './auditService.js';
 
 /**
  * Get a single repository by ID
@@ -127,6 +128,20 @@ const createRepository = async (organizationId, repositoryData) => {
       sshUrl: githubRepo.data.ssh_url
     });
 
+    // Audit log
+    await createAuditLog({
+      action: 'repository_created',
+      resourceType: 'repository',
+      resourceId: repository.id.toString(),
+      details: {
+        repositoryName: repository.name,
+        organizationId
+      },
+      userId: null,
+      ipAddress: null,
+      userAgent: null
+    });
+
     return repository;
   } catch (error) {
     logger.error('Error creating repository:', error);
@@ -181,6 +196,20 @@ const updateRepository = async (organizationId, repoId, repositoryData) => {
       sshUrl: githubRepo.data.ssh_url
     });
 
+    // Audit log
+    await createAuditLog({
+      action: 'repository_updated',
+      resourceType: 'repository',
+      resourceId: repository.id.toString(),
+      details: {
+        repositoryName: repository.name,
+        changes: repositoryData
+      },
+      userId: null,
+      ipAddress: null,
+      userAgent: null
+    });
+
     return repository;
   } catch (error) {
     logger.error('Error updating repository:', error);
@@ -220,6 +249,19 @@ const deleteRepository = async (organizationId, repoId) => {
 
     // Delete repository in database
     await repository.destroy();
+
+    // Audit log
+    await createAuditLog({
+      action: 'repository_deleted',
+      resourceType: 'repository',
+      resourceId: repoId.toString(),
+      details: {
+        repositoryName: repository.name
+      },
+      userId: null,
+      ipAddress: null,
+      userAgent: null
+    });
   } catch (error) {
     logger.error('Error deleting repository:', error);
     throw error;

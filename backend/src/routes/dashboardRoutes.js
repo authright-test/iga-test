@@ -1,12 +1,21 @@
 import express from 'express';
-import { authenticateJWT } from '../middleware/auth.js';
+import { createAppAuth } from '@octokit/auth-app';
+import { checkPermission } from '../middleware/auth.js';
 import logger from '../utils/logger.js';
 import { getDashboardData } from '../services/dashboardService.js';
 
 const router = express.Router();
 
+// GitHub App Authentication
+const auth = createAppAuth({
+  appId: process.env.GITHUB_APP_ID,
+  privateKey: process.env.GITHUB_APP_PRIVATE_KEY,
+  clientId: process.env.GITHUB_APP_CLIENT_ID,
+  clientSecret: process.env.GITHUB_APP_CLIENT_SECRET,
+});
+
 // Get dashboard data
-router.get('/:organizationId', authenticateJWT, async (req, res) => {
+router.get('/:organizationId', checkPermission('view:dashboard'), async (req, res) => {
   try {
     const { organizationId } = req.params;
     const data = await getDashboardData(organizationId);
@@ -17,4 +26,4 @@ router.get('/:organizationId', authenticateJWT, async (req, res) => {
   }
 });
 
-export default router; 
+export default router;

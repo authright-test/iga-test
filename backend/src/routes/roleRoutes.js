@@ -1,34 +1,36 @@
+import { createAppAuth } from '@octokit/auth-app';
 import express from 'express';
-import { Permission, Role, User } from '../models/index.js';
-import {
-  addPermissionToRole,
-  assignRoleToUser,
-  hasPermission,
-  removePermissionFromRole,
-  removeRoleFromUser
-} from '../services/accessControlService.js';
+import { checkPermission } from '../middleware/auth.js';
+import { Organization, Permission, Role } from '../models/index.js';
+import { addPermissionToRole, hasPermission, removePermissionFromRole } from '../services/accessControlService.js';
 import { createAuditLog } from '../services/auditService.js';
+import { createRole, deleteRole, getOrganizationRoles, updateRole } from '../services/roleService.js';
 import logger from '../utils/logger.js';
 
 const router = express.Router();
 
+// GitHub App Authentication
+const auth = createAppAuth({
+  appId: process.env.GITHUB_APP_ID,
+  privateKey: process.env.GITHUB_APP_PRIVATE_KEY,
+  clientId: process.env.GITHUB_APP_CLIENT_ID,
+  clientSecret: process.env.GITHUB_APP_CLIENT_SECRET,
+});
+
 /**
  * @route   GET /api/roles
- * @desc    Get all roles
+ * @desc    Get all roles for current organization
  * @access  Private
  */
-router.get('/', async (req, res) => {
+router.get('/', checkPermission('view:roles'), async (req, res) => {
   try {
-    // Check if user has permission to view roles
-    const hasViewPermission = await hasPermission(req.user.id, 'view:roles');
+    const organizationId = req.query.organizationId;
 
-    if (!hasViewPermission) {
-      return res.status(403).json({ error: 'Forbidden: Insufficient permissions' });
+    if (!organizationId) {
+      return res.status(400).json({ error: 'Organization ID is required' });
     }
 
-    const roles = await Role.findAll({
-      include: [Permission]
-    });
+    const roles = await getOrganizationRoles(organizationId);
 
     res.json(roles);
   } catch (error) {
@@ -42,25 +44,10 @@ router.get('/', async (req, res) => {
  * @desc    Get role by ID
  * @access  Private
  */
-router.get('/:id', async (req, res) => {
+router.get('/:id', checkPermission('view:roles'), async (req, res) => {
   try {
-    // Check if user has permission to view roles
-    const hasViewPermission = await hasPermission(req.user.id, 'view:roles');
-
-    if (!hasViewPermission) {
-      return res.status(403).json({ error: 'Forbidden: Insufficient permissions' });
-    }
-
     const role = await Role.findByPk(req.params.id, {
-      include: [
-        {
-          model: Permission
-        },
-        {
-          model: User,
-          attributes: ['id', 'username', 'email', 'avatarUrl']
-        }
-      ]
+      include: [Organization]
     });
 
     if (!role) {
@@ -79,39 +66,19 @@ router.get('/:id', async (req, res) => {
  * @desc    Create a new role
  * @access  Private
  */
-router.post('/', async (req, res) => {
+router.post('/', checkPermission('create:roles'), async (req, res) => {
   try {
-    // Check if user has permission to create roles
-    const hasCreatePermission = await hasPermission(req.user.id, 'create:roles');
+    const { name, description, permissions, organizationId } = req.body;
 
-    if (!hasCreatePermission) {
-      return res.status(403).json({ error: 'Forbidden: Insufficient permissions' });
+    if (!name || !permissions || !organizationId) {
+      return res.status(400).json({ error: 'Name, permissions, and organization ID are required' });
     }
 
-    const { name, description, isSystem = false } = req.body;
-
-    if (!name) {
-      return res.status(400).json({ error: 'Role name is required' });
-    }
-
-    const role = await Role.create({
-      name,
-      description,
-      isSystem
-    });
-
-    // Audit log
-    await createAuditLog({
-      action: 'role_created',
-      resourceType: 'role',
-      resourceId: role.id.toString(),
-      details: {
-        roleName: role.name
-      },
-      userId: req.user.id,
-      ipAddress: req.ip,
-      userAgent: req.get('user-agent')
-    });
+    const role = await createRole(
+      { name, description, permissions },
+      organizationId,
+      req.user.id
+    );
 
     res.status(201).json(role);
   } catch (error) {
@@ -125,51 +92,15 @@ router.post('/', async (req, res) => {
  * @desc    Update a role
  * @access  Private
  */
-router.put('/:id', async (req, res) => {
+router.put('/:id', checkPermission('update:roles'), async (req, res) => {
   try {
-    // Check if user has permission to update roles
-    const hasUpdatePermission = await hasPermission(req.user.id, 'update:roles');
+    const { name, description, permissions } = req.body;
 
-    if (!hasUpdatePermission) {
-      return res.status(403).json({ error: 'Forbidden: Insufficient permissions' });
-    }
-
-    const role = await Role.findByPk(req.params.id);
-
-    if (!role) {
-      return res.status(404).json({ error: 'Role not found' });
-    }
-
-    // Don't allow modifying system roles
-    if (role.isSystem) {
-      return res.status(403).json({ error: 'System roles cannot be modified' });
-    }
-
-    const { name, description } = req.body;
-
-    if (name) {
-      role.name = name;
-    }
-
-    if (description !== undefined) {
-      role.description = description;
-    }
-
-    await role.save();
-
-    // Audit log
-    await createAuditLog({
-      action: 'role_updated',
-      resourceType: 'role',
-      resourceId: role.id.toString(),
-      details: {
-        roleName: role.name,
-        changes: req.body
-      },
-      userId: req.user.id,
-      ipAddress: req.ip,
-      userAgent: req.get('user-agent')
-    });
+    const role = await updateRole(
+      req.params.id,
+      { name, description, permissions },
+      req.user.id
+    );
 
     res.json(role);
   } catch (error) {
@@ -183,13 +114,32 @@ router.put('/:id', async (req, res) => {
  * @desc    Delete a role
  * @access  Private
  */
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', checkPermission('delete:roles'), async (req, res) => {
   try {
-    // Check if user has permission to delete roles
-    const hasDeletePermission = await hasPermission(req.user.id, 'delete:roles');
+    const success = await deleteRole(req.params.id, req.user.id);
 
-    if (!hasDeletePermission) {
-      return res.status(403).json({ error: 'Forbidden: Insufficient permissions' });
+    if (!success) {
+      return res.status(400).json({ error: 'Failed to delete role' });
+    }
+
+    res.json({ message: 'Role deleted successfully' });
+  } catch (error) {
+    logger.error('Error deleting role:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/**
+ * @route   POST /api/roles/:id/assign
+ * @desc    Assign role to users
+ * @access  Private
+ */
+router.post('/:id/assign', checkPermission('update:roles'), async (req, res) => {
+  try {
+    const { userIds } = req.body;
+
+    if (!userIds || !Array.isArray(userIds)) {
+      return res.status(400).json({ error: 'User IDs array is required' });
     }
 
     const role = await Role.findByPk(req.params.id);
@@ -198,32 +148,69 @@ router.delete('/:id', async (req, res) => {
       return res.status(404).json({ error: 'Role not found' });
     }
 
-    // Don't allow deleting system roles
-    if (role.isSystem) {
-      return res.status(403).json({ error: 'System roles cannot be deleted' });
-    }
-
-    const roleName = role.name;
-    const roleId = role.id;
-
-    await role.destroy();
+    // Assign role to users
+    await role.addUsers(userIds);
 
     // Audit log
     await createAuditLog({
-      action: 'role_deleted',
+      action: 'role_assigned',
       resourceType: 'role',
-      resourceId: roleId.toString(),
+      resourceId: role.id.toString(),
       details: {
-        roleName
+        roleName: role.name,
+        userIds
       },
       userId: req.user.id,
       ipAddress: req.ip,
       userAgent: req.get('user-agent')
     });
 
-    res.json({ message: 'Role deleted successfully' });
+    res.json({ message: 'Role assigned successfully' });
   } catch (error) {
-    logger.error('Error deleting role:', error);
+    logger.error('Error assigning role:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/**
+ * @route   POST /api/roles/:id/unassign
+ * @desc    Unassign role from users
+ * @access  Private
+ */
+router.post('/:id/unassign', checkPermission('update:roles'), async (req, res) => {
+  try {
+    const { userIds } = req.body;
+
+    if (!userIds || !Array.isArray(userIds)) {
+      return res.status(400).json({ error: 'User IDs array is required' });
+    }
+
+    const role = await Role.findByPk(req.params.id);
+
+    if (!role) {
+      return res.status(404).json({ error: 'Role not found' });
+    }
+
+    // Unassign role from users
+    await role.removeUsers(userIds);
+
+    // Audit log
+    await createAuditLog({
+      action: 'role_unassigned',
+      resourceType: 'role',
+      resourceId: role.id.toString(),
+      details: {
+        roleName: role.name,
+        userIds
+      },
+      userId: req.user.id,
+      ipAddress: req.ip,
+      userAgent: req.get('user-agent')
+    });
+
+    res.json({ message: 'Role unassigned successfully' });
+  } catch (error) {
+    logger.error('Error unassigning role:', error);
     res.status(500).json({ error: error.message });
   }
 });
@@ -340,117 +327,6 @@ router.delete('/:id/permissions/:permissionId', async (req, res) => {
     res.json({ message: 'Permission removed from role successfully' });
   } catch (error) {
     logger.error('Error removing permission from role:', error);
-    res.status(500).json({ error: error.message });
-  }
-});
-
-/**
- * @route   POST /api/roles/:id/users
- * @desc    Assign role to users
- * @access  Private
- */
-router.post('/:id/users', async (req, res) => {
-  try {
-    // Check if user has permission to assign roles
-    const hasAssignPermission = await hasPermission(req.user.id, 'assign:roles');
-
-    if (!hasAssignPermission) {
-      return res.status(403).json({ error: 'Forbidden: Insufficient permissions' });
-    }
-
-    const { userIds } = req.body;
-
-    if (!userIds || !Array.isArray(userIds)) {
-      return res.status(400).json({ error: 'User IDs array is required' });
-    }
-
-    const role = await Role.findByPk(req.params.id);
-
-    if (!role) {
-      return res.status(404).json({ error: 'Role not found' });
-    }
-
-    // Assign role to users
-    const assignedUsers = [];
-    for (const userId of userIds) {
-      const success = await assignRoleToUser(userId, role.id);
-      if (success) {
-        assignedUsers.push(userId);
-      }
-    }
-
-    // Audit log
-    await createAuditLog({
-      action: 'role_assigned_to_users',
-      resourceType: 'role',
-      resourceId: role.id.toString(),
-      details: {
-        roleName: role.name,
-        userIds: assignedUsers
-      },
-      userId: req.user.id,
-      ipAddress: req.ip,
-      userAgent: req.get('user-agent')
-    });
-
-    res.json({ message: 'Role assigned to users successfully', assignedUsers });
-  } catch (error) {
-    logger.error('Error assigning role to users:', error);
-    res.status(500).json({ error: error.message });
-  }
-});
-
-/**
- * @route   DELETE /api/roles/:id/users/:userId
- * @desc    Remove role from user
- * @access  Private
- */
-router.delete('/:id/users/:userId', async (req, res) => {
-  try {
-    // Check if user has permission to assign roles
-    const hasAssignPermission = await hasPermission(req.user.id, 'assign:roles');
-
-    if (!hasAssignPermission) {
-      return res.status(403).json({ error: 'Forbidden: Insufficient permissions' });
-    }
-
-    const role = await Role.findByPk(req.params.id);
-
-    if (!role) {
-      return res.status(404).json({ error: 'Role not found' });
-    }
-
-    const user = await User.findByPk(req.params.userId);
-
-    if (!user) {
-      return res.status(404).json({ error: 'User not found' });
-    }
-
-    // Remove role from user
-    const success = await removeRoleFromUser(user.id, role.id);
-
-    if (!success) {
-      return res.status(400).json({ error: 'Failed to remove role from user' });
-    }
-
-    // Audit log
-    await createAuditLog({
-      action: 'role_removed_from_user',
-      resourceType: 'role',
-      resourceId: role.id.toString(),
-      details: {
-        roleName: role.name,
-        username: user.username,
-        userId: user.id
-      },
-      userId: req.user.id,
-      ipAddress: req.ip,
-      userAgent: req.get('user-agent')
-    });
-
-    res.json({ message: 'Role removed from user successfully' });
-  } catch (error) {
-    logger.error('Error removing role from user:', error);
     res.status(500).json({ error: error.message });
   }
 });

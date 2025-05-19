@@ -118,4 +118,94 @@ const isOrganizationAdmin = async (req, res, next) => {
   }
 };
 
+/**
+ * Middleware to check if the user has the required permission
+ * @param {string} requiredPermission - The permission required to access the route
+ * @returns {Function} Express middleware function
+ */
+export const checkPermission = (requiredPermission) => {
+  return async (req, res, next) => {
+    try {
+      // Get user permissions from request (assuming they are set by auth middleware)
+      const userPermissions = req.user?.permissions || [];
+
+      // Check if user has the required permission
+      if (!userPermissions.includes(requiredPermission)) {
+        logger.warn(`Permission denied: ${requiredPermission} required`);
+        return res.status(403).json({
+          error: 'Permission denied',
+          message: `You don't have permission to perform this action. Required permission: ${requiredPermission}`
+        });
+      }
+
+      // User has the required permission, proceed to next middleware
+      next();
+    } catch (error) {
+      logger.error('Error checking permission:', error);
+      res.status(500).json({
+        error: 'Internal server error',
+        message: 'Failed to check permissions'
+      });
+    }
+  };
+};
+
+/**
+ * Middleware to authenticate requests
+ * @returns {Function} Express middleware function
+ */
+export const authenticate = async (req, res, next) => {
+  try {
+    // Get the authorization header
+    const authHeader = req.headers.authorization;
+
+    if (!authHeader) {
+      return res.status(401).json({
+        error: 'Unauthorized',
+        message: 'No authorization header provided'
+      });
+    }
+
+    // Extract the token
+    const token = authHeader.split(' ')[1];
+
+    if (!token) {
+      return res.status(401).json({
+        error: 'Unauthorized',
+        message: 'No token provided'
+      });
+    }
+
+    // TODO: Implement token verification and user permission retrieval
+    // For now, we'll set a mock user with permissions
+    req.user = {
+      id: 'mock-user-id',
+      permissions: [
+        'teams.view',
+        'teams.create',
+        'teams.edit',
+        'teams.delete',
+        'teams.sync',
+        'violations.view',
+        'violations.create',
+        'violations.edit',
+        'violations.comment',
+        'stats.view',
+        'requests.view',
+        'requests.create',
+        'requests.approve',
+        'requests.comment'
+      ]
+    };
+
+    next();
+  } catch (error) {
+    logger.error('Authentication error:', error);
+    res.status(500).json({
+      error: 'Internal server error',
+      message: 'Failed to authenticate request'
+    });
+  }
+};
+
 export { authenticateJWT, authenticateGitHubApp, isOrganizationMember, isOrganizationAdmin }; 
