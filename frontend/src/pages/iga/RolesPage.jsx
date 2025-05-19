@@ -45,7 +45,6 @@ const RolesPage = () => {
       page: 0,
       size: 20,
     });
-  const [data, setData] = useState({});
 
   const [selectedRole, setSelectedRole] = useState(null);
   const [isRoleModalOpen, setIsRoleModalOpen] = useState(false);
@@ -60,17 +59,29 @@ const RolesPage = () => {
   const { hasPermission } = usePermissions();
 
   const {
-    roles,
-    isLoading,
-    error,
+    roles: data,
+    isLoadingRoles,
+    rolesError,
     getRoles,
     createRole,
+    isCreatingRole,
+    createRoleError,
     updateRole,
+    isUpdatingRole,
+    updateRoleError,
     deleteRole,
+    isDeletingRole,
+    deleteRoleError,
     assignRole,
+    isAssigningRole,
+    assignRoleError,
     revokeRole,
-    getRolePermissions,
+    isRevokingRole,
+    revokeRoleError,
+    getRolePermissionsQuery,
     updateRolePermissions,
+    isUpdatingPermissions,
+    updatePermissionsError,
   } = useRoles();
 
   const handleCreateRole = async () => {
@@ -91,7 +102,7 @@ const RolesPage = () => {
   const handleUpdateRole = async () => {
     try {
       if (!selectedRole) return;
-      const updatedRole = await updateRole(selectedRole.id, formData);
+      const updatedRole = await updateRole({ roleId: selectedRole.id, roleData: formData });
       logAuditEvent(
         'role_updated',
         'role',
@@ -122,7 +133,7 @@ const RolesPage = () => {
 
   const handleUpdatePermissions = async (roleId, permissions) => {
     try {
-      await updateRolePermissions(roleId, permissions);
+      await updateRolePermissions({ roleId, permissions });
       logAuditEvent(
         'role_permissions_updated',
         'role',
@@ -156,11 +167,11 @@ const RolesPage = () => {
 
   const openPermissionsModal = async (role) => {
     try {
-      const permissions = await getRolePermissions(role.id);
+      const permissions = await getRolePermissionsQuery.refetch(role.id);
       setSelectedRole(role);
       setFormData(prev => ({
         ...prev,
-        permissions,
+        permissions: permissions.data?.permissions || [],
       }));
       setIsPermissionsModalOpen(true);
     } catch (err) {
@@ -193,8 +204,9 @@ const RolesPage = () => {
               variant='contained'
               startIcon={<AddIcon />}
               onClick={() => openRoleModal()}
+              disabled={isCreatingRole}
             >
-              Create Role
+              {isCreatingRole ? 'Creating...' : 'Create Role'}
             </Button>
           )}
         </Stack>
@@ -206,9 +218,9 @@ const RolesPage = () => {
         />
       </Stack>
 
-      {error && (
+      {(rolesError || createRoleError || updateRoleError || deleteRoleError) && (
         <Alert severity='error'>
-          {error}
+          {rolesError?.message || createRoleError?.message || updateRoleError?.message || deleteRoleError?.message}
         </Alert>
       )}
 
@@ -217,9 +229,9 @@ const RolesPage = () => {
           sx={{
             borderRadius: 0,
           }}
-          disabled={isLoading}
+          disabled={isLoadingRoles}
           onRefresh={getRoles}>
-          <SearchCriteriaItem label={'Total Records'} value={data?.totalElements ?? 0} />
+          <SearchCriteriaItem label={'Total Records'} value={roles?.length ?? 0} />
           <SearchCriteriaItem
             label={'Account'}
             value={queryRequest.account}
@@ -227,72 +239,56 @@ const RolesPage = () => {
           <SearchCriteriaItem label={'Name'} value={queryRequest.name} />
         </SearchCriteriaBar>
 
-        {(isLoading) && <LinearProgress />}
+        {(isLoadingRoles || isCreatingRole || isUpdatingRole || isDeletingRole) && <LinearProgress />}
+
         <PerfectScrollbar>
           <Box sx={{ minWidth: 1050, minHeight: 500 }}>
             <Table>
-              {data?.content?.length === 0 && <caption>Empty</caption>}
+              {roles?.length === 0 && <caption>No roles found</caption>}
               <TableHead>
                 <TableRow>
                   <TableCell>Name</TableCell>
                   <TableCell>Description</TableCell>
                   <TableCell>Permissions</TableCell>
-                  <TableCell>
-
-                  </TableCell>
                   <TableCell align='right'>Actions</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
-                {data?.content?.map((item) => (
-                  <TableRow key={item.id}>
+                {roles?.map((role) => (
+                  <TableRow key={role.id}>
                     <TableCell>
                       <Stack direction='row' spacing={1} alignItems='center'>
-                        <Avatar>{item.name[0]}</Avatar>
-                        <Typography>{item.name}</Typography>
-                      </Stack>
-                    </TableCell>
-                    <TableCell>{item.description}</TableCell>
-                    <TableCell>
-                      {item?.members?.map((member) => (
-                        <Chip
-                          key={member.id}
-                          avatar={<Avatar src={member.avatarUrl}>{member.username[0]}</Avatar>}
-                          label={member.username}
-                          size='small'
-                        />
-                      ))}
-                    </TableCell>
-                    <TableCell>
-
-                    </TableCell>
-                    <TableCell></TableCell>
-                    <TableCell align='right'>
-                      <Stack direction='row' spacing={1}>
-                        {hasPermission('roles.edit') && (
-                          <IconButton
-                            size='small'
-                            onClick={() => openRoleModal(item)}
-                          >
-                            <EditIcon />
-                          </IconButton>
-                        )}
-                        <IconButton
-                          size='small'
-                          onClick={() => openPermissionsModal(item)}
-                        >
+                        <Avatar>
                           <ShieldIcon />
-                        </IconButton>
-                        {hasPermission('roles.delete') && (
-                          <IconButton
-                            size='small'
-                            color='error'
-                            onClick={() => handleDeleteRole(item)}
-                          >
-                            <DeleteIcon />
-                          </IconButton>
-                        )}
+                        </Avatar>
+                        <Typography>{role.name}</Typography>
                       </Stack>
+                    </TableCell>
+                    <TableCell>{role.description}</TableCell>
+                    <TableCell>
+                      <Stack direction='row' spacing={1}>
+                        {role.permissions?.map((permission) => (
+                          <Chip
+                            key={permission.id}
+                            label={permission.name}
+                            size="small"
+                          />
+                        ))}
+                      </Stack>
+                    </TableCell>
+                    <TableCell align='right'>
+                      <IconButton
+                        onClick={() => openRoleModal(role)}
+                        disabled={isUpdatingRole}
+                      >
+                        <EditIcon />
+                      </IconButton>
+                      <IconButton
+                        onClick={() => handleDeleteRole(role)}
+                        disabled={isDeletingRole}
+                      >
+                        <DeleteIcon />
+                      </IconButton>
                     </TableCell>
                   </TableRow>
                 ))}
@@ -302,56 +298,51 @@ const RolesPage = () => {
         </PerfectScrollbar>
       </Stack>
 
-      {data?.totalPages > 1 && (
-        <Stack direction={'row'} justifyContent={'center'} pt={2}>
-          <Pagination
-            color={'primary'}
-            shape={'circular'}
-            onChange={(event, value) => handlePageChange(value - 1)}
-            count={data.totalPages ?? 0}
-            page={data.page + 1}
-          />
-        </Stack>
-      )}
-
-
       {/* Role Modal */}
       <Dialog
         open={isRoleModalOpen}
         onClose={() => setIsRoleModalOpen(false)}
-        maxWidth='sm'
+        maxWidth="sm"
         fullWidth
       >
         <DialogTitle>
           {selectedRole ? 'Edit Role' : 'Create Role'}
         </DialogTitle>
         <DialogContent>
-          <Stack spacing={3} sx={{ mt: 2 }}>
+          <Stack spacing={2} sx={{ mt: 2 }}>
             <TextField
-              label='Role Name'
-              name='name'
+              name="name"
+              label="Name"
               value={formData.name}
               onChange={handleInputChange}
               fullWidth
+              disabled={isCreatingRole || isUpdatingRole}
             />
             <TextField
-              label='Description'
-              name='description'
+              name="description"
+              label="Description"
               value={formData.description}
               onChange={handleInputChange}
+              fullWidth
               multiline
               rows={3}
-              fullWidth
+              disabled={isCreatingRole || isUpdatingRole}
             />
           </Stack>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setIsRoleModalOpen(false)}>Cancel</Button>
+          <Button
+            onClick={() => setIsRoleModalOpen(false)}
+            disabled={isCreatingRole || isUpdatingRole}
+          >
+            Cancel
+          </Button>
           <Button
             onClick={selectedRole ? handleUpdateRole : handleCreateRole}
-            variant='contained'
+            variant="contained"
+            disabled={isCreatingRole || isUpdatingRole}
           >
-            {selectedRole ? 'Update' : 'Create'}
+            {isCreatingRole ? 'Creating...' : isUpdatingRole ? 'Updating...' : selectedRole ? 'Update' : 'Create'}
           </Button>
         </DialogActions>
       </Dialog>
@@ -360,22 +351,38 @@ const RolesPage = () => {
       <Dialog
         open={isPermissionsModalOpen}
         onClose={() => setIsPermissionsModalOpen(false)}
-        maxWidth='sm'
+        maxWidth="md"
         fullWidth
       >
         <DialogTitle>Manage Permissions</DialogTitle>
         <DialogContent>
-          <Stack spacing={3} sx={{ mt: 2 }}>
-            {/* Add your permissions management UI here */}
-          </Stack>
+          {selectedRole && (
+            <PermissionsForm
+              roleId={selectedRole.id}
+              permissions={formData.permissions}
+              onPermissionsChange={(newPermissions) => {
+                setFormData(prev => ({
+                  ...prev,
+                  permissions: newPermissions
+                }));
+              }}
+              disabled={isUpdatingPermissions}
+            />
+          )}
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setIsPermissionsModalOpen(false)}>Cancel</Button>
           <Button
-            onClick={() => handleUpdatePermissions(selectedRole?.id, formData.permissions)}
-            variant='contained'
+            onClick={() => setIsPermissionsModalOpen(false)}
+            disabled={isUpdatingPermissions}
           >
-            Update Permissions
+            Cancel
+          </Button>
+          <Button
+            onClick={() => handleUpdatePermissions(selectedRole.id, formData.permissions)}
+            variant="contained"
+            disabled={isUpdatingPermissions}
+          >
+            {isUpdatingPermissions ? 'Saving...' : 'Save'}
           </Button>
         </DialogActions>
       </Dialog>

@@ -1,132 +1,150 @@
-import { useEffect, useState } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '../contexts/AuthContext.jsx';
 import api from '../api/api';
 
 export const useRoles = () => {
-  const [roles, setRoles] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState(null);
   const { organization } = useAuth();
+  const queryClient = useQueryClient();
 
-  const getRoles = async () => {
-    try {
-      setIsLoading(true);
-      setError(null);
+  // Query key factory
+  const getQueryKey = (key) => ['roles', organization?.id, key];
 
-      const response = await api.get(
-        `/organizations/${organization.id}/roles`
-      );
+  // Get all roles
+  const {
+    data: roles = {},
+    isLoading: isLoadingRoles,
+    error: rolesError,
+    refetch: getRoles
+  } = useQuery({
+    queryKey: getQueryKey('list'),
+    queryFn: async () => {
+      const response = await api.get(`/organizations/${organization.id}/roles`);
+      return response.data;
+    },
+    enabled: !!organization?.id
+  });
 
-      setRoles(response.data);
-    } catch (err) {
-      setError(err.response?.data?.error || err.message);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const createRole = async (roleData) => {
-    try {
+  // Create role mutation
+  const createRoleMutation = useMutation({
+    mutationFn: async (roleData) => {
       const response = await api.post(
         `/organizations/${organization.id}/roles`,
         roleData
       );
-      setRoles([...roles, response.data]);
       return response.data;
-    } catch (err) {
-      throw err.response?.data?.error || err.message;
+    },
+    onSuccess: (newRole) => {
+      queryClient.setQueryData(getQueryKey('list'), (oldRoles) => [...oldRoles, newRole]);
     }
-  };
+  });
 
-  const updateRole = async (roleId, roleData) => {
-    try {
+  // Update role mutation
+  const updateRoleMutation = useMutation({
+    mutationFn: async ({ roleId, roleData }) => {
       const response = await api.put(
         `/organizations/${organization.id}/roles/${roleId}`,
         roleData
       );
-      setRoles(roles.map(role =>
-        role.id === roleId ? response.data : role
-      ));
       return response.data;
-    } catch (err) {
-      throw err.response?.data?.error || err.message;
-    }
-  };
-
-  const deleteRole = async (roleId) => {
-    try {
-      await api.delete(
-        `/organizations/${organization.id}/roles/${roleId}`
+    },
+    onSuccess: (updatedRole) => {
+      queryClient.setQueryData(getQueryKey('list'), (oldRoles) =>
+        oldRoles.map(role => role.id === updatedRole.id ? updatedRole : role)
       );
-      setRoles(roles.filter(role => role.id !== roleId));
-    } catch (err) {
-      throw err.response?.data?.error || err.message;
     }
-  };
+  });
 
-  const assignRole = async (roleId, userId) => {
-    try {
+  // Delete role mutation
+  const deleteRoleMutation = useMutation({
+    mutationFn: async (roleId) => {
+      await api.delete(`/organizations/${organization.id}/roles/${roleId}`);
+      return roleId;
+    },
+    onSuccess: (deletedRoleId) => {
+      queryClient.setQueryData(getQueryKey('list'), (oldRoles) =>
+        oldRoles.filter(role => role.id !== deletedRoleId)
+      );
+    }
+  });
+
+  // Assign role mutation
+  const assignRoleMutation = useMutation({
+    mutationFn: async ({ roleId, userId }) => {
       const response = await api.post(
         `/organizations/${organization.id}/roles/${roleId}/assign`,
         { userId }
       );
       return response.data;
-    } catch (err) {
-      throw err.response?.data?.error || err.message;
     }
-  };
+  });
 
-  const revokeRole = async (roleId, userId) => {
-    try {
+  // Revoke role mutation
+  const revokeRoleMutation = useMutation({
+    mutationFn: async ({ roleId, userId }) => {
       const response = await api.delete(
         `/organizations/${organization.id}/roles/${roleId}/assign/${userId}`
       );
       return response.data;
-    } catch (err) {
-      throw err.response?.data?.error || err.message;
     }
-  };
+  });
 
-  const getRolePermissions = async (roleId) => {
-    try {
+  // Get role permissions query
+  const getRolePermissionsQuery = (roleId) => useQuery({
+    queryKey: getQueryKey(['permissions', roleId]),
+    queryFn: async () => {
       const response = await api.get(
         `/organizations/${organization.id}/roles/${roleId}/permissions`
       );
       return response.data;
-    } catch (err) {
-      throw err.response?.data?.error || err.message;
-    }
-  };
+    },
+    enabled: !!roleId && !!organization?.id
+  });
 
-  const updateRolePermissions = async (roleId, permissions) => {
-    try {
+  // Update role permissions mutation
+  const updateRolePermissionsMutation = useMutation({
+    mutationFn: async ({ roleId, permissions }) => {
       const response = await api.put(
         `/organizations/${organization.id}/roles/${roleId}/permissions`,
         permissions
       );
       return response.data;
-    } catch (err) {
-      throw err.response?.data?.error || err.message;
+    },
+    onSuccess: (data, { roleId }) => {
+      queryClient.invalidateQueries(getQueryKey(['permissions', roleId]));
     }
-  };
-
-  useEffect(() => {
-    if (organization?.id) {
-      getRoles();
-    }
-  }, [organization?.id]);
+  });
 
   return {
+    // Queries
     roles,
-    isLoading,
-    error,
+    isLoadingRoles,
+    rolesError,
     getRoles,
-    createRole,
-    updateRole,
-    deleteRole,
-    assignRole,
-    revokeRole,
-    getRolePermissions,
-    updateRolePermissions,
+    getRolePermissionsQuery,
+
+    // Mutations
+    createRole: createRoleMutation.mutate,
+    isCreatingRole: createRoleMutation.isPending,
+    createRoleError: createRoleMutation.error,
+
+    updateRole: updateRoleMutation.mutate,
+    isUpdatingRole: updateRoleMutation.isPending,
+    updateRoleError: updateRoleMutation.error,
+
+    deleteRole: deleteRoleMutation.mutate,
+    isDeletingRole: deleteRoleMutation.isPending,
+    deleteRoleError: deleteRoleMutation.error,
+
+    assignRole: assignRoleMutation.mutate,
+    isAssigningRole: assignRoleMutation.isPending,
+    assignRoleError: assignRoleMutation.error,
+
+    revokeRole: revokeRoleMutation.mutate,
+    isRevokingRole: revokeRoleMutation.isPending,
+    revokeRoleError: revokeRoleMutation.error,
+
+    updateRolePermissions: updateRolePermissionsMutation.mutate,
+    isUpdatingPermissions: updateRolePermissionsMutation.isPending,
+    updatePermissionsError: updateRolePermissionsMutation.error
   };
 };
